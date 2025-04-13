@@ -16,13 +16,25 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import AddEntityModal from "@/components/common/AddEntityModal";
 import AddDocumentForm from "@/components/documents/AddDocumentForm";
+import { useDocuments } from "@/hooks/useDocuments";
 
 const Documents = () => {
   const { toast } = useToast();
-  const [searchQuery, setSearchQuery] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
+  const {
+    filteredDocuments,
+    isLoading,
+    searchQuery,
+    setSearchQuery,
+    typeFilter,
+    setTypeFilter,
+    getTenantName,
+    getPropertyName,
+    formatDate,
+    handleAddDocument
+  } = useDocuments();
 
-  const handleAddDocument = () => {
+  const handleAddDocumentSuccess = () => {
     setShowAddModal(false);
     toast({
       title: "Success",
@@ -49,7 +61,10 @@ const Documents = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <Select defaultValue="all">
+        <Select 
+          value={typeFilter} 
+          onValueChange={(value) => setTypeFilter(value as any)}
+        >
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Filter by type" />
           </SelectTrigger>
@@ -67,117 +82,77 @@ const Documents = () => {
         </Button>
       </div>
 
-      {/* Documents List - Placeholder */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-start gap-4">
-              <div className="rounded-lg bg-primary/10 p-2">
-                <FileText className="h-8 w-8 text-primary" />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-semibold">Lease Agreement - John Doe</h3>
-                    <p className="text-sm text-muted-foreground">Added Apr 12, 2025</p>
+      {/* Documents List */}
+      {isLoading ? (
+        <div className="text-center py-12">
+          <p>Loading documents data...</p>
+        </div>
+      ) : filteredDocuments.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">No documents found.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredDocuments.map(document => (
+            <Card key={document.id}>
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <div className="rounded-lg bg-primary/10 p-2">
+                    <FileText className="h-8 w-8 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-semibold">{document.name}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Added {formatDate(document.uploadDate)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-2 flex items-center gap-2">
+                      <Badge variant="outline">{document.type}</Badge>
+                      <span className="text-xs text-muted-foreground">{document.fileSize}</span>
+                    </div>
+                    {document.tenantId && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Tenant: {getTenantName(document.tenantId)}
+                      </p>
+                    )}
+                    {document.propertyId && (
+                      <p className="text-xs text-muted-foreground">
+                        Property: {getPropertyName(document.propertyId)}
+                      </p>
+                    )}
                   </div>
                 </div>
-                <div className="mt-2 flex items-center gap-2">
-                  <Badge variant="outline">Lease</Badge>
-                  <span className="text-xs text-muted-foreground">250KB</span>
+                <div className="mt-4 flex justify-end gap-2">
+                  <Button variant="outline" size="sm" asChild>
+                    <Link to={`/documents/${document.id}`}>
+                      <File className="mr-1 h-4 w-4" />
+                      View Details
+                    </Link>
+                  </Button>
+                  <Button variant="outline" size="sm" asChild>
+                    <a href={document.url} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="mr-1 h-4 w-4" />
+                      Open
+                    </a>
+                  </Button>
                 </div>
-              </div>
-            </div>
-            <div className="mt-4 flex justify-end gap-2">
-              <Button variant="outline" size="sm" asChild>
-                <Link to="/documents/1">
-                  <File className="mr-1 h-4 w-4" />
-                  View Details
-                </Link>
-              </Button>
-              <Button variant="outline" size="sm">
-                <ExternalLink className="mr-1 h-4 w-4" />
-                Open
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-start gap-4">
-              <div className="rounded-lg bg-primary/10 p-2">
-                <FileText className="h-8 w-8 text-primary" />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-semibold">Property Inspection Report</h3>
-                    <p className="text-sm text-muted-foreground">Added Apr 10, 2025</p>
-                  </div>
-                </div>
-                <div className="mt-2 flex items-center gap-2">
-                  <Badge variant="outline">Other</Badge>
-                  <span className="text-xs text-muted-foreground">1.2MB</span>
-                </div>
-              </div>
-            </div>
-            <div className="mt-4 flex justify-end gap-2">
-              <Button variant="outline" size="sm" asChild>
-                <Link to="/documents/2">
-                  <File className="mr-1 h-4 w-4" />
-                  View Details
-                </Link>
-              </Button>
-              <Button variant="outline" size="sm">
-                <ExternalLink className="mr-1 h-4 w-4" />
-                Open
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-start gap-4">
-              <div className="rounded-lg bg-primary/10 p-2">
-                <FileText className="h-8 w-8 text-primary" />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-semibold">Maintenance Invoice</h3>
-                    <p className="text-sm text-muted-foreground">Added Apr 8, 2025</p>
-                  </div>
-                </div>
-                <div className="mt-2 flex items-center gap-2">
-                  <Badge variant="outline">Maintenance</Badge>
-                  <span className="text-xs text-muted-foreground">420KB</span>
-                </div>
-              </div>
-            </div>
-            <div className="mt-4 flex justify-end gap-2">
-              <Button variant="outline" size="sm" asChild>
-                <Link to="/documents/3">
-                  <File className="mr-1 h-4 w-4" />
-                  View Details
-                </Link>
-              </Button>
-              <Button variant="outline" size="sm">
-                <ExternalLink className="mr-1 h-4 w-4" />
-                Open
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Add Document Modal */}
       <AddEntityModal
         title="Add New Document"
         open={showAddModal}
         onOpenChange={setShowAddModal}
-        onSave={handleAddDocument}
+        onSave={handleAddDocumentSuccess}
       >
-        <AddDocumentForm onSuccess={handleAddDocument} />
+        <AddDocumentForm onSuccess={handleAddDocumentSuccess} />
       </AddEntityModal>
     </div>
   );

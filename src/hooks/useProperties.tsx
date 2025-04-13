@@ -1,11 +1,12 @@
-
 import { useState, useEffect } from "react";
 import { Property } from "@/types";
 import { propertiesService, tenantsService } from "@/services/supabaseService";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function useProperties() {
   const { toast } = useToast();
+  const { user, profile } = useAuth();
   const [properties, setProperties] = useState<Property[]>([]);
   const [tenants, setTenants] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -15,11 +16,14 @@ export function useProperties() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const managerId = profile?.id || user?.id;
+        
         const [fetchedProperties, fetchedTenants] = await Promise.all([
-          propertiesService.getAll(),
-          tenantsService.getAll()
+          propertiesService.getAll(managerId),
+          tenantsService.getAll(managerId)
         ]);
         
+        console.log("Fetched properties:", fetchedProperties);
         setProperties(fetchedProperties);
         setTenants(fetchedTenants);
         setIsLoading(false);
@@ -35,7 +39,7 @@ export function useProperties() {
     };
 
     fetchData();
-  }, [toast]);
+  }, [toast, user, profile]);
 
   // Filter properties
   const getFilteredProperties = () => {
@@ -79,10 +83,17 @@ export function useProperties() {
   // Add property (we'll implement this in AddPropertyForm)
   const handleAddProperty = async (formData: Omit<Property, "id">) => {
     try {
-      const result = await propertiesService.create(formData);
+      // Ensure managerId is set
+      const managerId = profile?.id || user?.id;
+      const propertyData = {
+        ...formData,
+        managerId
+      };
+      
+      const result = await propertiesService.create(propertyData);
       
       // Refresh properties data after adding new property
-      const updatedProperties = await propertiesService.getAll();
+      const updatedProperties = await propertiesService.getAll(managerId);
       setProperties(updatedProperties);
       
       return true;

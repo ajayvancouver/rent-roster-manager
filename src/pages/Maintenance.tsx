@@ -7,12 +7,12 @@ import MaintenanceSummaryCards from "@/components/maintenance/MaintenanceSummary
 import MaintenanceFilters from "@/components/maintenance/MaintenanceFilters";
 import MaintenanceTabs from "@/components/maintenance/MaintenanceTabs";
 import { useMaintenanceData } from "@/hooks/useMaintenanceData";
-import { maintenanceRequests } from "@/data/mockData";
 
 const MaintenancePage = () => {
   const { toast } = useToast();
   const [showAddModal, setShowAddModal] = useState(false);
   const {
+    isLoading,
     searchQuery,
     setSearchQuery,
     priorityFilter,
@@ -24,10 +24,12 @@ const MaintenancePage = () => {
     closedRequests,
     toggleSort,
     getTenantName,
-    getPropertyName
+    getPropertyName,
+    handleAddRequest,
+    maintenanceRequests
   } = useMaintenanceData();
 
-  const handleAddRequest = () => {
+  const handleAddRequestSuccess = () => {
     setShowAddModal(false);
     toast({
       title: "Success",
@@ -67,9 +69,9 @@ const MaintenancePage = () => {
         title="New Maintenance Request"
         open={showAddModal}
         onOpenChange={setShowAddModal}
-        onSave={handleAddRequest}
+        onSave={handleAddRequestSuccess}
       >
-        <AddMaintenanceRequestForm onSuccess={handleAddRequest} />
+        <AddMaintenanceRequestForm onSuccess={handleAddRequestSuccess} />
       </AddEntityModal>
     </div>
   );

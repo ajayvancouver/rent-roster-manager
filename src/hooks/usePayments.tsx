@@ -1,11 +1,12 @@
-
 import { useState, useEffect } from "react";
 import { Payment } from "@/types";
 import { paymentsService, tenantsService, propertiesService } from "@/services/supabaseService";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function usePayments() {
   const { toast } = useToast();
+  const { user, profile } = useAuth();
   const [payments, setPayments] = useState<Payment[]>([]);
   const [tenants, setTenants] = useState<any[]>([]);
   const [properties, setProperties] = useState<any[]>([]);
@@ -22,12 +23,15 @@ export function usePayments() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const managerId = profile?.id || user?.id;
+        
         const [fetchedPayments, fetchedTenants, fetchedProperties] = await Promise.all([
-          paymentsService.getAll(),
-          tenantsService.getAll(),
-          propertiesService.getAll()
+          paymentsService.getAll(managerId),
+          tenantsService.getAll(managerId),
+          propertiesService.getAll(managerId)
         ]);
         
+        console.log("Fetched payments:", fetchedPayments);
         setPayments(fetchedPayments);
         setTenants(fetchedTenants);
         setProperties(fetchedProperties);
@@ -44,7 +48,7 @@ export function usePayments() {
     };
 
     fetchData();
-  }, [toast]);
+  }, [toast, user, profile]);
 
   // Get tenant name by ID
   const getTenantName = (tenantId: string) => {
@@ -150,10 +154,18 @@ export function usePayments() {
   // Add payment
   const handleAddPayment = async (formData: Omit<Payment, "id" | "tenantName" | "propertyId" | "propertyName" | "unitNumber">) => {
     try {
-      const result = await paymentsService.create(formData);
+      const managerId = profile?.id || user?.id;
+      
+      // Ensure managerId is set
+      const paymentData = {
+        ...formData,
+        managerId
+      };
+      
+      const result = await paymentsService.create(paymentData);
       
       // Refresh payments data after adding new payment
-      const updatedPayments = await paymentsService.getAll();
+      const updatedPayments = await paymentsService.getAll(managerId);
       setPayments(updatedPayments);
       
       return true;
