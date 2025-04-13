@@ -47,8 +47,40 @@ export const useTenantForm = ({ onSuccess }: UseTenantFormProps) => {
     setIsLoading(true);
     
     try {
-      // First check if a tenant with this email already exists
-      const { data: existingTenants } = await tenantsService.checkEmailExists(formData.email);
+      // Validate form data
+      if (!formData.name) {
+        toast({
+          title: "Name is required",
+          description: "Please enter a tenant name.",
+          variant: "destructive"
+        });
+        setIsLoading(false);
+        return;
+      }
+      
+      if (!formData.email) {
+        toast({
+          title: "Email is required",
+          description: "Please enter a tenant email.",
+          variant: "destructive"
+        });
+        setIsLoading(false);
+        return;
+      }
+      
+      // Check if a tenant with this email already exists
+      const { data: existingTenants, error: emailCheckError } = await tenantsService.checkEmailExists(formData.email);
+      
+      if (emailCheckError) {
+        console.error("Error checking email:", emailCheckError);
+        toast({
+          title: "Error checking email",
+          description: "Could not verify if email is already in use.",
+          variant: "destructive"
+        });
+        setIsLoading(false);
+        return;
+      }
       
       if (existingTenants && existingTenants.length > 0) {
         toast({
@@ -63,11 +95,25 @@ export const useTenantForm = ({ onSuccess }: UseTenantFormProps) => {
       // Prepare the data - convert empty propertyId to null
       const submitData = {
         ...formData,
-        propertyId: formData.propertyId ? formData.propertyId : null
+        propertyId: formData.propertyId || null,
+        unitNumber: formData.unitNumber || null
       };
       
+      console.log("Submitting tenant data:", submitData);
+      
       // Use the actual Supabase service to create the tenant
-      const newTenant = await tenantsService.create(submitData);
+      const { data: newTenant, error } = await tenantsService.create(submitData);
+      
+      if (error) {
+        console.error("Supabase error creating tenant:", error);
+        toast({
+          title: "Failed to add tenant",
+          description: error.message || "Please try again later.",
+          variant: "destructive"
+        });
+        setIsLoading(false);
+        return;
+      }
       
       toast({
         title: "Tenant added!",
