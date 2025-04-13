@@ -90,7 +90,8 @@ export function useDocuments() {
       
       const documentData = {
         ...formData,
-        managerId
+        managerId,
+        uploadDate: new Date().toISOString() // Add the missing uploadDate property
       };
       
       const result = await documentsService.create(documentData);

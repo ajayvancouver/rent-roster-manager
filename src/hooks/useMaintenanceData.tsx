@@ -111,7 +111,8 @@ export function useMaintenanceData() {
       
       const requestData = {
         ...formData,
-        managerId
+        managerId,
+        dateSubmitted: new Date().toISOString() // Add the missing dateSubmitted property
       };
       
       const result = await maintenanceService.create(requestData);
