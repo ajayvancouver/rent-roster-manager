@@ -1,6 +1,6 @@
 
-import React from "react";
-import { User, Mail, Phone, Building2, Calendar, DollarSign } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { User, Mail, Phone, Building2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { 
@@ -10,8 +10,8 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { Tenant } from "@/types";
-import { properties } from "@/data/mockData";
+import { Tenant, Property } from "@/types";
+import { propertiesService } from "@/services/supabaseService";
 
 interface TenantFormFieldsProps {
   formData: Omit<Tenant, "id">;
@@ -24,6 +24,24 @@ export const TenantFormFields: React.FC<TenantFormFieldsProps> = ({
   handleChange,
   handleSelectChange
 }) => {
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProperties = async () => {
+      try {
+        const data = await propertiesService.getAll();
+        setProperties(data);
+      } catch (error) {
+        console.error("Error fetching properties:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProperties();
+  }, []);
+
   return (
     <div className="space-y-4">
       <div className="space-y-2">
@@ -86,11 +104,17 @@ export const TenantFormFields: React.FC<TenantFormFieldsProps> = ({
             <SelectValue placeholder="Select property" />
           </SelectTrigger>
           <SelectContent>
-            {properties.map(property => (
-              <SelectItem key={property.id} value={property.id}>
-                {property.name}
-              </SelectItem>
-            ))}
+            {isLoading ? (
+              <SelectItem value="loading" disabled>Loading properties...</SelectItem>
+            ) : properties.length === 0 ? (
+              <SelectItem value="none" disabled>No properties found</SelectItem>
+            ) : (
+              properties.map(property => (
+                <SelectItem key={property.id} value={property.id}>
+                  {property.name}
+                </SelectItem>
+              ))
+            )}
           </SelectContent>
         </Select>
       </div>

@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Tenant } from "@/types";
+import { tenantsService } from "@/services/supabaseService";
 
 interface UseTenantFormProps {
   onSuccess: (tenantData: Omit<Tenant, "id">) => void;
@@ -46,11 +47,8 @@ export const useTenantForm = ({ onSuccess }: UseTenantFormProps) => {
     setIsLoading(true);
     
     try {
-      // In a real app, this would be an API call
-      console.log("Submitting tenant:", formData);
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Use the actual Supabase service to create the tenant
+      const newTenant = await tenantsService.create(formData);
       
       toast({
         title: "Tenant added!",
