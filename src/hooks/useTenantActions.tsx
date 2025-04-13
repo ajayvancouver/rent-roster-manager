@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Tenant } from "@/types";
 import { tenantsService } from "@/services/tenantsService";
 import { useToast } from "@/hooks/use-toast";
+import { linkTenantToUser } from "@/services/authService"; 
 
 export function useTenantActions(tenants: Tenant[], setTenants: React.Dispatch<React.SetStateAction<Tenant[]>>, properties: any[]) {
   const { toast } = useToast();
@@ -50,6 +51,21 @@ export function useTenantActions(tenants: Tenant[], setTenants: React.Dispatch<R
         }
         
         setTenants(prevTenants => [...prevTenants, newTenant]);
+        
+        // Check if the tenant has a user account with the same email
+        if (tenantData.email) {
+          try {
+            const { data: users } = await tenantsService.findUserByEmail(tenantData.email);
+            if (users && users.length > 0) {
+              // If a user with this email exists, link the tenant to the user
+              const userId = users[0].id;
+              await linkTenantToUser(newTenant.id, userId);
+            }
+          } catch (linkError) {
+            console.error("Error linking tenant to user:", linkError);
+            // Don't fail the tenant creation if linking fails
+          }
+        }
         
         toast({
           title: "Success",

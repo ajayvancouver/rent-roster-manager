@@ -9,6 +9,16 @@ export interface UserProfile {
   full_name: string | null;
   avatar_url: string | null;
   user_type: UserType;
+  // Extended tenant fields
+  property_id?: string | null;
+  unit_number?: string | null;
+  phone?: string | null;
+  rent_amount?: number | null;
+  deposit_amount?: number | null;
+  balance?: number | null;
+  lease_start?: string | null;
+  lease_end?: string | null;
+  status?: string | null;
 }
 
 export interface AuthContextType {

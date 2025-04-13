@@ -66,6 +66,13 @@ export const tenantsService = {
       .eq('email', email);
   },
 
+  async findUserByEmail(email: string) {
+    return await supabase
+      .from('profiles')
+      .select('id, email')
+      .eq('email', email);
+  },
+
   async create(tenant: Omit<Tenant, 'id' | 'propertyName' | 'propertyAddress'>) {
     // Map our TypeScript interface to database columns
     const dbTenant = {
@@ -115,5 +122,40 @@ export const tenantsService = {
       .eq('id', id)
       .select()
       .single();
+  },
+
+  async getTenantByUserId(userId: string) {
+    const { data, error } = await supabase
+      .from('tenants')
+      .select('*, properties(name, address, city, state, zip_code)')
+      .eq('tenant_user_id', userId)
+      .single();
+      
+    if (error) {
+      if (error.code === 'PGRST116') { // No data found
+        return null;
+      }
+      throw error;
+    }
+    
+    if (!data) return null;
+    
+    // Map to our TypeScript interface
+    return {
+      id: data.id,
+      name: data.name,
+      email: data.email,
+      phone: data.phone || '',
+      propertyId: data.property_id || '',
+      propertyName: data.properties ? data.properties.name : null,
+      propertyAddress: data.properties ? `${data.properties.address}, ${data.properties.city}, ${data.properties.state} ${data.properties.zip_code}` : null,
+      unitNumber: data.unit_number || '',
+      leaseStart: data.lease_start,
+      leaseEnd: data.lease_end,
+      rentAmount: data.rent_amount,
+      depositAmount: data.deposit_amount,
+      balance: data.balance || 0,
+      status: data.status as 'active' | 'inactive' | 'pending'
+    };
   }
 };

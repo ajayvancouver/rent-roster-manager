@@ -68,7 +68,26 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile | nu
 
     if (data) {
       console.log("Profile found:", data);
-      return data as UserProfile;
+      
+      // Map the database fields to our UserProfile interface
+      const userProfile: UserProfile = {
+        id: data.id,
+        email: data.email,
+        full_name: data.full_name,
+        avatar_url: data.avatar_url,
+        user_type: data.user_type as UserType,
+        property_id: data.property_id,
+        unit_number: data.unit_number,
+        phone: data.phone,
+        rent_amount: data.rent_amount,
+        deposit_amount: data.deposit_amount,
+        balance: data.balance,
+        lease_start: data.lease_start,
+        lease_end: data.lease_end,
+        status: data.status
+      };
+      
+      return userProfile;
     }
     
     console.log("No profile found for user:", userId);
@@ -92,7 +111,24 @@ export const createDefaultProfile = async (userId: string, email: string): Promi
       
     if (existingProfile) {
       console.log("Profile already exists:", existingProfile);
-      return existingProfile as UserProfile;
+      
+      // Map the database fields to our UserProfile interface
+      return {
+        id: existingProfile.id,
+        email: existingProfile.email,
+        full_name: existingProfile.full_name,
+        avatar_url: existingProfile.avatar_url,
+        user_type: existingProfile.user_type as UserType,
+        property_id: existingProfile.property_id,
+        unit_number: existingProfile.unit_number,
+        phone: existingProfile.phone,
+        rent_amount: existingProfile.rent_amount,
+        deposit_amount: existingProfile.deposit_amount,
+        balance: existingProfile.balance,
+        lease_start: existingProfile.lease_start,
+        lease_end: existingProfile.lease_end,
+        status: existingProfile.status
+      };
     }
     
     // Create new profile
@@ -101,6 +137,7 @@ export const createDefaultProfile = async (userId: string, email: string): Promi
       email: email,
       full_name: email,
       user_type: 'tenant' as UserType,
+      status: 'active'
     };
     
     const { data, error } = await supabase
@@ -115,9 +152,87 @@ export const createDefaultProfile = async (userId: string, email: string): Promi
     }
     
     console.log("Created default profile for user:", userId, data);
-    return data as UserProfile;
+    
+    // Map the database fields to our UserProfile interface
+    return {
+      id: data.id,
+      email: data.email,
+      full_name: data.full_name,
+      avatar_url: data.avatar_url,
+      user_type: data.user_type as UserType,
+      property_id: data.property_id,
+      unit_number: data.unit_number,
+      phone: data.phone,
+      rent_amount: data.rent_amount,
+      deposit_amount: data.deposit_amount,
+      balance: data.balance,
+      lease_start: data.lease_start,
+      lease_end: data.lease_end,
+      status: data.status
+    };
   } catch (error) {
     console.error("Error creating default profile:", error);
     return null;
+  }
+};
+
+// New function to link a tenant record with a user profile
+export const linkTenantToUser = async (tenantId: string, userId: string) => {
+  try {
+    console.log(`Linking tenant ${tenantId} to user ${userId}`);
+    const { data, error } = await supabase
+      .from("tenants")
+      .update({ tenant_user_id: userId })
+      .eq("id", tenantId)
+      .select()
+      .single();
+      
+    if (error) {
+      console.error("Error linking tenant to user:", error);
+      throw error;
+    }
+    
+    console.log("Successfully linked tenant to user:", data);
+    return data;
+  } catch (error) {
+    console.error("Error in linkTenantToUser:", error);
+    throw error;
+  }
+};
+
+// New function to update user profile with tenant data
+export const updateProfileWithTenantData = async (userId: string, tenantData: any) => {
+  try {
+    console.log(`Updating profile for user ${userId} with tenant data:`, tenantData);
+    
+    const updateData = {
+      property_id: tenantData.property_id,
+      unit_number: tenantData.unit_number,
+      phone: tenantData.phone,
+      rent_amount: tenantData.rent_amount,
+      deposit_amount: tenantData.deposit_amount,
+      balance: tenantData.balance,
+      lease_start: tenantData.lease_start,
+      lease_end: tenantData.lease_end,
+      status: tenantData.status
+    };
+    
+    const { data, error } = await supabase
+      .from("profiles")
+      .update(updateData)
+      .eq("id", userId)
+      .select()
+      .single();
+      
+    if (error) {
+      console.error("Error updating profile with tenant data:", error);
+      throw error;
+    }
+    
+    console.log("Successfully updated profile with tenant data:", data);
+    return data;
+  } catch (error) {
+    console.error("Error in updateProfileWithTenantData:", error);
+    throw error;
   }
 };

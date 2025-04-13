@@ -185,32 +185,67 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          balance: number | null
           created_at: string
+          deposit_amount: number | null
           email: string
           full_name: string | null
           id: string
+          lease_end: string | null
+          lease_start: string | null
+          phone: string | null
+          property_id: string | null
+          rent_amount: number | null
+          status: string | null
+          unit_number: string | null
           updated_at: string
           user_type: string
         }
         Insert: {
           avatar_url?: string | null
+          balance?: number | null
           created_at?: string
+          deposit_amount?: number | null
           email: string
           full_name?: string | null
           id: string
+          lease_end?: string | null
+          lease_start?: string | null
+          phone?: string | null
+          property_id?: string | null
+          rent_amount?: number | null
+          status?: string | null
+          unit_number?: string | null
           updated_at?: string
           user_type?: string
         }
         Update: {
           avatar_url?: string | null
+          balance?: number | null
           created_at?: string
+          deposit_amount?: number | null
           email?: string
           full_name?: string | null
           id?: string
+          lease_end?: string | null
+          lease_start?: string | null
+          phone?: string | null
+          property_id?: string | null
+          rent_amount?: number | null
+          status?: string | null
+          unit_number?: string | null
           updated_at?: string
           user_type?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       properties: {
         Row: {
