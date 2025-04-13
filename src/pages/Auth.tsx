@@ -15,7 +15,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ExclamationTriangleIcon } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 
 const Auth = () => {
   const { user, signIn, signUp, isLoading } = useAuth();
@@ -84,7 +84,7 @@ const Auth = () => {
           <CardContent>
             {error && (
               <Alert variant="destructive" className="mb-4">
-                <ExclamationTriangleIcon className="h-4 w-4" />
+                <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
