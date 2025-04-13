@@ -52,17 +52,23 @@ const TenantDashboard = () => {
             .order("date", { ascending: false });
           
           if (paymentsError) throw paymentsError;
+          
           // Map database fields to match our Payment type
-          const mappedPayments = (paymentsData || []).map(payment => ({
+          const mappedPayments: Payment[] = (paymentsData || []).map(payment => ({
             id: payment.id,
             tenantId: payment.tenant_id,
-            propertyId: payment.property_id || null,
+            tenantName: tenantData.name,
+            propertyId: tenantData.property_id,
+            propertyName: tenantData.properties ? tenantData.properties.name : null,
+            unitNumber: tenantData.unit_number,
             amount: payment.amount,
             date: payment.date,
-            method: payment.method,
-            status: payment.status,
+            // Ensure method is one of the allowed values in the Payment type
+            method: validatePaymentMethod(payment.method),
+            status: validatePaymentStatus(payment.status),
             notes: payment.notes
           }));
+          
           setPayments(mappedPayments);
           
           // Fetch maintenance requests
@@ -73,20 +79,26 @@ const TenantDashboard = () => {
             .order("date_submitted", { ascending: false });
           
           if (maintenanceError) throw maintenanceError;
+          
           // Map database fields to match our Maintenance type
           const mappedMaintenance = (maintenanceData || []).map(item => ({
             id: item.id,
             propertyId: item.property_id,
+            propertyName: tenantData.properties ? tenantData.properties.name : null,
             tenantId: item.tenant_id,
+            tenantName: tenantData.name,
+            tenantEmail: tenantData.email,
+            unitNumber: tenantData.unit_number,
             title: item.title,
             description: item.description,
-            priority: item.priority as Maintenance["priority"],
-            status: item.status as Maintenance["status"],
+            priority: validateMaintenancePriority(item.priority),
+            status: validateMaintenanceStatus(item.status),
             dateSubmitted: item.date_submitted,
             dateCompleted: item.date_completed,
             assignedTo: item.assigned_to,
             cost: item.cost
           }));
+          
           setMaintenance(mappedMaintenance);
           
           // Fetch documents
@@ -97,18 +109,22 @@ const TenantDashboard = () => {
             .order("upload_date", { ascending: false });
           
           if (documentsError) throw documentsError;
+          
           // Map database fields to match our Document type
           const mappedDocuments = (documentsData || []).map(doc => ({
             id: doc.id,
             name: doc.name,
-            type: doc.type as Document["type"],
+            type: validateDocumentType(doc.type),
             tenantId: doc.tenant_id,
+            tenantName: tenantData.name,
             propertyId: doc.property_id,
+            propertyName: tenantData.properties ? tenantData.properties.name : null,
             uploadDate: doc.upload_date,
             fileSize: doc.file_size,
             fileType: doc.file_type,
             url: doc.url
           }));
+          
           setDocuments(mappedDocuments);
         }
         
@@ -126,6 +142,46 @@ const TenantDashboard = () => {
     
     fetchTenantData();
   }, [user, toast]);
+
+  // Helper function to validate payment method
+  const validatePaymentMethod = (method: string): Payment['method'] => {
+    const validMethods: Payment['method'][] = ['cash', 'check', 'bank transfer', 'credit card'];
+    return validMethods.includes(method as Payment['method']) 
+      ? (method as Payment['method']) 
+      : 'cash'; // Default fallback
+  };
+
+  // Helper function to validate payment status
+  const validatePaymentStatus = (status: string): Payment['status'] => {
+    const validStatuses: Payment['status'][] = ['pending', 'completed', 'failed'];
+    return validStatuses.includes(status as Payment['status']) 
+      ? (status as Payment['status']) 
+      : 'pending'; // Default fallback
+  };
+
+  // Helper function to validate maintenance priority
+  const validateMaintenancePriority = (priority: string): Maintenance['priority'] => {
+    const validPriorities: Maintenance['priority'][] = ['low', 'medium', 'high', 'emergency'];
+    return validPriorities.includes(priority as Maintenance['priority']) 
+      ? (priority as Maintenance['priority']) 
+      : 'medium'; // Default fallback
+  };
+
+  // Helper function to validate maintenance status
+  const validateMaintenanceStatus = (status: string): Maintenance['status'] => {
+    const validStatuses: Maintenance['status'][] = ['pending', 'in-progress', 'completed', 'cancelled'];
+    return validStatuses.includes(status as Maintenance['status']) 
+      ? (status as Maintenance['status']) 
+      : 'pending'; // Default fallback
+  };
+
+  // Helper function to validate document type
+  const validateDocumentType = (type: string): Document['type'] => {
+    const validTypes: Document['type'][] = ['lease', 'payment', 'maintenance', 'other'];
+    return validTypes.includes(type as Document['type']) 
+      ? (type as Document['type']) 
+      : 'other'; // Default fallback
+  };
 
   if (isLoading) {
     return <div className="p-8">Loading your tenant portal...</div>;
@@ -319,8 +375,8 @@ const TenantDashboard = () => {
             <p className="text-sm text-muted-foreground">
               {propertyInfo?.address}, {propertyInfo?.city}, {propertyInfo?.state} {propertyInfo?.zip_code}
             </p>
-            {tenantInfo.unitNumber && (
-              <p className="mt-1 text-sm">Unit: {tenantInfo.unitNumber}</p>
+            {tenantInfo.unit_number && (
+              <p className="mt-1 text-sm">Unit: {tenantInfo.unit_number}</p>
             )}
           </CardContent>
         </Card>
@@ -333,11 +389,11 @@ const TenantDashboard = () => {
             <div className="flex justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Start</p>
-                <p className="font-medium">{formatDate(tenantInfo.leaseStart)}</p>
+                <p className="font-medium">{formatDate(tenantInfo.lease_start)}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">End</p>
-                <p className="font-medium">{formatDate(tenantInfo.leaseEnd)}</p>
+                <p className="font-medium">{formatDate(tenantInfo.lease_end)}</p>
               </div>
             </div>
           </CardContent>
@@ -348,7 +404,7 @@ const TenantDashboard = () => {
             <CardTitle className="text-lg">Rent</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="font-medium">{formatCurrency(tenantInfo.rentAmount)}/month</p>
+            <p className="font-medium">{formatCurrency(tenantInfo.rent_amount)}/month</p>
             <div className="mt-2 flex justify-between items-center">
               <span className="text-sm text-muted-foreground">Current Balance:</span>
               <span className={`font-bold ${tenantInfo.balance > 0 ? 'text-red-500' : 'text-green-500'}`}>
