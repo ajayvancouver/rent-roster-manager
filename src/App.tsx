@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { AuthProvider } from "@/contexts/AuthProvider";
 import SidebarLayout from "./components/layout/SidebarLayout";
 import ProtectedRoute from "./components/common/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
@@ -21,6 +21,7 @@ import DocumentDetail from "./pages/DocumentDetail";
 import TenantDashboard from "./pages/tenant/TenantDashboard";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import { useAuth } from "./hooks/useAuth";
 
 const queryClient = new QueryClient();
 
@@ -147,7 +148,7 @@ const App = () => (
   </QueryClientProvider>
 );
 
-// Root redirect component
+// Root redirect component - fixed to avoid infinite loop
 const RootRedirect = () => {
   const { user, userType, isLoading } = useAuth();
   
@@ -156,15 +157,15 @@ const RootRedirect = () => {
   }
   
   if (!user) {
-    return <Navigate to="/auth" />;
+    return <Navigate to="/auth" replace />;
   }
   
   if (userType === "manager") {
-    return <Navigate to="/dashboard" />;
+    return <Navigate to="/dashboard" replace />;
   } else if (userType === "tenant") {
-    return <Navigate to="/tenant" />;
+    return <Navigate to="/tenant" replace />;
   } else {
-    return <Navigate to="/auth" />;
+    return <Navigate to="/auth" replace />;
   }
 };
 

@@ -81,6 +81,21 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile | nu
 
 export const createDefaultProfile = async (userId: string, email: string): Promise<UserProfile | null> => {
   try {
+    console.log("Creating default profile for user:", userId);
+    
+    // Check if profile already exists
+    const { data: existingProfile } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .single();
+      
+    if (existingProfile) {
+      console.log("Profile already exists:", existingProfile);
+      return existingProfile as UserProfile;
+    }
+    
+    // Create new profile
     const defaultProfile = {
       id: userId,
       email: email,
@@ -88,17 +103,19 @@ export const createDefaultProfile = async (userId: string, email: string): Promi
       user_type: 'tenant' as UserType,
     };
     
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("profiles")
-      .insert([defaultProfile]);
+      .insert([defaultProfile])
+      .select()
+      .single();
       
     if (error) {
       console.error("Error creating default profile:", error);
       return null;
     }
     
-    console.log("Created default profile for user:", userId);
-    return defaultProfile as UserProfile;
+    console.log("Created default profile for user:", userId, data);
+    return data as UserProfile;
   } catch (error) {
     console.error("Error creating default profile:", error);
     return null;

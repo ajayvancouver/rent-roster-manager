@@ -50,9 +50,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (currentSession?.user) {
         handleProfileFetch(currentSession.user.id);
+      } else {
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
     });
 
     return () => {
@@ -61,19 +61,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const handleProfileFetch = async (userId: string) => {
-    const userProfile = await fetchUserProfile(userId);
-    
-    if (userProfile) {
-      setProfile(userProfile);
-      setUserType(userProfile.user_type);
-    } else if (user?.email) {
-      // Profile should have been created by the trigger
-      // But as a fallback, attempt to create it
-      const defaultProfile = await createDefaultProfile(userId, user.email);
-      if (defaultProfile) {
-        setProfile(defaultProfile);
-        setUserType(defaultProfile.user_type);
+    try {
+      let userProfile = await fetchUserProfile(userId);
+      
+      if (!userProfile && user?.email) {
+        // Profile should have been created by the trigger
+        // But as a fallback, attempt to create it manually
+        userProfile = await createDefaultProfile(userId, user.email);
       }
+      
+      if (userProfile) {
+        setProfile(userProfile);
+        setUserType(userProfile.user_type);
+      }
+      
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error handling profile fetch:", error);
+      setIsLoading(false);
     }
   };
 
@@ -85,7 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error("Sign in error:", error.message);
       throw error;
     } finally {
-      setIsLoading(false);
+      // We don't set isLoading to false here because the auth state change event will trigger
     }
   };
 
