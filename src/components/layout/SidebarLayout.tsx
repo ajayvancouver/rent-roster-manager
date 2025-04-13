@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
@@ -16,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
+import Header from "@/components/layout/Header";
 
 interface SidebarItemProps {
   icon: React.ElementType;
@@ -90,7 +90,9 @@ const SidebarLayout = ({ children }: SidebarLayoutProps) => {
             <Menu size={24} />
           </Button>
           <h1 className="text-xl font-bold text-sidebar-foreground">Rent Roster</h1>
-          <div className="w-10"></div> {/* Spacer for centering */}
+          <div className="w-10">
+            
+          </div>
         </header>
         
         {/* Mobile Sidebar as a Sheet */}
@@ -156,6 +158,7 @@ const SidebarLayout = ({ children }: SidebarLayoutProps) => {
       
       {/* Desktop Content */}
       <main className="lg:ml-64 flex-1 transition-all duration-300 ease-in-out">
+        <Header />
         <div className="container mx-auto py-6 px-4">
           {children}
         </div>

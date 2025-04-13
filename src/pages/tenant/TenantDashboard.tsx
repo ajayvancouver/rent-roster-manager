@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,8 +9,9 @@ import { useToast } from "@/hooks/use-toast";
 import { DateRange } from "react-day-picker";
 import { endOfMonth, format, startOfMonth, subMonths } from "date-fns";
 import { Payment, Maintenance, Document } from "@/types";
+import TenantDashboardHeader from "./TenantDashboardHeader";
 
-const TenantDashboard = () => {
+const TenantDashboard: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
@@ -362,81 +362,84 @@ const TenantDashboard = () => {
   };
 
   return (
-    <div className="container py-8 space-y-6">
-      <h1 className="text-3xl font-bold">Tenant Portal</h1>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Property</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="font-medium">{propertyInfo?.name}</p>
-            <p className="text-sm text-muted-foreground">
-              {propertyInfo?.address}, {propertyInfo?.city}, {propertyInfo?.state} {propertyInfo?.zip_code}
-            </p>
-            {tenantInfo.unit_number && (
-              <p className="mt-1 text-sm">Unit: {tenantInfo.unit_number}</p>
-            )}
-          </CardContent>
-        </Card>
+    <div className="min-h-screen flex flex-col">
+      <TenantDashboardHeader />
+      <div className="container mx-auto px-4 py-6">
+        <h1 className="text-3xl font-bold">Tenant Portal</h1>
         
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Lease</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Start</p>
-                <p className="font-medium">{formatDate(tenantInfo.lease_start)}</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Property</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="font-medium">{propertyInfo?.name}</p>
+              <p className="text-sm text-muted-foreground">
+                {propertyInfo?.address}, {propertyInfo?.city}, {propertyInfo?.state} {propertyInfo?.zip_code}
+              </p>
+              {tenantInfo.unit_number && (
+                <p className="mt-1 text-sm">Unit: {tenantInfo.unit_number}</p>
+              )}
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Lease</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Start</p>
+                  <p className="font-medium">{formatDate(tenantInfo.lease_start)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">End</p>
+                  <p className="font-medium">{formatDate(tenantInfo.lease_end)}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">End</p>
-                <p className="font-medium">{formatDate(tenantInfo.lease_end)}</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Rent</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="font-medium">{formatCurrency(tenantInfo.rent_amount)}/month</p>
+              <div className="mt-2 flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Current Balance:</span>
+                <span className={`font-bold ${tenantInfo.balance > 0 ? 'text-red-500' : 'text-green-500'}`}>
+                  {formatCurrency(tenantInfo.balance)}
+                </span>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
         
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Rent</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="font-medium">{formatCurrency(tenantInfo.rent_amount)}/month</p>
-            <div className="mt-2 flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Current Balance:</span>
-              <span className={`font-bold ${tenantInfo.balance > 0 ? 'text-red-500' : 'text-green-500'}`}>
-                {formatCurrency(tenantInfo.balance)}
-              </span>
+        <Tabs defaultValue="payments" className="mt-8">
+          <TabsList>
+            <TabsTrigger value="payments">Payments</TabsTrigger>
+            <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
+            <TabsTrigger value="documents">Documents</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="payments" className="mt-4">
+            <div className="mb-4">
+              <DateRangePicker date={date} setDate={setDate} />
             </div>
-          </CardContent>
-        </Card>
+            {renderPayments()}
+          </TabsContent>
+          
+          <TabsContent value="maintenance" className="mt-4">
+            {renderMaintenance()}
+          </TabsContent>
+          
+          <TabsContent value="documents" className="mt-4">
+            {renderDocuments()}
+          </TabsContent>
+        </Tabs>
       </div>
-      
-      <Tabs defaultValue="payments" className="mt-8">
-        <TabsList>
-          <TabsTrigger value="payments">Payments</TabsTrigger>
-          <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
-          <TabsTrigger value="documents">Documents</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="payments" className="mt-4">
-          <div className="mb-4">
-            <DateRangePicker date={date} setDate={setDate} />
-          </div>
-          {renderPayments()}
-        </TabsContent>
-        
-        <TabsContent value="maintenance" className="mt-4">
-          {renderMaintenance()}
-        </TabsContent>
-        
-        <TabsContent value="documents" className="mt-4">
-          {renderDocuments()}
-        </TabsContent>
-      </Tabs>
     </div>
   );
 };
