@@ -44,8 +44,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(currentSession?.user ?? null);
         
         if (currentSession?.user) {
-          // Don't fetch profile here - will cause deadlock
-          // use setTimeout to avoid recursion
+          // Use setTimeout to avoid recursion
           setTimeout(() => {
             fetchProfile(currentSession.user.id);
           }, 0);
@@ -85,6 +84,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         console.error("Error fetching profile:", error);
+        // Don't throw the error, just log it and continue
+        // This way the app doesn't crash if profile fetch fails
         return;
       }
 
@@ -94,9 +95,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUserType(data.user_type as UserType);
       } else {
         console.log("No profile found for user:", userId);
+        // Create a default profile if one doesn't exist
+        await createDefaultProfile(userId);
       }
     } catch (error) {
       console.error("Error fetching user profile:", error);
+    }
+  };
+
+  const createDefaultProfile = async (userId: string) => {
+    try {
+      // Only do this if we have user data
+      if (!user) return;
+      
+      const defaultProfile = {
+        id: userId,
+        email: user.email || '',
+        full_name: user.email || '',
+        user_type: 'tenant' as UserType,
+      };
+      
+      const { error } = await supabase
+        .from("profiles")
+        .insert([defaultProfile]);
+        
+      if (error) {
+        console.error("Error creating default profile:", error);
+        return;
+      }
+      
+      console.log("Created default profile for user:", userId);
+      setProfile(defaultProfile as UserProfile);
+      setUserType('tenant');
+    } catch (error) {
+      console.error("Error creating default profile:", error);
     }
   };
 

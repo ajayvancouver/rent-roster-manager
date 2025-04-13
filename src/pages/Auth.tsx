@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect } from "react";
-import { useNavigate, Navigate } from "react-router-dom";
+import React, { useState } from "react";
+import { Navigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,6 @@ import { useToast } from "@/hooks/use-toast";
 
 const Auth = () => {
   const { user, signIn, signUp, isLoading } = useAuth();
-  const navigate = useNavigate();
   const { toast } = useToast();
   
   const [email, setEmail] = useState("");
@@ -29,13 +28,6 @@ const Auth = () => {
   const [userType, setUserType] = useState<"manager" | "tenant">("tenant");
   const [activeTab, setActiveTab] = useState("login");
   const [error, setError] = useState<string | null>(null);
-
-  // If already authenticated, redirect to dashboard
-  useEffect(() => {
-    if (user) {
-      navigate("/");
-    }
-  }, [user, navigate]);
 
   // Redirect if already logged in
   if (user) {
@@ -53,7 +45,6 @@ const Auth = () => {
     
     try {
       await signIn(email, password);
-      navigate("/");
       toast({
         title: "Welcome back!",
         description: "You have successfully signed in.",
