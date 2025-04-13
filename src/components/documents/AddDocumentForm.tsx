@@ -118,14 +118,14 @@ const AddDocumentForm = ({ onSuccess }: AddDocumentFormProps) => {
       <div className="space-y-2">
         <Label htmlFor="propertyId">Related Property (Optional)</Label>
         <Select 
-          value={formData.propertyId || ""} 
+          value={formData.propertyId} 
           onValueChange={(value) => handleSelectChange("propertyId", value)}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select property" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">None</SelectItem>
+            <SelectItem value="none">None</SelectItem>
             {properties.map(property => (
               <SelectItem key={property.id} value={property.id}>
                 {property.name}
@@ -138,7 +138,7 @@ const AddDocumentForm = ({ onSuccess }: AddDocumentFormProps) => {
       <div className="space-y-2">
         <Label htmlFor="tenantId">Related Tenant (Optional)</Label>
         <Select 
-          value={formData.tenantId || ""} 
+          value={formData.tenantId} 
           onValueChange={(value) => handleSelectChange("tenantId", value)}
           disabled={!formData.propertyId && formData.tenantId === ""}
         >
@@ -146,7 +146,7 @@ const AddDocumentForm = ({ onSuccess }: AddDocumentFormProps) => {
             <SelectValue placeholder={formData.propertyId ? "Select tenant" : "Select property first (optional)"} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">None</SelectItem>
+            <SelectItem value="none">None</SelectItem>
             {filteredTenants.map(tenant => (
               <SelectItem key={tenant.id} value={tenant.id}>
                 {tenant.name}
