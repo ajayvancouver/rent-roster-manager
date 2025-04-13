@@ -116,6 +116,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(true);
       await signOutUser();
       
+      // Reset all states
+      setSession(null);
+      setUser(null);
+      setProfile(null);
+      setUserType(null);
+      
       toast({
         title: "Signed out",
         description: "You have been signed out successfully",
