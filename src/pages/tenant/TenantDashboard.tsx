@@ -52,7 +52,18 @@ const TenantDashboard = () => {
             .order("date", { ascending: false });
           
           if (paymentsError) throw paymentsError;
-          setPayments(paymentsData);
+          // Map database fields to match our Payment type
+          const mappedPayments = (paymentsData || []).map(payment => ({
+            id: payment.id,
+            tenantId: payment.tenant_id,
+            propertyId: payment.property_id || null,
+            amount: payment.amount,
+            date: payment.date,
+            method: payment.method,
+            status: payment.status,
+            notes: payment.notes
+          }));
+          setPayments(mappedPayments);
           
           // Fetch maintenance requests
           const { data: maintenanceData, error: maintenanceError } = await supabase
@@ -62,7 +73,21 @@ const TenantDashboard = () => {
             .order("date_submitted", { ascending: false });
           
           if (maintenanceError) throw maintenanceError;
-          setMaintenance(maintenanceData);
+          // Map database fields to match our Maintenance type
+          const mappedMaintenance = (maintenanceData || []).map(item => ({
+            id: item.id,
+            propertyId: item.property_id,
+            tenantId: item.tenant_id,
+            title: item.title,
+            description: item.description,
+            priority: item.priority as Maintenance["priority"],
+            status: item.status as Maintenance["status"],
+            dateSubmitted: item.date_submitted,
+            dateCompleted: item.date_completed,
+            assignedTo: item.assigned_to,
+            cost: item.cost
+          }));
+          setMaintenance(mappedMaintenance);
           
           // Fetch documents
           const { data: documentsData, error: documentsError } = await supabase
@@ -72,7 +97,19 @@ const TenantDashboard = () => {
             .order("upload_date", { ascending: false });
           
           if (documentsError) throw documentsError;
-          setDocuments(documentsData);
+          // Map database fields to match our Document type
+          const mappedDocuments = (documentsData || []).map(doc => ({
+            id: doc.id,
+            name: doc.name,
+            type: doc.type as Document["type"],
+            tenantId: doc.tenant_id,
+            propertyId: doc.property_id,
+            uploadDate: doc.upload_date,
+            fileSize: doc.file_size,
+            fileType: doc.file_type,
+            url: doc.url
+          }));
+          setDocuments(mappedDocuments);
         }
         
       } catch (error) {

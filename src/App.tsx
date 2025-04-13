@@ -1,10 +1,9 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import SidebarLayout from "./components/layout/SidebarLayout";
 import ProtectedRoute from "./components/common/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
@@ -127,7 +126,7 @@ const App = () => (
 
 // Component to redirect users based on their type
 const UserTypeRedirect = () => {
-  const { userType, isLoading } = useAuthContext();
+  const { userType, isLoading } = useAuth();
   
   if (isLoading) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
@@ -141,11 +140,5 @@ const UserTypeRedirect = () => {
     return <Navigate to="/auth" />;
   }
 };
-
-// Temporary helper until the import is added
-function useAuthContext() {
-  const { userType, isLoading } = useAuth();
-  return { userType, isLoading };
-}
 
 export default App;
