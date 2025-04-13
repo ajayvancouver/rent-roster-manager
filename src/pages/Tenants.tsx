@@ -6,7 +6,8 @@ import {
   Banknote, 
   UserCheck, 
   UserMinus,
-  ClipboardList
+  ClipboardList,
+  Users
 } from "lucide-react";
 import { tenants, properties } from "@/data/mockData";
 import { Tenant } from "@/types";
