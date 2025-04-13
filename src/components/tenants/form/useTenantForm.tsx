@@ -5,14 +5,14 @@ import { Tenant } from "@/types";
 import { tenantsService } from "@/services/tenantsService";
 
 interface UseTenantFormProps {
-  onSuccess: (tenantData: Omit<Tenant, "id">) => void;
+  onSuccess: (tenantData: Omit<Tenant, "id" | "propertyName" | "propertyAddress">) => void;
 }
 
 export const useTenantForm = ({ onSuccess }: UseTenantFormProps) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   
-  const [formData, setFormData] = useState<Omit<Tenant, "id">>({
+  const [formData, setFormData] = useState<Omit<Tenant, "id" | "propertyName" | "propertyAddress">>({
     name: "",
     email: "",
     phone: "",

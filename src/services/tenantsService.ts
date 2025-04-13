@@ -6,7 +6,7 @@ export const tenantsService = {
   async getAll(): Promise<Tenant[]> {
     const { data, error } = await supabase
       .from('tenants')
-      .select('*');
+      .select('*, properties(name, address, city, state, zip_code)');
     
     if (error) throw error;
     
@@ -17,6 +17,8 @@ export const tenantsService = {
       email: item.email,
       phone: item.phone || '',
       propertyId: item.property_id || '', // Map property_id to propertyId
+      propertyName: item.properties ? item.properties.name : null,
+      propertyAddress: item.properties ? `${item.properties.address}, ${item.properties.city}, ${item.properties.state} ${item.properties.zip_code}` : null,
       unitNumber: item.unit_number || '',
       leaseStart: item.lease_start, // Map lease_start to leaseStart
       leaseEnd: item.lease_end, // Map lease_end to leaseEnd
@@ -30,7 +32,7 @@ export const tenantsService = {
   async getById(id: string): Promise<Tenant | null> {
     const { data, error } = await supabase
       .from('tenants')
-      .select('*')
+      .select('*, properties(name, address, city, state, zip_code)')
       .eq('id', id)
       .single();
     
@@ -45,6 +47,8 @@ export const tenantsService = {
       email: data.email,
       phone: data.phone || '',
       propertyId: data.property_id || '', // Map property_id to propertyId
+      propertyName: data.properties ? data.properties.name : null,
+      propertyAddress: data.properties ? `${data.properties.address}, ${data.properties.city}, ${data.properties.state} ${data.properties.zip_code}` : null,
       unitNumber: data.unit_number || '',
       leaseStart: data.lease_start, // Map lease_start to leaseStart
       leaseEnd: data.lease_end, // Map lease_end to leaseEnd
@@ -62,7 +66,7 @@ export const tenantsService = {
       .eq('email', email);
   },
 
-  async create(tenant: Omit<Tenant, 'id'>) {
+  async create(tenant: Omit<Tenant, 'id' | 'propertyName' | 'propertyAddress'>) {
     // Map our TypeScript interface to database columns
     const dbTenant = {
       name: tenant.name,
@@ -83,6 +87,32 @@ export const tenantsService = {
     return await supabase
       .from('tenants')
       .insert(dbTenant)
+      .select()
+      .single();
+  },
+
+  async update(id: string, tenant: Partial<Omit<Tenant, 'id' | 'propertyName' | 'propertyAddress'>>) {
+    // Map our TypeScript interface to database columns
+    const dbTenant: any = {};
+    
+    if (tenant.name !== undefined) dbTenant.name = tenant.name;
+    if (tenant.email !== undefined) dbTenant.email = tenant.email;
+    if (tenant.phone !== undefined) dbTenant.phone = tenant.phone || null;
+    if (tenant.propertyId !== undefined) dbTenant.property_id = tenant.propertyId || null;
+    if (tenant.unitNumber !== undefined) dbTenant.unit_number = tenant.unitNumber || null;
+    if (tenant.leaseStart !== undefined) dbTenant.lease_start = tenant.leaseStart;
+    if (tenant.leaseEnd !== undefined) dbTenant.lease_end = tenant.leaseEnd;
+    if (tenant.rentAmount !== undefined) dbTenant.rent_amount = tenant.rentAmount;
+    if (tenant.depositAmount !== undefined) dbTenant.deposit_amount = tenant.depositAmount;
+    if (tenant.balance !== undefined) dbTenant.balance = tenant.balance;
+    if (tenant.status !== undefined) dbTenant.status = tenant.status;
+    
+    console.log("Updating tenant in DB with data:", dbTenant);
+    
+    return await supabase
+      .from('tenants')
+      .update(dbTenant)
+      .eq('id', id)
       .select()
       .single();
   }

@@ -5,6 +5,8 @@ export interface Tenant {
   email: string;
   phone: string;
   propertyId: string;
+  propertyName?: string | null;
+  propertyAddress?: string | null;
   unitNumber?: string;
   leaseStart: string;
   leaseEnd: string;
@@ -24,11 +26,17 @@ export interface Property {
   units: number;
   type: 'apartment' | 'house' | 'duplex' | 'commercial';
   image?: string;
+  tenantCount?: number;
+  occupancyRate?: number;
 }
 
 export interface Payment {
   id: string;
   tenantId: string;
+  tenantName?: string;
+  propertyId?: string | null;
+  propertyName?: string | null;
+  unitNumber?: string | null;
   amount: number;
   date: string;
   method: 'cash' | 'check' | 'bank transfer' | 'credit card';
@@ -39,7 +47,11 @@ export interface Payment {
 export interface Maintenance {
   id: string;
   propertyId: string;
+  propertyName?: string;
   tenantId: string;
+  tenantName?: string;
+  tenantEmail?: string | null;
+  unitNumber?: string | null;
   title: string;
   description: string;
   priority: 'low' | 'medium' | 'high' | 'emergency';
@@ -55,7 +67,9 @@ export interface Document {
   name: string;
   type: 'lease' | 'payment' | 'maintenance' | 'other';
   tenantId?: string;
+  tenantName?: string;
   propertyId?: string;
+  propertyName?: string;
   uploadDate: string;
   fileSize: string;
   fileType: string;

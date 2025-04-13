@@ -3,10 +3,37 @@ import { supabase } from "@/integrations/supabase/client";
 import { Maintenance } from "@/types";
 
 export const maintenanceService = {
+  async getAll(): Promise<Maintenance[]> {
+    const { data, error } = await supabase
+      .from('maintenance')
+      .select('*, properties(name), tenants(name, email, unit_number)');
+    
+    if (error) throw error;
+    
+    // Map database columns to our TypeScript interfaces
+    return (data || []).map(item => ({
+      id: item.id,
+      propertyId: item.property_id, // Map property_id to propertyId
+      propertyName: item.properties ? item.properties.name : 'Unknown',
+      tenantId: item.tenant_id, // Map tenant_id to tenantId
+      tenantName: item.tenants ? item.tenants.name : 'Unknown Tenant',
+      tenantEmail: item.tenants ? item.tenants.email : null,
+      unitNumber: item.tenants ? item.tenants.unit_number : null,
+      title: item.title,
+      description: item.description,
+      priority: item.priority as 'low' | 'medium' | 'high' | 'emergency',
+      status: item.status as 'pending' | 'in-progress' | 'completed' | 'cancelled',
+      dateSubmitted: item.date_submitted, // Map date_submitted to dateSubmitted
+      dateCompleted: item.date_completed || undefined, // Map date_completed to dateCompleted
+      assignedTo: item.assigned_to || undefined,
+      cost: item.cost || undefined
+    }));
+  },
+
   async getByTenantId(tenantId: string): Promise<Maintenance[]> {
     const { data, error } = await supabase
       .from('maintenance')
-      .select('*')
+      .select('*, properties(name)')
       .eq('tenant_id', tenantId);
     
     if (error) throw error;
@@ -15,6 +42,7 @@ export const maintenanceService = {
     return (data || []).map(item => ({
       id: item.id,
       propertyId: item.property_id, // Map property_id to propertyId
+      propertyName: item.properties ? item.properties.name : 'Unknown',
       tenantId: item.tenant_id, // Map tenant_id to tenantId
       title: item.title,
       description: item.description,
@@ -25,5 +53,53 @@ export const maintenanceService = {
       assignedTo: item.assigned_to || undefined,
       cost: item.cost || undefined
     }));
+  },
+
+  async getByPropertyId(propertyId: string): Promise<Maintenance[]> {
+    const { data, error } = await supabase
+      .from('maintenance')
+      .select('*, tenants(name, email, unit_number)')
+      .eq('property_id', propertyId);
+    
+    if (error) throw error;
+    
+    // Map database columns to our TypeScript interfaces
+    return (data || []).map(item => ({
+      id: item.id,
+      propertyId: item.property_id, // Map property_id to propertyId
+      tenantId: item.tenant_id, // Map tenant_id to tenantId
+      tenantName: item.tenants ? item.tenants.name : 'Unknown Tenant',
+      tenantEmail: item.tenants ? item.tenants.email : null,
+      unitNumber: item.tenants ? item.tenants.unit_number : null,
+      title: item.title,
+      description: item.description,
+      priority: item.priority as 'low' | 'medium' | 'high' | 'emergency',
+      status: item.status as 'pending' | 'in-progress' | 'completed' | 'cancelled',
+      dateSubmitted: item.date_submitted, // Map date_submitted to dateSubmitted
+      dateCompleted: item.date_completed || undefined, // Map date_completed to dateCompleted
+      assignedTo: item.assigned_to || undefined,
+      cost: item.cost || undefined
+    }));
+  },
+
+  async create(maintenance: Omit<Maintenance, 'id' | 'propertyName' | 'tenantName' | 'tenantEmail' | 'unitNumber' | 'dateCompleted'>) {
+    // Map our TypeScript interface to database columns
+    const dbMaintenance = {
+      property_id: maintenance.propertyId,
+      tenant_id: maintenance.tenantId || null,
+      title: maintenance.title,
+      description: maintenance.description,
+      priority: maintenance.priority,
+      status: maintenance.status,
+      date_submitted: maintenance.dateSubmitted || new Date().toISOString(),
+      assigned_to: maintenance.assignedTo || null,
+      cost: maintenance.cost || null
+    };
+    
+    return await supabase
+      .from('maintenance')
+      .insert(dbMaintenance)
+      .select()
+      .single();
   }
 };

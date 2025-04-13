@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Tenant } from "@/types";
 import { tenantsService, propertiesService } from "@/services/supabaseService";
@@ -37,6 +36,13 @@ export function useTenants() {
   }, [toast]);
 
   const getPropertyName = (propertyId: string) => {
+    if (!propertyId) return "Unassigned";
+    
+    // First check if the tenant has the property name already from the join
+    const tenant = tenants.find(t => t.propertyId === propertyId && t.propertyName);
+    if (tenant?.propertyName) return tenant.propertyName;
+    
+    // Fallback to searching in properties
     const property = properties.find(p => p.id === propertyId);
     return property ? property.name : "Unknown Property";
   };
@@ -50,33 +56,7 @@ export function useTenants() {
     );
   });
 
-  const sortedTenants = [...filteredTenants].sort((a, b) => {
-    if (sortField === "name" || sortField === "email") {
-      return sortDirection === "asc"
-        ? a[sortField].localeCompare(b[sortField])
-        : b[sortField].localeCompare(a[sortField]);
-    } else if (sortField === "rentAmount" || sortField === "balance") {
-      return sortDirection === "asc"
-        ? a[sortField] - b[sortField]
-        : b[sortField] - a[sortField];
-    } else if (sortField === "leaseEnd") {
-      return sortDirection === "asc"
-        ? new Date(a[sortField]).getTime() - new Date(b[sortField]).getTime()
-        : new Date(b[sortField]).getTime() - new Date(a[sortField]).getTime();
-    }
-    return 0;
-  });
-
-  const toggleSort = (field: keyof Tenant) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortDirection("asc");
-    }
-  };
-
-  const handleAddTenant = async (tenantData: Omit<Tenant, "id">) => {
+  const handleAddTenant = async (tenantData: Omit<Tenant, "id" | "propertyName" | "propertyAddress">) => {
     try {
       const { data, error } = await tenantsService.create(tenantData);
       
@@ -91,7 +71,7 @@ export function useTenants() {
       }
       
       if (data) {
-        // Map the returned data to a Tenant object, similar to what tenantsService.getById does
+        // Map the returned data to a Tenant object
         const newTenant: Tenant = {
           id: data.id,
           name: data.name,
@@ -106,6 +86,15 @@ export function useTenants() {
           balance: data.balance || 0,
           status: data.status as 'active' | 'inactive' | 'pending'
         };
+        
+        // Add property data if available
+        if (newTenant.propertyId) {
+          const property = properties.find(p => p.id === newTenant.propertyId);
+          if (property) {
+            newTenant.propertyName = property.name;
+            newTenant.propertyAddress = `${property.address}, ${property.city}, ${property.state} ${property.zipCode}`;
+          }
+        }
         
         setTenants([...tenants, newTenant]);
         
@@ -137,10 +126,32 @@ export function useTenants() {
     sortField,
     sortDirection,
     getPropertyName,
-    toggleSort,
+    toggleSort: (field: keyof Tenant) => {
+      if (sortField === field) {
+        setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+      } else {
+        setSortField(field);
+        setSortDirection("asc");
+      }
+    },
     handleAddTenant,
-    sortedTenants,
-    activeTenants: sortedTenants.filter(t => t.status === "active"),
-    inactiveTenants: sortedTenants.filter(t => t.status !== "active")
+    sortedTenants: [...filteredTenants].sort((a, b) => {
+      if (sortField === "name" || sortField === "email") {
+        return sortDirection === "asc"
+          ? a[sortField].localeCompare(b[sortField])
+          : b[sortField].localeCompare(a[sortField]);
+      } else if (sortField === "rentAmount" || sortField === "balance") {
+        return sortDirection === "asc"
+          ? a[sortField] - b[sortField]
+          : b[sortField] - a[sortField];
+      } else if (sortField === "leaseEnd") {
+        return sortDirection === "asc"
+          ? new Date(a[sortField]).getTime() - new Date(b[sortField]).getTime()
+          : new Date(b[sortField]).getTime() - new Date(a[sortField]).getTime();
+      }
+      return 0;
+    }),
+    activeTenants: filteredTenants.filter(t => t.status === "active"),
+    inactiveTenants: filteredTenants.filter(t => t.status !== "active")
   };
 }
