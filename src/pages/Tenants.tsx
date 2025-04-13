@@ -481,8 +481,8 @@ const Tenants = () => {
         open={showAddModal}
         onOpenChange={setShowAddModal}
         onSave={() => {
-          // This is just a placeholder. The actual saving is triggered by the form component
-          // No operation needed here
+          // This is a no-op function to satisfy the type requirement
+          // The actual saving is done by AddTenantForm's onSuccess prop
         }}
       >
         <AddTenantForm onSuccess={handleAddTenant} />

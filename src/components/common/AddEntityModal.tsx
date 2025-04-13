@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { DialogProps } from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ import {
 interface AddEntityModalProps extends DialogProps {
   title: string;
   children: React.ReactNode;
-  onSave: (...args: any[]) => void;
+  onSave: (...args: any[]) => void;  // Change the type to allow any number of arguments
   isLoading?: boolean;
 }
 
@@ -27,7 +27,6 @@ const AddEntityModal = ({
   ...props
 }: AddEntityModalProps) => {
   // This is just a placeholder. The actual form data is managed in the child component.
-  // We're not actually using this function in this component.
   const handleSave = () => {
     // The child component (AddTenantForm) will handle the actual saving process
     // through its onSuccess prop
