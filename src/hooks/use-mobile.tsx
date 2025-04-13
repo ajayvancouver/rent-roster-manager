@@ -7,18 +7,33 @@ export function useIsMobile() {
   const [isMobile, setIsMobile] = React.useState<boolean>(false)
 
   React.useEffect(() => {
-    // Set initial value
-    setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
-
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
-    }
-
-    // Add event listener for window resize
-    window.addEventListener("resize", handleResize)
+    // Check if running in a Capacitor environment
+    const isNative = typeof (window as any).Capacitor !== 'undefined';
     
-    // Clean up event listener
-    return () => window.removeEventListener("resize", handleResize)
+    // Function to determine if mobile
+    const checkIsMobile = () => {
+      if (isNative) {
+        // Always return true if in Capacitor environment
+        return true;
+      }
+      // Use screen width for browser detection
+      return window.innerWidth < MOBILE_BREAKPOINT;
+    };
+
+    // Set initial value
+    setIsMobile(checkIsMobile());
+
+    // Only add resize listener in browser environments
+    if (!isNative) {
+      const handleResize = () => {
+        setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+      };
+
+      window.addEventListener("resize", handleResize);
+      
+      // Clean up event listener
+      return () => window.removeEventListener("resize", handleResize);
+    }
   }, [])
 
   return isMobile
