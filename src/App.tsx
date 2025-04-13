@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -31,10 +32,13 @@ const App = () => (
             {/* Auth Route */}
             <Route path="/auth" element={<Auth />} />
             
+            {/* Root route - redirects based on auth status and user type */}
+            <Route path="/" element={<RootRedirect />} />
+            
             {/* Protected Manager Routes */}
             <Route element={<ProtectedRoute requiredUserType="manager" />}>
               <Route
-                path="/"
+                path="/dashboard"
                 element={
                   <SidebarLayout>
                     <Dashboard />
@@ -107,14 +111,6 @@ const App = () => (
               />
             </Route>
             
-            {/* Protected Routes for both user types */}
-            <Route element={<ProtectedRoute />}>
-              <Route path="/user-type-redirect" element={<UserTypeRedirect />} />
-            </Route>
-
-            {/* Redirect based on user type */}
-            <Route path="/" element={<UserTypeRedirect />} />
-            
             {/* 404 Route */}
             <Route path="*" element={<NotFound />} />
           </Routes>
@@ -124,12 +120,16 @@ const App = () => (
   </QueryClientProvider>
 );
 
-// Component to redirect users based on their type
-const UserTypeRedirect = () => {
-  const { userType, isLoading } = useAuth();
+// Root redirect component
+const RootRedirect = () => {
+  const { user, userType, isLoading } = useAuth();
   
   if (isLoading) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
+  
+  if (!user) {
+    return <Navigate to="/auth" />;
   }
   
   if (userType === "manager") {

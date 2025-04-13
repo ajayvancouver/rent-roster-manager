@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,10 +16,12 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const Auth = () => {
   const { user, signIn, signUp, isLoading } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -39,7 +42,12 @@ const Auth = () => {
     try {
       await signIn(email, password);
       navigate("/");
+      toast({
+        title: "Welcome back!",
+        description: "You have successfully signed in.",
+      });
     } catch (error: any) {
+      console.error("Sign in error:", error);
       setError(
         error.message.includes("Invalid login credentials") 
           ? "Incorrect email or password. Please try again." 
@@ -52,11 +60,25 @@ const Auth = () => {
     e.preventDefault();
     setError(null);
     
+    if (!fullName.trim()) {
+      setError("Please provide your full name.");
+      return;
+    }
+    
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long.");
+      return;
+    }
+    
     try {
       await signUp(email, password, userType, fullName);
+      toast({
+        title: "Account created",
+        description: "Please check your email to confirm your account.",
+      });
       setActiveTab("login");
-      // Add a success toast to inform user to check email
     } catch (error: any) {
+      console.error("Sign up error:", error);
       setError(
         error.message.includes("User already registered")
           ? "An account with this email already exists. Please sign in." 
@@ -135,6 +157,7 @@ const Auth = () => {
                       placeholder="John Doe"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
+                      required
                     />
                   </div>
                   
@@ -158,6 +181,7 @@ const Auth = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
+                      minLength={6}
                     />
                   </div>
                   
