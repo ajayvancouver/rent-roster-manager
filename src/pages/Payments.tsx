@@ -1,7 +1,6 @@
+
 import { useState } from "react";
 import { Calendar, ArrowUpDown, Search, DollarSign, CheckCircle2, XCircle, AlertCircle, Plus } from "lucide-react";
-import { payments, tenants, properties } from "@/data/mockData";
-import { Payment } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -24,102 +23,34 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import AddEntityModal from "@/components/common/AddEntityModal";
 import AddPaymentForm from "@/components/payments/AddPaymentForm";
+import { usePayments } from "@/hooks/usePayments";
 
 const Payments = () => {
   const { toast } = useToast();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<Payment["status"] | "all">("all");
-  const [sortField, setSortField] = useState<keyof Payment>("date");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [showAddModal, setShowAddModal] = useState(false);
+  
+  const {
+    isLoading,
+    searchQuery,
+    setSearchQuery,
+    statusFilter,
+    setStatusFilter,
+    toggleSort,
+    getTenantName,
+    getPropertyInfo,
+    getSortedPayments,
+    formatDate,
+    getStatusColor,
+    handleAddPayment,
+    totalAmount,
+    completedAmount,
+    pendingAmount
+  } = usePayments();
 
-  // Get tenant name by ID
-  const getTenantName = (tenantId: string) => {
-    const tenant = tenants.find(t => t.id === tenantId);
-    return tenant ? tenant.name : "Unknown";
-  };
-
-  // Get property info for a tenant
-  const getPropertyInfo = (tenantId: string) => {
-    const tenant = tenants.find(t => t.id === tenantId);
-    if (!tenant) return { name: "Unknown", unit: "" };
-    
-    const property = properties.find(p => p.id === tenant.propertyId);
-    return {
-      name: property ? property.name : "Unknown",
-      unit: tenant.unitNumber ? `Unit ${tenant.unitNumber}` : "",
-    };
-  };
-
-  // Filter and sort payments
-  const filteredPayments = payments.filter(payment => {
-    // Apply status filter
-    if (statusFilter !== "all" && payment.status !== statusFilter) {
-      return false;
-    }
-    
-    // Apply search filter
-    const searchTerms = searchQuery.toLowerCase();
-    const tenantName = getTenantName(payment.tenantId).toLowerCase();
-    const propertyInfo = getPropertyInfo(payment.tenantId);
-    
-    return (
-      tenantName.includes(searchTerms) ||
-      propertyInfo.name.toLowerCase().includes(searchTerms) ||
-      payment.method.toLowerCase().includes(searchTerms) ||
-      payment.status.toLowerCase().includes(searchTerms)
-    );
-  });
-
-  const sortedPayments = [...filteredPayments].sort((a, b) => {
-    if (sortField === "date") {
-      return sortDirection === "asc"
-        ? new Date(a.date).getTime() - new Date(b.date).getTime()
-        : new Date(b.date).getTime() - new Date(a.date).getTime();
-    } else if (sortField === "amount") {
-      return sortDirection === "asc" ? a.amount - b.amount : b.amount - a.amount;
-    }
-    return 0;
-  });
-
-  // Total payments stats
-  const totalAmount = payments.reduce((sum, payment) => sum + payment.amount, 0);
-  const completedAmount = payments
-    .filter(p => p.status === "completed")
-    .reduce((sum, payment) => sum + payment.amount, 0);
-  const pendingAmount = payments
-    .filter(p => p.status === "pending")
-    .reduce((sum, payment) => sum + payment.amount, 0);
-
-  // Toggle sort
-  const toggleSort = (field: keyof Payment) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortDirection("desc"); // Default to newest/highest first
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
-
-  const getStatusColor = (status: Payment["status"]) => {
-    switch (status) {
-      case "completed": return "bg-green-100 text-green-800 border-green-200";
-      case "pending": return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "failed": return "bg-red-100 text-red-800 border-red-200";
-      default: return "bg-gray-100 text-gray-800 border-gray-200";
-    }
-  };
+  const sortedPayments = getSortedPayments();
 
   // Handle adding a payment
-  const handleAddPayment = () => {
+  const onAddPaymentSuccess = async () => {
     setShowAddModal(false);
     toast({
       title: "Success",
@@ -193,7 +124,7 @@ const Payments = () => {
         </div>
         <Select
           value={statusFilter}
-          onValueChange={(value) => setStatusFilter(value as Payment["status"] | "all")}
+          onValueChange={(value) => setStatusFilter(value as any)}
         >
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Filter by status" />
@@ -211,88 +142,95 @@ const Payments = () => {
         </Button>
       </div>
 
-      {/* Payments Table */}
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[200px]">Tenant</TableHead>
-              <TableHead>Property</TableHead>
-              <TableHead>
-                <Button variant="ghost" className="p-0 h-8" onClick={() => toggleSort("date")}>
-                  Date <ArrowUpDown className="h-4 w-4 ml-1" />
-                </Button>
-              </TableHead>
-              <TableHead>
-                <Button variant="ghost" className="p-0 h-8" onClick={() => toggleSort("amount")}>
-                  Amount <ArrowUpDown className="h-4 w-4 ml-1" />
-                </Button>
-              </TableHead>
-              <TableHead>Method</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Notes</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sortedPayments.length === 0 ? (
+      {/* Loading state */}
+      {isLoading ? (
+        <div className="flex justify-center py-12">
+          <p>Loading payments data...</p>
+        </div>
+      ) : (
+        // Payments Table
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
-                  No payments found
-                </TableCell>
+                <TableHead className="w-[200px]">Tenant</TableHead>
+                <TableHead>Property</TableHead>
+                <TableHead>
+                  <Button variant="ghost" className="p-0 h-8" onClick={() => toggleSort("date")}>
+                    Date <ArrowUpDown className="h-4 w-4 ml-1" />
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button variant="ghost" className="p-0 h-8" onClick={() => toggleSort("amount")}>
+                    Amount <ArrowUpDown className="h-4 w-4 ml-1" />
+                  </Button>
+                </TableHead>
+                <TableHead>Method</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Notes</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
-            ) : (
-              sortedPayments.map((payment) => {
-                const propertyInfo = getPropertyInfo(payment.tenantId);
-                
-                return (
-                  <TableRow key={payment.id}>
-                    <TableCell className="font-medium">
-                      {getTenantName(payment.tenantId)}
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        {propertyInfo.name}
-                        {propertyInfo.unit && (
-                          <div className="text-xs text-muted-foreground">{propertyInfo.unit}</div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>{formatDate(payment.date)}</TableCell>
-                    <TableCell className="font-semibold">${payment.amount.toLocaleString()}</TableCell>
-                    <TableCell className="capitalize">{payment.method}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={getStatusColor(payment.status)}>
-                        {payment.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="max-w-[200px] truncate">
-                      {payment.notes || "-"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="outline" size="sm">
-                          <Calendar className="h-4 w-4 mr-1" />
-                          Details
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            )}
-          </TableBody>
-        </Table>
-      </div>
+            </TableHeader>
+            <TableBody>
+              {sortedPayments.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
+                    No payments found
+                  </TableCell>
+                </TableRow>
+              ) : (
+                sortedPayments.map((payment) => {
+                  const propertyInfo = getPropertyInfo(payment.tenantId);
+                  
+                  return (
+                    <TableRow key={payment.id}>
+                      <TableCell className="font-medium">
+                        {getTenantName(payment.tenantId)}
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          {propertyInfo.name}
+                          {propertyInfo.unit && (
+                            <div className="text-xs text-muted-foreground">{propertyInfo.unit}</div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>{formatDate(payment.date)}</TableCell>
+                      <TableCell className="font-semibold">${payment.amount.toLocaleString()}</TableCell>
+                      <TableCell className="capitalize">{payment.method}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={getStatusColor(payment.status)}>
+                          {payment.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="max-w-[200px] truncate">
+                        {payment.notes || "-"}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button variant="outline" size="sm">
+                            <Calendar className="h-4 w-4 mr-1" />
+                            Details
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       {/* Add Payment Modal */}
       <AddEntityModal
         title="Record New Payment"
         open={showAddModal}
         onOpenChange={setShowAddModal}
-        onSave={handleAddPayment}
+        onSave={onAddPaymentSuccess}
       >
-        <AddPaymentForm onSuccess={handleAddPayment} />
+        <AddPaymentForm onSuccess={onAddPaymentSuccess} />
       </AddEntityModal>
     </div>
   );

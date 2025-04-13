@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { Calendar, Banknote, FileText, DollarSign } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Calendar, DollarSign } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +13,8 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { Payment } from "@/types";
-import { tenants } from "@/data/mockData";
+import { tenantsService } from "@/services/supabaseService";
+import { usePayments } from "@/hooks/usePayments";
 
 interface AddPaymentFormProps {
   onSuccess: () => void;
@@ -21,9 +22,11 @@ interface AddPaymentFormProps {
 
 const AddPaymentForm = ({ onSuccess }: AddPaymentFormProps) => {
   const { toast } = useToast();
+  const { handleAddPayment } = usePayments();
   const [isLoading, setIsLoading] = useState(false);
+  const [tenants, setTenants] = useState<any[]>([]);
   
-  const [formData, setFormData] = useState<Omit<Payment, "id">>({
+  const [formData, setFormData] = useState<Omit<Payment, "id" | "tenantName" | "propertyId" | "propertyName" | "unitNumber">>({
     tenantId: "",
     amount: 0,
     date: new Date().toISOString().split('T')[0],
@@ -31,6 +34,25 @@ const AddPaymentForm = ({ onSuccess }: AddPaymentFormProps) => {
     status: "completed",
     notes: ""
   });
+
+  // Fetch tenants for dropdown
+  useEffect(() => {
+    const fetchTenants = async () => {
+      try {
+        const data = await tenantsService.getAll();
+        setTenants(data);
+      } catch (error) {
+        console.error("Error fetching tenants:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load tenants data",
+          variant: "destructive"
+        });
+      }
+    };
+    
+    fetchTenants();
+  }, [toast]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -50,28 +72,32 @@ const AddPaymentForm = ({ onSuccess }: AddPaymentFormProps) => {
   };
 
   const handleSubmit = async () => {
+    if (!formData.tenantId) {
+      toast({
+        title: "Error",
+        description: "Please select a tenant",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (formData.amount <= 0) {
+      toast({
+        title: "Error",
+        description: "Payment amount must be greater than zero",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsLoading(true);
     
     try {
-      // In a real app, this would be an API call
-      console.log("Recording payment:", formData);
+      const success = await handleAddPayment(formData);
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast({
-        title: "Payment recorded!",
-        description: `Payment of $${formData.amount} has been recorded successfully.`
-      });
-      
-      onSuccess();
-    } catch (error) {
-      console.error("Error recording payment:", error);
-      toast({
-        title: "Failed to record payment",
-        description: "Please try again later.",
-        variant: "destructive"
-      });
+      if (success) {
+        onSuccess();
+      }
     } finally {
       setIsLoading(false);
     }
@@ -84,6 +110,7 @@ const AddPaymentForm = ({ onSuccess }: AddPaymentFormProps) => {
         <Select 
           value={formData.tenantId} 
           onValueChange={(value) => handleSelectChange("tenantId", value)}
+          disabled={isLoading}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select tenant" />
@@ -112,6 +139,7 @@ const AddPaymentForm = ({ onSuccess }: AddPaymentFormProps) => {
             className="pl-9"
             value={formData.amount || ""}
             onChange={handleChange}
+            disabled={isLoading}
             required
           />
         </div>
@@ -128,6 +156,7 @@ const AddPaymentForm = ({ onSuccess }: AddPaymentFormProps) => {
             className="pl-9"
             value={formData.date}
             onChange={handleChange}
+            disabled={isLoading}
             required
           />
         </div>
@@ -138,6 +167,7 @@ const AddPaymentForm = ({ onSuccess }: AddPaymentFormProps) => {
         <Select 
           value={formData.method} 
           onValueChange={(value) => handleSelectChange("method", value)}
+          disabled={isLoading}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select payment method" />
@@ -156,6 +186,7 @@ const AddPaymentForm = ({ onSuccess }: AddPaymentFormProps) => {
         <Select 
           value={formData.status} 
           onValueChange={(value) => handleSelectChange("status", value)}
+          disabled={isLoading}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select status" />
@@ -163,6 +194,7 @@ const AddPaymentForm = ({ onSuccess }: AddPaymentFormProps) => {
           <SelectContent>
             <SelectItem value="completed">Completed</SelectItem>
             <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="failed">Failed</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -176,6 +208,7 @@ const AddPaymentForm = ({ onSuccess }: AddPaymentFormProps) => {
           rows={3}
           value={formData.notes || ""}
           onChange={handleChange}
+          disabled={isLoading}
         />
       </div>
     </div>
