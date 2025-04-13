@@ -2,10 +2,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { Document } from "@/types";
 
 export const documentsService = {
-  async getAll(): Promise<Document[]> {
-    const { data, error } = await supabase
+  async getAll(managerId?: string): Promise<Document[]> {
+    let query = supabase
       .from('documents')
-      .select('*, tenants(name, email), properties(name)');
+      .select('*, tenants(name, email), properties(name, manager_id)');
+    
+    // If managerId is provided, filter documents by properties with matching manager_id
+    if (managerId) {
+      // For documents that have a property_id
+      query = query.or(`properties.manager_id.eq.${managerId},and(property_id.is.null,tenants.properties.manager_id.eq.${managerId})`);
+    }
+    
+    const { data, error } = await query;
     
     if (error) throw error;
     
@@ -21,7 +29,8 @@ export const documentsService = {
       uploadDate: item.upload_date, // Map upload_date to uploadDate
       fileSize: item.file_size, // Map file_size to fileSize
       fileType: item.file_type, // Map file_type to fileType
-      url: item.url
+      url: item.url,
+      managerId: item.properties?.manager_id
     }));
   },
 

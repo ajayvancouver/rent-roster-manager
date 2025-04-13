@@ -1,12 +1,18 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Payment } from "@/types";
 
 export const paymentsService = {
-  async getAll(): Promise<Payment[]> {
-    const { data, error } = await supabase
+  async getAll(managerId?: string): Promise<Payment[]> {
+    let query = supabase
       .from('payments')
-      .select('*, tenants(name, email, property_id, unit_number, properties(name))');
+      .select('*, tenants(name, email, property_id, unit_number, properties(name, manager_id))');
+    
+    // If managerId is provided, filter by matching manager_id
+    if (managerId) {
+      query = query.eq('tenants.properties.manager_id', managerId);
+    }
+    
+    const { data, error } = await query;
     
     if (error) throw error;
     
@@ -22,7 +28,8 @@ export const paymentsService = {
       date: item.date,
       method: item.method as 'cash' | 'check' | 'bank transfer' | 'credit card',
       status: item.status as 'pending' | 'completed' | 'failed',
-      notes: item.notes || undefined
+      notes: item.notes || undefined,
+      managerId: item.tenants?.properties?.manager_id
     }));
   },
 

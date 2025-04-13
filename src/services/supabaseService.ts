@@ -16,7 +16,7 @@ export {
 };
 
 // Create a function to initialize all data at once
-export async function loadAllData() {
+export async function loadAllData(managerId?: string) {
   try {
     const [
       properties, 
@@ -25,11 +25,11 @@ export async function loadAllData() {
       maintenance, 
       documents
     ] = await Promise.all([
-      propertiesService.getAll(),
-      tenantsService.getAll(),
-      paymentsService.getAll(),
-      maintenanceService.getAll(),
-      documentsService.getAll()
+      propertiesService.getAll(managerId),
+      tenantsService.getAll(managerId),
+      paymentsService.getAll(managerId),
+      maintenanceService.getAll(managerId),
+      documentsService.getAll(managerId)
     ]);
     
     return {

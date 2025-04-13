@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 // This hook provides access to all the data across the application
 export function usePropertyManager() {
   const { toast } = useToast();
-  const { user, userType } = useAuth();
+  const { user, userType, profile } = useAuth();
   const [properties, setProperties] = useState<Property[]>([]);
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -26,7 +26,8 @@ export function usePropertyManager() {
       }
 
       try {
-        const data = await loadAllData();
+        const managerId = profile?.id || user.id;
+        const data = await loadAllData(managerId);
         
         setProperties(data.properties);
         setTenants(data.tenants);
@@ -47,7 +48,7 @@ export function usePropertyManager() {
     };
 
     fetchData();
-  }, [user, userType, toast]);
+  }, [user, userType, profile, toast]);
 
   // Calculate useful statistics
   const stats = getDashboardStats(payments, tenants, properties, maintenance);

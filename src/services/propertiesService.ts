@@ -3,10 +3,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { Property } from "@/types";
 
 export const propertiesService = {
-  async getAll(): Promise<Property[]> {
-    const { data, error } = await supabase
-      .from('properties')
-      .select('*');
+  async getAll(managerId?: string): Promise<Property[]> {
+    let query = supabase.from('properties').select('*');
+    
+    // Filter by manager_id if provided
+    if (managerId) {
+      query = query.eq('manager_id', managerId);
+    }
+    
+    const { data, error } = await query;
     
     if (error) throw error;
     
@@ -20,7 +25,8 @@ export const propertiesService = {
       zipCode: item.zip_code, 
       units: item.units,
       type: item.type as 'apartment' | 'house' | 'duplex' | 'commercial', // Cast to correct union type
-      image: item.image || undefined
+      image: item.image || undefined,
+      managerId: item.manager_id
     }));
   },
 
@@ -45,7 +51,8 @@ export const propertiesService = {
       zipCode: data.zip_code,
       units: data.units,
       type: data.type as 'apartment' | 'house' | 'duplex' | 'commercial', // Cast to correct union type
-      image: data.image || undefined
+      image: data.image || undefined,
+      managerId: data.manager_id
     };
   },
 
@@ -59,7 +66,8 @@ export const propertiesService = {
       zip_code: property.zipCode, // Map zipCode to zip_code
       units: property.units,
       type: property.type,
-      image: property.image
+      image: property.image,
+      manager_id: property.managerId
     };
     
     const { data, error } = await supabase
@@ -80,7 +88,8 @@ export const propertiesService = {
       zipCode: data.zip_code,
       units: data.units,
       type: data.type as 'apartment' | 'house' | 'duplex' | 'commercial', // Cast to correct union type
-      image: data.image || undefined
+      image: data.image || undefined,
+      managerId: data.manager_id
     };
   }
 };

@@ -3,10 +3,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tenant } from "@/types";
 
 export const tenantsService = {
-  async getAll(): Promise<Tenant[]> {
-    const { data, error } = await supabase
+  async getAll(managerId?: string): Promise<Tenant[]> {
+    let query = supabase
       .from('tenants')
       .select('*, properties(name, address, city, state, zip_code)');
+    
+    // If managerId is provided, filter tenants by properties with matching manager_id
+    if (managerId) {
+      query = query.eq('properties.manager_id', managerId);
+    }
+    
+    const { data, error } = await query;
     
     if (error) throw error;
     
@@ -25,7 +32,8 @@ export const tenantsService = {
       rentAmount: item.rent_amount, // Map rent_amount to rentAmount
       depositAmount: item.deposit_amount, // Map deposit_amount to depositAmount
       balance: item.balance || 0,
-      status: item.status as 'active' | 'inactive' | 'pending'
+      status: item.status as 'active' | 'inactive' | 'pending',
+      managerId: item.properties?.manager_id
     }));
   },
 

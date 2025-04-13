@@ -2,10 +2,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { Maintenance } from "@/types";
 
 export const maintenanceService = {
-  async getAll(): Promise<Maintenance[]> {
-    const { data, error } = await supabase
+  async getAll(managerId?: string): Promise<Maintenance[]> {
+    let query = supabase
       .from('maintenance')
-      .select('*, properties(name), tenants(name, email, unit_number)');
+      .select('*, properties(name, manager_id), tenants(name, email, unit_number)');
+    
+    // If managerId is provided, filter by matching manager_id
+    if (managerId) {
+      query = query.eq('properties.manager_id', managerId);
+    }
+    
+    const { data, error } = await query;
     
     if (error) throw error;
     
@@ -25,7 +32,8 @@ export const maintenanceService = {
       dateSubmitted: item.date_submitted, // Map date_submitted to dateSubmitted
       dateCompleted: item.date_completed || undefined, // Map date_completed to dateCompleted
       assignedTo: item.assigned_to || undefined,
-      cost: item.cost || undefined
+      cost: item.cost || undefined,
+      managerId: item.properties?.manager_id
     }));
   },
 

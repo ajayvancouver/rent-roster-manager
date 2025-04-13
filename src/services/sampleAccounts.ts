@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { signUpWithEmail } from "./authService";
 import { UserType } from "@/types/auth";
+import { updateProfile } from "./supabaseService";
 
 /**
  * Creates a sample tenant account
@@ -34,7 +35,11 @@ export const createSampleManager = async (): Promise<{ email: string; password: 
   const userType: UserType = "manager";
 
   try {
-    await signUpWithEmail(email, password, userType, fullName);
+    const { user } = await signUpWithEmail(email, password, userType, fullName);
+    if (user?.id) {
+      // Set the manager_id field in the profile
+      await updateProfile(user.id, { manager_id: user.id });
+    }
     console.log("Created sample manager account:", email);
     return { email, password };
   } catch (error) {
