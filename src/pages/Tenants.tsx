@@ -62,13 +62,11 @@ const Tenants = () => {
     fetchData();
   }, []);
 
-  // Get property name by ID
   const getPropertyName = (propertyId: string) => {
     const property = properties.find(p => p.id === propertyId);
     return property ? property.name : "Unknown Property";
   };
 
-  // Filter and sort tenants
   const filteredTenants = tenants.filter(tenant => {
     const searchTerms = searchQuery.toLowerCase();
     return (
@@ -78,7 +76,6 @@ const Tenants = () => {
     );
   });
 
-  // Sorting logic remains the same as in the previous implementation
   const sortedTenants = [...filteredTenants].sort((a, b) => {
     if (sortField === "name" || sortField === "email") {
       return sortDirection === "asc"
@@ -96,11 +93,9 @@ const Tenants = () => {
     return 0;
   });
 
-  // Get active, inactive, and all tenants
   const activeTenants = sortedTenants.filter(t => t.status === "active");
   const inactiveTenants = sortedTenants.filter(t => t.status !== "active");
 
-  // Toggle sort
   const toggleSort = (field: keyof Tenant) => {
     if (sortField === field) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
@@ -136,12 +131,10 @@ const Tenants = () => {
     }
   };
 
-  // Render method remains mostly the same, with minor adjustments for loading state
   if (isLoading) {
-    return <div>Loading...</div>; // Consider using a proper loading component
+    return <div>Loading...</div>;
   }
 
-  // Rest of the component remains the same as the previous implementation
   return (
     <div className="space-y-6">
       <div>
@@ -149,7 +142,6 @@ const Tenants = () => {
         <p className="text-muted-foreground mt-2">Manage your tenants and leases</p>
       </div>
 
-      {/* Stats Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         <Card className="card-hover">
           <CardContent className="pt-6">
@@ -198,7 +190,6 @@ const Tenants = () => {
         </Card>
       </div>
 
-      {/* Action Bar */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative grow">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -216,7 +207,6 @@ const Tenants = () => {
         </Button>
       </div>
 
-      {/* Tenants Table */}
       <Tabs defaultValue="active" className="w-full">
         <TabsList>
           <TabsTrigger value="active">Active Tenants</TabsTrigger>
@@ -486,12 +476,11 @@ const Tenants = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Add Tenant Modal */}
       <AddEntityModal
         title="Add New Tenant"
         open={showAddModal}
         onOpenChange={setShowAddModal}
-        onSave={handleAddTenant}
+        onSave={() => {}}
       >
         <AddTenantForm onSuccess={handleAddTenant} />
       </AddEntityModal>
