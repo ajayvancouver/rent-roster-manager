@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { 
   ArrowUpDown, 
@@ -113,7 +113,7 @@ const Tenants = () => {
     });
   };
 
-  const handleAddTenant = async (tenantData: Omit<Tenant, 'id'>) => {
+  const handleAddTenant = async (tenantData: Omit<Tenant, "id">) => {
     try {
       const newTenant = await tenantsService.create(tenantData);
       setTenants([...tenants, newTenant]);
@@ -480,7 +480,10 @@ const Tenants = () => {
         title="Add New Tenant"
         open={showAddModal}
         onOpenChange={setShowAddModal}
-        onSave={() => {}}
+        onSave={() => {
+          // This is a no-op function to satisfy the type requirements
+          // The actual saving is done within the AddTenantForm
+        }}
       >
         <AddTenantForm onSuccess={handleAddTenant} />
       </AddEntityModal>
