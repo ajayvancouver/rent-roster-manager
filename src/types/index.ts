@@ -14,6 +14,7 @@ export interface Tenant {
   depositAmount: number;
   balance: number;
   status: 'active' | 'inactive' | 'pending';
+  managerId?: string;
 }
 
 export interface Property {
@@ -28,6 +29,7 @@ export interface Property {
   image?: string;
   tenantCount?: number;
   occupancyRate?: number;
+  managerId?: string;
 }
 
 export interface Payment {
@@ -42,6 +44,7 @@ export interface Payment {
   method: 'cash' | 'check' | 'bank transfer' | 'credit card';
   status: 'pending' | 'completed' | 'failed';
   notes?: string;
+  managerId?: string;
 }
 
 export interface Maintenance {
@@ -60,6 +63,7 @@ export interface Maintenance {
   dateCompleted?: string;
   assignedTo?: string;
   cost?: number;
+  managerId?: string;
 }
 
 export interface Document {
@@ -74,4 +78,5 @@ export interface Document {
   fileSize: string;
   fileType: string;
   url: string;
+  managerId?: string;
 }

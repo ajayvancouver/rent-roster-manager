@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Property } from "@/types";
 import { propertiesService } from "@/services/supabaseService";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AddPropertyFormProps {
   onSuccess: () => void;
@@ -20,6 +21,7 @@ interface AddPropertyFormProps {
 
 const AddPropertyForm = ({ onSuccess }: AddPropertyFormProps) => {
   const { toast } = useToast();
+  const { user, profile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   
   const [formData, setFormData] = useState<Omit<Property, "id">>({
@@ -30,7 +32,8 @@ const AddPropertyForm = ({ onSuccess }: AddPropertyFormProps) => {
     zipCode: "",
     units: 1,
     type: "apartment",
-    image: undefined
+    image: undefined,
+    managerId: profile?.id || user?.id
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

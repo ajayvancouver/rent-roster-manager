@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Tenant } from "@/types";
 
@@ -6,7 +5,7 @@ export const tenantsService = {
   async getAll(managerId?: string): Promise<Tenant[]> {
     let query = supabase
       .from('tenants')
-      .select('*, properties(name, address, city, state, zip_code)');
+      .select('*, properties(name, address, city, state, zip_code, manager_id)');
     
     // If managerId is provided, filter tenants by properties with matching manager_id
     if (managerId) {
@@ -81,7 +80,7 @@ export const tenantsService = {
       .eq('email', email);
   },
 
-  async create(tenant: Omit<Tenant, 'id' | 'propertyName' | 'propertyAddress'>) {
+  async create(tenant: Omit<Tenant, 'id' | 'propertyName' | 'propertyAddress'>): Promise<any> {
     // Map our TypeScript interface to database columns
     const dbTenant = {
       name: tenant.name,
