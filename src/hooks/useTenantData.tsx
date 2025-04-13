@@ -3,8 +3,10 @@ import { useState, useEffect } from "react";
 import { Tenant } from "@/types";
 import { tenantsService, propertiesService } from "@/services/supabaseService";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function useTenantData() {
+  const { user, userType } = useAuth();
   const { toast } = useToast();
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [properties, setProperties] = useState<any[]>([]);
@@ -12,6 +14,11 @@ export function useTenantData() {
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!user || userType !== "manager") {
+        setIsLoading(false);
+        return;
+      }
+      
       try {
         const [fetchedTenants, fetchedProperties] = await Promise.all([
           tenantsService.getAll(),
@@ -32,7 +39,7 @@ export function useTenantData() {
     };
 
     fetchData();
-  }, [toast]);
+  }, [user, userType, toast]);
 
   const getPropertyName = (propertyId: string) => {
     if (!propertyId) return "Unassigned";

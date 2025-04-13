@@ -4,10 +4,12 @@ import { loadAllData } from "@/services/supabaseService";
 import { useToast } from "@/hooks/use-toast";
 import { Payment, Tenant, Property, Maintenance, Document } from "@/types";
 import { getDashboardStats } from "@/utils/dataUtils";
+import { useAuth } from "@/contexts/AuthContext";
 
 // This hook provides access to all the data across the application
 export function usePropertyManager() {
   const { toast } = useToast();
+  const { user, userType } = useAuth();
   const [properties, setProperties] = useState<Property[]>([]);
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -18,6 +20,11 @@ export function usePropertyManager() {
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!user || userType !== "manager") {
+        setIsLoading(false);
+        return;
+      }
+
       try {
         const data = await loadAllData();
         
@@ -40,7 +47,7 @@ export function usePropertyManager() {
     };
 
     fetchData();
-  }, [toast]);
+  }, [user, userType, toast]);
 
   // Calculate useful statistics
   const stats = getDashboardStats(payments, tenants, properties, maintenance);

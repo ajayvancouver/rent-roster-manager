@@ -18,6 +18,7 @@ export type Database = {
           name: string
           property_id: string | null
           tenant_id: string | null
+          tenant_user_id: string | null
           type: string
           updated_at: string | null
           upload_date: string
@@ -31,6 +32,7 @@ export type Database = {
           name: string
           property_id?: string | null
           tenant_id?: string | null
+          tenant_user_id?: string | null
           type: string
           updated_at?: string | null
           upload_date?: string
@@ -44,6 +46,7 @@ export type Database = {
           name?: string
           property_id?: string | null
           tenant_id?: string | null
+          tenant_user_id?: string | null
           type?: string
           updated_at?: string | null
           upload_date?: string
@@ -79,6 +82,7 @@ export type Database = {
           property_id: string
           status: string
           tenant_id: string | null
+          tenant_user_id: string | null
           title: string
           updated_at: string | null
         }
@@ -94,6 +98,7 @@ export type Database = {
           property_id: string
           status: string
           tenant_id?: string | null
+          tenant_user_id?: string | null
           title: string
           updated_at?: string | null
         }
@@ -109,6 +114,7 @@ export type Database = {
           property_id?: string
           status?: string
           tenant_id?: string | null
+          tenant_user_id?: string | null
           title?: string
           updated_at?: string | null
         }
@@ -139,6 +145,7 @@ export type Database = {
           notes: string | null
           status: string
           tenant_id: string
+          tenant_user_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -150,6 +157,7 @@ export type Database = {
           notes?: string | null
           status: string
           tenant_id: string
+          tenant_user_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -161,6 +169,7 @@ export type Database = {
           notes?: string | null
           status?: string
           tenant_id?: string
+          tenant_user_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -172,6 +181,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          updated_at: string
+          user_type: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email: string
+          full_name?: string | null
+          id: string
+          updated_at?: string
+          user_type?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+          user_type?: string
+        }
+        Relationships: []
       }
       properties: {
         Row: {
@@ -229,6 +268,7 @@ export type Database = {
           property_id: string | null
           rent_amount: number
           status: string
+          tenant_user_id: string | null
           unit_number: string | null
           updated_at: string | null
         }
@@ -245,6 +285,7 @@ export type Database = {
           property_id?: string | null
           rent_amount: number
           status: string
+          tenant_user_id?: string | null
           unit_number?: string | null
           updated_at?: string | null
         }
@@ -261,6 +302,7 @@ export type Database = {
           property_id?: string | null
           rent_amount?: number
           status?: string
+          tenant_user_id?: string | null
           unit_number?: string | null
           updated_at?: string | null
         }
@@ -282,7 +324,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      user_type: "manager" | "tenant"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -397,6 +439,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      user_type: ["manager", "tenant"],
+    },
   },
 } as const
