@@ -77,6 +77,7 @@ export const tenantsService = {
 
   async create(tenant: Omit<Tenant, 'id' | 'propertyName' | 'propertyAddress'>): Promise<any> {
     // Map our TypeScript interface to database columns
+    // IMPORTANT: We removed manager_id from the dbTenant object as it's not a column in the tenants table
     const dbTenant = {
       name: tenant.name,
       email: tenant.email,
@@ -88,8 +89,7 @@ export const tenantsService = {
       rent_amount: tenant.rentAmount,
       deposit_amount: tenant.depositAmount,
       balance: tenant.balance,
-      status: tenant.status,
-      manager_id: tenant.managerId
+      status: tenant.status
     };
     
     return await supabase

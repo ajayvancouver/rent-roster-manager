@@ -16,22 +16,3 @@ export async function linkTenantToUser(tenantId: string, userId: string) {
     throw error;
   }
 }
-
-export async function getTenantByUserId(userId: string) {
-  try {
-    const { data, error } = await supabase
-      .from('tenants')
-      .select('*, properties(id, name, address, city, state, zip_code, manager_id)')
-      .eq('tenant_user_id', userId)
-      .single();
-    
-    if (error && error.code !== 'PGRST116') { // No rows returned is not an error
-      throw error;
-    }
-    
-    return data;
-  } catch (error) {
-    console.error("Error getting tenant by user ID:", error);
-    throw error;
-  }
-}

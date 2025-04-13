@@ -12,7 +12,11 @@ export function useTenantActions(tenants: Tenant[], setTenants: React.Dispatch<R
   const handleAddTenant = async (tenantData: Omit<Tenant, "id" | "propertyName" | "propertyAddress">) => {
     try {
       setIsProcessing(true);
-      const { data, error } = await tenantsService.create(tenantData);
+      
+      // Remove managerId from tenant data since it's a property of properties, not tenants
+      const { managerId, ...tenantWithoutManagerId } = tenantData;
+      
+      const { data, error } = await tenantsService.create(tenantWithoutManagerId);
       
       if (error) {
         console.error("Error creating tenant:", error);
@@ -39,7 +43,7 @@ export function useTenantActions(tenants: Tenant[], setTenants: React.Dispatch<R
           depositAmount: data.deposit_amount,
           balance: data.balance || 0,
           status: data.status as 'active' | 'inactive' | 'pending',
-          managerId: data.manager_id
+          managerId: tenantData.managerId // Keep the managerId from the original data
         };
         
         // Add property data if available

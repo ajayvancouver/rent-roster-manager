@@ -14,6 +14,8 @@ export const useTenantForm = ({ onSuccess }: UseTenantFormProps) => {
   const { user, profile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   
+  const managerId = profile?.id || user?.id;
+  
   const [formData, setFormData] = useState<Omit<Tenant, "id" | "propertyName" | "propertyAddress">>({
     name: "",
     email: "",
@@ -26,7 +28,7 @@ export const useTenantForm = ({ onSuccess }: UseTenantFormProps) => {
     depositAmount: 0,
     balance: 0,
     status: "active",
-    managerId: profile?.id || user?.id
+    managerId: managerId
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -95,12 +97,12 @@ export const useTenantForm = ({ onSuccess }: UseTenantFormProps) => {
         return;
       }
       
-      // Prepare the data with proper null handling
+      // Prepare the data with proper null handling and ensure managerId is present
       const submitData = {
         ...formData,
         propertyId: formData.propertyId || "",
         unitNumber: formData.unitNumber || "",
-        managerId: profile?.id || user?.id
+        managerId: managerId
       };
       
       console.log("Submitting tenant data:", submitData);

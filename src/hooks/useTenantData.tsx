@@ -1,12 +1,13 @@
 
 import { useState, useEffect } from "react";
 import { Tenant } from "@/types";
-import { tenantsService, propertiesService } from "@/services/supabaseService";
+import { tenantsService } from "@/services/tenantsService";
+import { propertiesService } from "@/services/supabaseService";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 
 export function useTenantData() {
-  const { user, userType } = useAuth();
+  const { user, userType, profile } = useAuth();
   const { toast } = useToast();
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [properties, setProperties] = useState<any[]>([]);
@@ -14,21 +15,24 @@ export function useTenantData() {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!user || userType !== "manager") {
+      if (!user) {
         setIsLoading(false);
         return;
       }
       
       try {
+        const managerId = profile?.id || user.id;
+        
         const [fetchedTenants, fetchedProperties] = await Promise.all([
-          tenantsService.getAll(),
-          propertiesService.getAll()
+          tenantsService.getAll(managerId),
+          propertiesService.getAll(managerId)
         ]);
         
         setTenants(fetchedTenants);
         setProperties(fetchedProperties);
         setIsLoading(false);
       } catch (error) {
+        console.error("Error fetching tenant data:", error);
         toast({
           title: "Error",
           description: "Failed to load tenants and properties",
@@ -39,7 +43,7 @@ export function useTenantData() {
     };
 
     fetchData();
-  }, [user, userType, toast]);
+  }, [user, userType, profile, toast]);
 
   const getPropertyName = (propertyId: string) => {
     if (!propertyId) return "Unassigned";
