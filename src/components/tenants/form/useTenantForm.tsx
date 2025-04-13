@@ -47,8 +47,14 @@ export const useTenantForm = ({ onSuccess }: UseTenantFormProps) => {
     setIsLoading(true);
     
     try {
+      // Prepare the data - convert empty propertyId to null
+      const submitData = {
+        ...formData,
+        propertyId: formData.propertyId ? formData.propertyId : null
+      };
+      
       // Use the actual Supabase service to create the tenant
-      const newTenant = await tenantsService.create(formData);
+      const newTenant = await tenantsService.create(submitData);
       
       toast({
         title: "Tenant added!",

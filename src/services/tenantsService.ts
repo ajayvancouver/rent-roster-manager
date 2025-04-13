@@ -61,12 +61,12 @@ export const tenantsService = {
       name: tenant.name,
       email: tenant.email,
       phone: tenant.phone,
-      property_id: tenant.propertyId, // Map propertyId to property_id
-      unit_number: tenant.unitNumber,
-      lease_start: tenant.leaseStart, // Map leaseStart to lease_start
-      lease_end: tenant.leaseEnd, // Map leaseEnd to lease_end
-      rent_amount: tenant.rentAmount, // Map rentAmount to rent_amount
-      deposit_amount: tenant.depositAmount, // Map depositAmount to deposit_amount
+      property_id: tenant.propertyId || null, // Ensure null for empty strings
+      unit_number: tenant.unitNumber || null, // Also handle empty unit numbers
+      lease_start: tenant.leaseStart, 
+      lease_end: tenant.leaseEnd,
+      rent_amount: tenant.rentAmount,
+      deposit_amount: tenant.depositAmount,
       balance: tenant.balance || 0,
       status: tenant.status
     };
@@ -85,12 +85,12 @@ export const tenantsService = {
       name: data.name,
       email: data.email,
       phone: data.phone || '',
-      propertyId: data.property_id || '', // Map property_id to propertyId
-      unitNumber: data.unit_number,
-      leaseStart: data.lease_start, // Map lease_start to leaseStart
-      leaseEnd: data.lease_end, // Map lease_end to leaseEnd
-      rentAmount: data.rent_amount, // Map rent_amount to rentAmount
-      depositAmount: data.deposit_amount, // Map deposit_amount to depositAmount
+      propertyId: data.property_id || '',
+      unitNumber: data.unit_number || '',
+      leaseStart: data.lease_start,
+      leaseEnd: data.lease_end,
+      rentAmount: data.rent_amount,
+      depositAmount: data.deposit_amount,
       balance: data.balance || 0,
       status: data.status as 'active' | 'inactive' | 'pending'
     };
