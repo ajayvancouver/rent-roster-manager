@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,9 +15,11 @@ import {
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/layout/Header";
+import { createSampleManager, createSampleTenant, logoutCurrentUser } from "@/services/sampleAccounts";
+import { Separator } from "@/components/ui/separator";
 
 const Auth = () => {
   const { user, signIn, signUp, isLoading } = useAuth();
@@ -28,6 +31,29 @@ const Auth = () => {
   const [userType, setUserType] = useState<"manager" | "tenant">("tenant");
   const [activeTab, setActiveTab] = useState("login");
   const [error, setError] = useState<string | null>(null);
+  
+  // Sample account states
+  const [creatingTenant, setCreatingTenant] = useState(false);
+  const [creatingManager, setCreatingManager] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [sampleTenant, setSampleTenant] = useState<{ email: string; password: string } | null>(null);
+  const [sampleManager, setSampleManager] = useState<{ email: string; password: string } | null>(null);
+
+  useEffect(() => {
+    // Auto-logout current user when page loads
+    const performAutoLogout = async () => {
+      try {
+        setLoggingOut(true);
+        await logoutCurrentUser();
+      } catch (error) {
+        console.error("Auto-logout failed:", error);
+      } finally {
+        setLoggingOut(false);
+      }
+    };
+    
+    performAutoLogout();
+  }, []);
 
   if (user) {
     return <Navigate to="/" />;
@@ -96,6 +122,65 @@ const Auth = () => {
 
   const clearError = () => {
     setError(null);
+  };
+
+  const handleCreateSampleTenant = async () => {
+    try {
+      setCreatingTenant(true);
+      const credentials = await createSampleTenant();
+      setSampleTenant(credentials);
+      toast({
+        title: "Sample Tenant Created",
+        description: "A sample tenant account has been created for testing."
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error Creating Sample Tenant",
+        description: error.message || "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setCreatingTenant(false);
+    }
+  };
+
+  const handleCreateSampleManager = async () => {
+    try {
+      setCreatingManager(true);
+      const credentials = await createSampleManager();
+      setSampleManager(credentials);
+      toast({
+        title: "Sample Manager Created",
+        description: "A sample property manager account has been created for testing."
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error Creating Sample Manager",
+        description: error.message || "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setCreatingManager(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      setLoggingOut(true);
+      await logoutCurrentUser();
+      toast({
+        title: "Logged Out",
+        description: "You have been logged out successfully."
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error Logging Out",
+        description: error.message || "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setLoggingOut(false);
+    }
   };
 
   return (
@@ -216,6 +301,81 @@ const Auth = () => {
                   </form>
                 </TabsContent>
               </Tabs>
+              
+              {/* Sample Account Generator Section */}
+              <div className="mt-8">
+                <Separator className="my-4" />
+                <h3 className="text-lg font-medium mb-4">Test Account Generator</h3>
+                
+                <div className="space-y-4">
+                  <div className="flex gap-4">
+                    <Button 
+                      variant="outline"
+                      className="flex-1"
+                      onClick={handleCreateSampleTenant}
+                      disabled={creatingTenant}
+                    >
+                      {creatingTenant ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Creating...
+                        </>
+                      ) : "Create Tenant Account"}
+                    </Button>
+                    
+                    <Button 
+                      variant="outline"
+                      className="flex-1"
+                      onClick={handleCreateSampleManager}
+                      disabled={creatingManager}
+                    >
+                      {creatingManager ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Creating...
+                        </>
+                      ) : "Create Manager Account"}
+                    </Button>
+                  </div>
+                  
+                  <Button 
+                    variant="secondary"
+                    className="w-full"
+                    onClick={handleLogout}
+                    disabled={loggingOut}
+                  >
+                    {loggingOut ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Logging out...
+                      </>
+                    ) : "Log Out Current User"}
+                  </Button>
+                </div>
+                
+                {/* Display generated credentials */}
+                {(sampleTenant || sampleManager) && (
+                  <div className="mt-4 p-4 border rounded-md bg-muted">
+                    <h4 className="font-medium mb-2">Sample Credentials</h4>
+                    
+                    {sampleTenant && (
+                      <div className="mb-2">
+                        <p className="font-medium text-sm">Tenant Account:</p>
+                        <p className="text-sm">Email: {sampleTenant.email}</p>
+                        <p className="text-sm">Password: {sampleTenant.password}</p>
+                      </div>
+                    )}
+                    
+                    {sampleManager && (
+                      <div>
+                        <p className="font-medium text-sm">Manager Account:</p>
+                        <p className="text-sm">Email: {sampleManager.email}</p>
+                        <p className="text-sm">Password: {sampleManager.password}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </CardContent>
             <CardFooter className="text-center text-sm text-muted-foreground">
               By continuing, you agree to our Terms of Service and Privacy Policy.
