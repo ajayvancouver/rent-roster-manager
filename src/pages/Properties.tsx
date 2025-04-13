@@ -8,6 +8,7 @@ import PropertyStats from "@/components/properties/PropertyStats";
 import PropertySearch from "@/components/properties/PropertySearch";
 import PropertyGrid from "@/components/properties/PropertyGrid";
 import PropertyList from "@/components/properties/PropertyList";
+import GenerateSampleDataButton from "@/components/properties/GenerateSampleDataButton";
 
 const Properties = () => {
   const { toast } = useToast();
@@ -24,7 +25,9 @@ const Properties = () => {
     getVacancyCount,
     getPropertyTypeIcon,
     getOccupancyRate,
-    getOverallOccupancyRate
+    getOverallOccupancyRate,
+    handleAddProperty,
+    fetchProperties
   } = useProperties();
 
   const handleAddProperty = () => {
@@ -32,6 +35,15 @@ const Properties = () => {
     toast({
       title: "Success",
       description: "Property has been added successfully."
+    });
+  };
+
+  const handleDataGenerated = () => {
+    // Refresh the properties list after generating sample data
+    fetchProperties();
+    toast({
+      title: "Data Refreshed",
+      description: "Properties list has been updated with sample data."
     });
   };
 
@@ -49,13 +61,16 @@ const Properties = () => {
       />
 
       {/* Action Bar */}
-      <PropertySearch
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        viewType={viewType}
-        setViewType={setViewType}
-        onAddProperty={() => setShowAddModal(true)}
-      />
+      <div className="flex items-center justify-between gap-4">
+        <PropertySearch
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          viewType={viewType}
+          setViewType={setViewType}
+          onAddProperty={() => setShowAddModal(true)}
+        />
+        <GenerateSampleDataButton onSuccess={handleDataGenerated} />
+      </div>
 
       {/* Loading state */}
       {isLoading ? (

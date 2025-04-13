@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+
+import { useState, useEffect, useCallback } from "react";
 import { Property } from "@/types";
 import { propertiesService, tenantsService } from "@/services/supabaseService";
 import { useToast } from "@/hooks/use-toast";
@@ -13,33 +14,34 @@ export function useProperties() {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewType, setViewType] = useState<"grid" | "list">("grid");
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const managerId = profile?.id || user?.id;
-        
-        const [fetchedProperties, fetchedTenants] = await Promise.all([
-          propertiesService.getAll(managerId),
-          tenantsService.getAll(managerId)
-        ]);
-        
-        console.log("Fetched properties:", fetchedProperties);
-        setProperties(fetchedProperties);
-        setTenants(fetchedTenants);
-        setIsLoading(false);
-      } catch (error) {
-        console.error("Error fetching properties data:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load properties data",
-          variant: "destructive"
-        });
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
+  const fetchProperties = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const managerId = profile?.id || user?.id;
+      
+      const [fetchedProperties, fetchedTenants] = await Promise.all([
+        propertiesService.getAll(managerId),
+        tenantsService.getAll(managerId)
+      ]);
+      
+      console.log("Fetched properties:", fetchedProperties);
+      setProperties(fetchedProperties);
+      setTenants(fetchedTenants);
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error fetching properties data:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load properties data",
+        variant: "destructive"
+      });
+      setIsLoading(false);
+    }
   }, [toast, user, profile]);
+
+  useEffect(() => {
+    fetchProperties();
+  }, [fetchProperties]);
 
   // Filter properties
   const getFilteredProperties = () => {
@@ -93,8 +95,7 @@ export function useProperties() {
       const result = await propertiesService.create(propertyData);
       
       // Refresh properties data after adding new property
-      const updatedProperties = await propertiesService.getAll(managerId);
-      setProperties(updatedProperties);
+      await fetchProperties();
       
       return true;
     } catch (error) {
@@ -122,6 +123,7 @@ export function useProperties() {
     getPropertyTypeIcon,
     getOccupancyRate,
     getOverallOccupancyRate,
-    handleAddProperty
+    handleAddProperty,
+    fetchProperties
   };
 }

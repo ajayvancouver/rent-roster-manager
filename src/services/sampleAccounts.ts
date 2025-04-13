@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { signUpWithEmail } from "./authService";
 import { UserType } from "@/types/auth";
 import { updateProfile } from "./supabaseService";
+import { createSampleProperties, connectSampleTenantsToProperties } from "./sampleProperties";
 
 /**
  * Creates a sample tenant account
@@ -25,7 +26,7 @@ export const createSampleTenant = async (): Promise<{ email: string; password: s
 };
 
 /**
- * Creates a sample property manager account
+ * Creates a sample property manager account with properties and tenants
  * @returns Email and password for the sample property manager
  */
 export const createSampleManager = async (): Promise<{ email: string; password: string }> => {
@@ -39,8 +40,20 @@ export const createSampleManager = async (): Promise<{ email: string; password: 
     if (user?.id) {
       // Set the manager_id field in the profile
       await updateProfile(user.id, { manager_id: user.id });
+      
+      // Create sample properties for this manager
+      const propertyIds = await createSampleProperties(user.id);
+      
+      // Create some sample tenants
+      const tenantCount = 5;
+      for (let i = 0; i < tenantCount; i++) {
+        await createSampleTenant();
+      }
+      
+      // Connect tenants to properties
+      await connectSampleTenantsToProperties(user.id, propertyIds);
     }
-    console.log("Created sample manager account:", email);
+    console.log("Created sample manager account with properties and tenants:", email);
     return { email, password };
   } catch (error) {
     console.error("Error creating sample manager:", error);
