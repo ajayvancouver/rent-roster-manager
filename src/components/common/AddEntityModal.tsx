@@ -15,7 +15,7 @@ import {
 interface AddEntityModalProps extends DialogProps {
   title: string;
   children: React.ReactNode;
-  onSave: () => void;
+  onSave: (...args: any[]) => void;
   isLoading?: boolean;
 }
 
@@ -41,7 +41,7 @@ const AddEntityModal = ({
           <Button variant="outline" type="button" asChild>
             <DialogClose>Cancel</DialogClose>
           </Button>
-          <Button type="button" onClick={onSave} disabled={isLoading}>
+          <Button type="button" onClick={() => onSave()} disabled={isLoading}>
             {isLoading ? "Saving..." : "Save"}
           </Button>
         </DialogFooter>

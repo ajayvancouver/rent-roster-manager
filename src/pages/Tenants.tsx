@@ -480,10 +480,7 @@ const Tenants = () => {
         title="Add New Tenant"
         open={showAddModal}
         onOpenChange={setShowAddModal}
-        onSave={() => {
-          // This is a no-op function to satisfy the type requirements
-          // The actual saving is done within the AddTenantForm
-        }}
+        onSave={handleAddTenant}
       >
         <AddTenantForm onSuccess={handleAddTenant} />
       </AddEntityModal>
