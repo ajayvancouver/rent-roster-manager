@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { 
   ArrowUpDown, 
   Search, 
@@ -126,13 +127,17 @@ const Tenants = () => {
               <TableRow key={tenant.id}>
                 <TableCell className="font-medium">
                   <div>
-                    {tenant.name}
+                    <Link to={`/tenants/${tenant.id}`} className="hover:underline">
+                      {tenant.name}
+                    </Link>
                     <div className="text-xs text-muted-foreground mt-1">{tenant.email}</div>
                   </div>
                 </TableCell>
                 <TableCell>
                   <div>
-                    {getPropertyName(tenant.propertyId)}
+                    <Link to={`/properties/${tenant.propertyId}`} className="hover:underline">
+                      {getPropertyName(tenant.propertyId)}
+                    </Link>
                     {tenant.unitNumber && (
                       <div className="text-xs text-muted-foreground">Unit {tenant.unitNumber}</div>
                     )}
@@ -154,9 +159,11 @@ const Tenants = () => {
                     <Button variant="outline" size="icon" title="Record Payment">
                       <Banknote className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" size="icon" title="View Details">
-                      <ClipboardList className="h-4 w-4" />
-                    </Button>
+                    <Link to={`/tenants/${tenant.id}`}>
+                      <Button variant="outline" size="icon" title="View Details">
+                        <ClipboardList className="h-4 w-4" />
+                      </Button>
+                    </Link>
                   </div>
                 </TableCell>
               </TableRow>

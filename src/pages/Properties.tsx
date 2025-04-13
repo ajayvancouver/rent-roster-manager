@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Building2, Search, Users, Home, Building } from "lucide-react";
 import { properties, tenants } from "@/data/mockData";
 import { Property } from "@/types";
@@ -156,7 +157,9 @@ const Properties = () => {
               </div>
               <CardContent className="p-6">
                 <div className="flex justify-between items-start mb-2">
-                  <h3 className="text-lg font-semibold">{property.name}</h3>
+                  <Link to={`/properties/${property.id}`}>
+                    <h3 className="text-lg font-semibold hover:underline">{property.name}</h3>
+                  </Link>
                   <Badge className="capitalize">{property.type}</Badge>
                 </div>
                 <p className="text-sm text-muted-foreground mb-4">
@@ -183,7 +186,9 @@ const Properties = () => {
                   </div>
                 </div>
                 <div className="mt-4 flex justify-end">
-                  <Button variant="outline" size="sm">View Details</Button>
+                  <Link to={`/properties/${property.id}`}>
+                    <Button variant="outline" size="sm">View Details</Button>
+                  </Link>
                 </div>
               </CardContent>
             </Card>
@@ -201,7 +206,9 @@ const Properties = () => {
                         {getPropertyTypeIcon(property.type)}
                       </div>
                       <div>
-                        <h3 className="font-semibold">{property.name}</h3>
+                        <Link to={`/properties/${property.id}`}>
+                          <h3 className="font-semibold hover:underline">{property.name}</h3>
+                        </Link>
                         <p className="text-sm text-muted-foreground">
                           {property.address}, {property.city}, {property.state} {property.zipCode}
                         </p>
@@ -229,7 +236,9 @@ const Properties = () => {
                     </div>
                   </div>
                   
-                  <Button variant="outline" size="sm">View Details</Button>
+                  <Link to={`/properties/${property.id}`}>
+                    <Button variant="outline" size="sm">View Details</Button>
+                  </Link>
                 </div>
               </CardContent>
             </Card>
