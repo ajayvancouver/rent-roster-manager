@@ -12,6 +12,10 @@ export function usePayments() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<Payment["status"] | "all">("all");
+  const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
+    from: undefined,
+    to: undefined,
+  });
   const [sortField, setSortField] = useState<keyof Payment>("date");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
@@ -66,6 +70,21 @@ export function usePayments() {
       // Apply status filter
       if (statusFilter !== "all" && payment.status !== statusFilter) {
         return false;
+      }
+      
+      // Apply date range filter
+      if (dateRange.from && dateRange.to) {
+        const paymentDate = new Date(payment.date);
+        const fromDate = new Date(dateRange.from);
+        const toDate = new Date(dateRange.to);
+        
+        // Set time to beginning and end of day for proper comparison
+        fromDate.setHours(0, 0, 0, 0);
+        toDate.setHours(23, 59, 59, 999);
+        
+        if (paymentDate < fromDate || paymentDate > toDate) {
+          return false;
+        }
       }
       
       // Apply search filter
@@ -166,6 +185,8 @@ export function usePayments() {
     setSearchQuery,
     statusFilter,
     setStatusFilter,
+    dateRange,
+    setDateRange,
     sortField,
     sortDirection,
     toggleSort,

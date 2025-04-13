@@ -18,6 +18,8 @@ const Payments = () => {
     setSearchQuery,
     statusFilter,
     setStatusFilter,
+    dateRange,
+    setDateRange,
     toggleSort,
     getTenantName,
     getPropertyInfo,
@@ -61,6 +63,8 @@ const Payments = () => {
         setSearchQuery={setSearchQuery}
         statusFilter={statusFilter}
         setStatusFilter={setStatusFilter}
+        dateRange={dateRange}
+        setDateRange={setDateRange}
         onAddPayment={() => setShowAddModal(true)}
       />
 
