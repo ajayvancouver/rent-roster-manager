@@ -95,7 +95,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUserType(data.user_type as UserType);
       } else {
         console.log("No profile found for user:", userId);
-        // Create a default profile if one doesn't exist
+        // Profile should have been created by the trigger
+        // But as a fallback, attempt to create it
         await createDefaultProfile(userId);
       }
     } catch (error) {
