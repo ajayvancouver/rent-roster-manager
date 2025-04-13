@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Wrench, Search, ArrowUpDown, Clock, PlusCircle, AlertTriangle } from "lucide-react";
 import { maintenanceRequests, properties, tenants } from "@/data/mockData";
@@ -23,14 +22,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import AddEntityModal from "@/components/common/AddEntityModal";
+import AddMaintenanceRequestForm from "@/components/maintenance/AddMaintenanceRequestForm";
 
 const MaintenancePage = () => {
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<Maintenance["priority"] | "all">("all");
   const [sortField, setSortField] = useState<keyof Maintenance>("dateSubmitted");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [showAddModal, setShowAddModal] = useState(false);
 
-  // Get tenant and property info
   const getTenantName = (tenantId: string) => {
     const tenant = tenants.find(t => t.id === tenantId);
     return tenant ? tenant.name : "Unknown";
@@ -41,14 +44,11 @@ const MaintenancePage = () => {
     return property ? property.name : "Unknown";
   };
 
-  // Filter and sort maintenance requests
   const filteredRequests = maintenanceRequests.filter(request => {
-    // Apply priority filter
     if (priorityFilter !== "all" && request.priority !== priorityFilter) {
       return false;
     }
     
-    // Apply search filter
     const searchTerms = searchQuery.toLowerCase();
     const tenantName = getTenantName(request.tenantId).toLowerCase();
     const propertyName = getPropertyName(request.propertyId).toLowerCase();
@@ -77,17 +77,15 @@ const MaintenancePage = () => {
     return 0;
   });
 
-  // Group requests by status
   const openRequests = sortedRequests.filter(r => r.status === "pending" || r.status === "in-progress");
   const closedRequests = sortedRequests.filter(r => r.status === "completed" || r.status === "cancelled");
 
-  // Toggle sort
   const toggleSort = (field: keyof Maintenance) => {
     if (sortField === field) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
-      setSortDirection("desc"); // Default to newest/highest first
+      setSortDirection("desc");
     }
   };
 
@@ -119,7 +117,14 @@ const MaintenancePage = () => {
     }
   };
 
-  // Calculate stats
+  const handleAddRequest = () => {
+    setShowAddModal(false);
+    toast({
+      title: "Success",
+      description: "Maintenance request has been submitted successfully."
+    });
+  };
+
   const pendingCount = maintenanceRequests.filter(r => r.status === "pending").length;
   const inProgressCount = maintenanceRequests.filter(r => r.status === "in-progress").length;
   const emergencyCount = maintenanceRequests.filter(
@@ -199,7 +204,6 @@ const MaintenancePage = () => {
         <p className="text-muted-foreground mt-2">Track and manage maintenance requests</p>
       </div>
 
-      {/* Stats Row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card className="card-hover">
           <CardContent className="pt-6">
@@ -244,7 +248,6 @@ const MaintenancePage = () => {
         </Card>
       </div>
 
-      {/* Action Bar */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative grow">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -271,13 +274,12 @@ const MaintenancePage = () => {
             <SelectItem value="low">Low</SelectItem>
           </SelectContent>
         </Select>
-        <Button>
+        <Button onClick={() => setShowAddModal(true)}>
           <PlusCircle className="h-4 w-4 mr-1" />
           New Request
         </Button>
       </div>
 
-      {/* Maintenance Requests Tabs */}
       <Tabs defaultValue="open" className="w-full">
         <TabsList>
           <TabsTrigger value="open">Open Requests</TabsTrigger>
@@ -294,6 +296,15 @@ const MaintenancePage = () => {
           {renderRequestsTable(sortedRequests)}
         </TabsContent>
       </Tabs>
+
+      <AddEntityModal
+        title="New Maintenance Request"
+        open={showAddModal}
+        onOpenChange={setShowAddModal}
+        onSave={handleAddRequest}
+      >
+        <AddMaintenanceRequestForm onSuccess={handleAddRequest} />
+      </AddEntityModal>
     </div>
   );
 };

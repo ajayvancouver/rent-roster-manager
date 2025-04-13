@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { 
@@ -8,7 +7,8 @@ import {
   UserCheck, 
   UserMinus,
   ClipboardList,
-  Users
+  Users,
+  Plus
 } from "lucide-react";
 import { tenants, properties } from "@/data/mockData";
 import { Tenant } from "@/types";
@@ -25,11 +25,16 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import AddEntityModal from "@/components/common/AddEntityModal";
+import AddTenantForm from "@/components/tenants/AddTenantForm";
 
 const Tenants = () => {
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [sortField, setSortField] = useState<keyof Tenant>("name");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [showAddModal, setShowAddModal] = useState(false);
 
   // Get property name by ID
   const getPropertyName = (propertyId: string) => {
@@ -83,6 +88,14 @@ const Tenants = () => {
       month: 'short',
       day: 'numeric',
       year: 'numeric'
+    });
+  };
+
+  const handleAddTenant = () => {
+    setShowAddModal(false);
+    toast({
+      title: "Success",
+      description: "Tenant has been added successfully."
     });
   };
 
@@ -242,7 +255,10 @@ const Tenants = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <Button>Add Tenant</Button>
+        <Button onClick={() => setShowAddModal(true)}>
+          <Plus className="mr-1 h-4 w-4" />
+          Add Tenant
+        </Button>
       </div>
 
       {/* Tenants Table */}
@@ -262,6 +278,16 @@ const Tenants = () => {
           {renderTenantTable(sortedTenants)}
         </TabsContent>
       </Tabs>
+
+      {/* Add Tenant Modal */}
+      <AddEntityModal
+        title="Add New Tenant"
+        open={showAddModal}
+        onOpenChange={setShowAddModal}
+        onSave={handleAddTenant}
+      >
+        <AddTenantForm onSuccess={handleAddTenant} />
+      </AddEntityModal>
     </div>
   );
 };

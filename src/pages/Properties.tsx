@@ -1,17 +1,21 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Building2, Search, Users, Home, Building } from "lucide-react";
+import { Building2, Search, Users, Home, Building, Plus } from "lucide-react";
 import { properties, tenants } from "@/data/mockData";
 import { Property } from "@/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import AddEntityModal from "@/components/common/AddEntityModal";
+import AddPropertyForm from "@/components/properties/AddPropertyForm";
 
 const Properties = () => {
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [viewType, setViewType] = useState<"grid" | "list">("grid");
+  const [showAddModal, setShowAddModal] = useState(false);
 
   // Filter properties
   const filteredProperties = properties.filter(property => {
@@ -48,6 +52,14 @@ const Properties = () => {
       default:
         return <Building2 className="h-5 w-5" />;
     }
+  };
+
+  const handleAddProperty = () => {
+    setShowAddModal(false);
+    toast({
+      title: "Success",
+      description: "Property has been added successfully."
+    });
   };
 
   return (
@@ -133,7 +145,10 @@ const Properties = () => {
           >
             List
           </Button>
-          <Button>Add Property</Button>
+          <Button onClick={() => setShowAddModal(true)}>
+            <Plus className="mr-1 h-4 w-4" />
+            Add Property
+          </Button>
         </div>
       </div>
 
@@ -245,6 +260,16 @@ const Properties = () => {
           ))}
         </div>
       )}
+
+      {/* Add Property Modal */}
+      <AddEntityModal
+        title="Add New Property"
+        open={showAddModal}
+        onOpenChange={setShowAddModal}
+        onSave={handleAddProperty}
+      >
+        <AddPropertyForm onSuccess={handleAddProperty} />
+      </AddEntityModal>
     </div>
   );
 };
