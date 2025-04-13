@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { File, FolderOpen, Calendar, Building2, User } from "lucide-react";
+import { File, FolderOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Document } from "@/types";
 import { properties, tenants } from "@/data/mockData";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface AddDocumentFormProps {
   onSuccess: () => void;
@@ -20,6 +21,7 @@ interface AddDocumentFormProps {
 
 const AddDocumentForm = ({ onSuccess }: AddDocumentFormProps) => {
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [isLoading, setIsLoading] = useState(false);
   
   const [formData, setFormData] = useState<Omit<Document, "id" | "uploadDate" | "fileSize" | "fileType">>({
@@ -106,7 +108,7 @@ const AddDocumentForm = ({ onSuccess }: AddDocumentFormProps) => {
           <SelectTrigger>
             <SelectValue placeholder="Select document type" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className={isMobile ? "w-[calc(100vw-2rem)]" : ""}>
             <SelectItem value="lease">Lease Agreement</SelectItem>
             <SelectItem value="payment">Payment Receipt</SelectItem>
             <SelectItem value="maintenance">Maintenance Record</SelectItem>
@@ -124,7 +126,7 @@ const AddDocumentForm = ({ onSuccess }: AddDocumentFormProps) => {
           <SelectTrigger>
             <SelectValue placeholder="Select property" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className={isMobile ? "w-[calc(100vw-2rem)]" : ""}>
             <SelectItem value="none">None</SelectItem>
             {properties.map(property => (
               <SelectItem key={property.id} value={property.id}>
@@ -145,7 +147,7 @@ const AddDocumentForm = ({ onSuccess }: AddDocumentFormProps) => {
           <SelectTrigger>
             <SelectValue placeholder={formData.propertyId ? "Select tenant" : "Select property first (optional)"} />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className={isMobile ? "w-[calc(100vw-2rem)]" : ""}>
             <SelectItem value="none">None</SelectItem>
             {filteredTenants.map(tenant => (
               <SelectItem key={tenant.id} value={tenant.id}>
