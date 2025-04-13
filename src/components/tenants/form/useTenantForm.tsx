@@ -47,6 +47,19 @@ export const useTenantForm = ({ onSuccess }: UseTenantFormProps) => {
     setIsLoading(true);
     
     try {
+      // First check if a tenant with this email already exists
+      const { data: existingTenants } = await tenantsService.checkEmailExists(formData.email);
+      
+      if (existingTenants && existingTenants.length > 0) {
+        toast({
+          title: "Email already in use",
+          description: "A tenant with this email already exists.",
+          variant: "destructive"
+        });
+        setIsLoading(false);
+        return;
+      }
+      
       // Prepare the data - convert empty propertyId to null
       const submitData = {
         ...formData,

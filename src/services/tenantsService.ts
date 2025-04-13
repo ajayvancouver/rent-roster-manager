@@ -54,6 +54,13 @@ export const tenantsService = {
       status: data.status as 'active' | 'inactive' | 'pending'
     };
   },
+  
+  async checkEmailExists(email: string) {
+    return await supabase
+      .from('tenants')
+      .select('email')
+      .eq('email', email);
+  },
 
   async create(tenant: Omit<Tenant, 'id'>): Promise<Tenant> {
     // Map our TypeScript interface to database columns
