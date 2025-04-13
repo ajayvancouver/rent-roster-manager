@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { 
   ArrowUpDown, 
@@ -10,8 +10,8 @@ import {
   Users,
   Plus
 } from "lucide-react";
-import { tenants, properties } from "@/data/mockData";
 import { Tenant } from "@/types";
+import { tenantsService, propertiesService } from "@/services/supabaseService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -31,10 +31,36 @@ import AddTenantForm from "@/components/tenants/AddTenantForm";
 
 const Tenants = () => {
   const { toast } = useToast();
+  const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [properties, setProperties] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortField, setSortField] = useState<keyof Tenant>("name");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [showAddModal, setShowAddModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [fetchedTenants, fetchedProperties] = await Promise.all([
+          tenantsService.getAll(),
+          propertiesService.getAll()
+        ]);
+        setTenants(fetchedTenants);
+        setProperties(fetchedProperties);
+        setIsLoading(false);
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to load tenants and properties",
+          variant: "destructive"
+        });
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   // Get property name by ID
   const getPropertyName = (propertyId: string) => {
@@ -52,6 +78,7 @@ const Tenants = () => {
     );
   });
 
+  // Sorting logic remains the same as in the previous implementation
   const sortedTenants = [...filteredTenants].sort((a, b) => {
     if (sortField === "name" || sortField === "email") {
       return sortDirection === "asc"
@@ -91,102 +118,30 @@ const Tenants = () => {
     });
   };
 
-  const handleAddTenant = () => {
-    setShowAddModal(false);
-    toast({
-      title: "Success",
-      description: "Tenant has been added successfully."
-    });
+  const handleAddTenant = async (tenantData: Omit<Tenant, 'id'>) => {
+    try {
+      const newTenant = await tenantsService.create(tenantData);
+      setTenants([...tenants, newTenant]);
+      setShowAddModal(false);
+      toast({
+        title: "Success",
+        description: "Tenant has been added successfully."
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add tenant",
+        variant: "destructive"
+      });
+    }
   };
 
-  const renderTenantTable = (tenantsList: Tenant[]) => (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[250px]">
-              <Button variant="ghost" className="p-0 h-8" onClick={() => toggleSort("name")}>
-                Tenant Name <ArrowUpDown className="h-4 w-4 ml-1" />
-              </Button>
-            </TableHead>
-            <TableHead>Property</TableHead>
-            <TableHead>
-              <Button variant="ghost" className="p-0 h-8" onClick={() => toggleSort("rentAmount")}>
-                Rent <ArrowUpDown className="h-4 w-4 ml-1" />
-              </Button>
-            </TableHead>
-            <TableHead>
-              <Button variant="ghost" className="p-0 h-8" onClick={() => toggleSort("balance")}>
-                Balance <ArrowUpDown className="h-4 w-4 ml-1" />
-              </Button>
-            </TableHead>
-            <TableHead>
-              <Button variant="ghost" className="p-0 h-8" onClick={() => toggleSort("leaseEnd")}>
-                Lease End <ArrowUpDown className="h-4 w-4 ml-1" />
-              </Button>
-            </TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {tenantsList.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
-                No tenants found
-              </TableCell>
-            </TableRow>
-          ) : (
-            tenantsList.map((tenant) => (
-              <TableRow key={tenant.id}>
-                <TableCell className="font-medium">
-                  <div>
-                    <Link to={`/tenants/${tenant.id}`} className="hover:underline">
-                      {tenant.name}
-                    </Link>
-                    <div className="text-xs text-muted-foreground mt-1">{tenant.email}</div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div>
-                    <Link to={`/properties/${tenant.propertyId}`} className="hover:underline">
-                      {getPropertyName(tenant.propertyId)}
-                    </Link>
-                    {tenant.unitNumber && (
-                      <div className="text-xs text-muted-foreground">Unit {tenant.unitNumber}</div>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell>${tenant.rentAmount}</TableCell>
-                <TableCell>
-                  {tenant.balance > 0 ? (
-                    <Badge variant="destructive">${tenant.balance}</Badge>
-                  ) : (
-                    <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
-                      Paid
-                    </Badge>
-                  )}
-                </TableCell>
-                <TableCell>{formatDate(tenant.leaseEnd)}</TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline" size="icon" title="Record Payment">
-                      <Banknote className="h-4 w-4" />
-                    </Button>
-                    <Link to={`/tenants/${tenant.id}`}>
-                      <Button variant="outline" size="icon" title="View Details">
-                        <ClipboardList className="h-4 w-4" />
-                      </Button>
-                    </Link>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-    </div>
-  );
+  // Render method remains mostly the same, with minor adjustments for loading state
+  if (isLoading) {
+    return <div>Loading...</div>; // Consider using a proper loading component
+  }
 
+  // Rest of the component remains the same as the previous implementation
   return (
     <div className="space-y-6">
       <div>
@@ -269,13 +224,265 @@ const Tenants = () => {
           <TabsTrigger value="all">All Tenants</TabsTrigger>
         </TabsList>
         <TabsContent value="active" className="mt-4">
-          {renderTenantTable(activeTenants)}
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[250px]">
+                    <Button variant="ghost" className="p-0 h-8" onClick={() => toggleSort("name")}>
+                      Tenant Name <ArrowUpDown className="h-4 w-4 ml-1" />
+                    </Button>
+                  </TableHead>
+                  <TableHead>Property</TableHead>
+                  <TableHead>
+                    <Button variant="ghost" className="p-0 h-8" onClick={() => toggleSort("rentAmount")}>
+                      Rent <ArrowUpDown className="h-4 w-4 ml-1" />
+                    </Button>
+                  </TableHead>
+                  <TableHead>
+                    <Button variant="ghost" className="p-0 h-8" onClick={() => toggleSort("balance")}>
+                      Balance <ArrowUpDown className="h-4 w-4 ml-1" />
+                    </Button>
+                  </TableHead>
+                  <TableHead>
+                    <Button variant="ghost" className="p-0 h-8" onClick={() => toggleSort("leaseEnd")}>
+                      Lease End <ArrowUpDown className="h-4 w-4 ml-1" />
+                    </Button>
+                  </TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {activeTenants.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+                      No tenants found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  activeTenants.map((tenant) => (
+                    <TableRow key={tenant.id}>
+                      <TableCell className="font-medium">
+                        <div>
+                          <Link to={`/tenants/${tenant.id}`} className="hover:underline">
+                            {tenant.name}
+                          </Link>
+                          <div className="text-xs text-muted-foreground mt-1">{tenant.email}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <Link to={`/properties/${tenant.propertyId}`} className="hover:underline">
+                            {getPropertyName(tenant.propertyId)}
+                          </Link>
+                          {tenant.unitNumber && (
+                            <div className="text-xs text-muted-foreground">Unit {tenant.unitNumber}</div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>${tenant.rentAmount}</TableCell>
+                      <TableCell>
+                        {tenant.balance > 0 ? (
+                          <Badge variant="destructive">${tenant.balance}</Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
+                            Paid
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>{formatDate(tenant.leaseEnd)}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button variant="outline" size="icon" title="Record Payment">
+                            <Banknote className="h-4 w-4" />
+                          </Button>
+                          <Link to={`/tenants/${tenant.id}`}>
+                            <Button variant="outline" size="icon" title="View Details">
+                              <ClipboardList className="h-4 w-4" />
+                            </Button>
+                          </Link>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </TabsContent>
         <TabsContent value="inactive" className="mt-4">
-          {renderTenantTable(inactiveTenants)}
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[250px]">
+                    <Button variant="ghost" className="p-0 h-8" onClick={() => toggleSort("name")}>
+                      Tenant Name <ArrowUpDown className="h-4 w-4 ml-1" />
+                    </Button>
+                  </TableHead>
+                  <TableHead>Property</TableHead>
+                  <TableHead>
+                    <Button variant="ghost" className="p-0 h-8" onClick={() => toggleSort("rentAmount")}>
+                      Rent <ArrowUpDown className="h-4 w-4 ml-1" />
+                    </Button>
+                  </TableHead>
+                  <TableHead>
+                    <Button variant="ghost" className="p-0 h-8" onClick={() => toggleSort("balance")}>
+                      Balance <ArrowUpDown className="h-4 w-4 ml-1" />
+                    </Button>
+                  </TableHead>
+                  <TableHead>
+                    <Button variant="ghost" className="p-0 h-8" onClick={() => toggleSort("leaseEnd")}>
+                      Lease End <ArrowUpDown className="h-4 w-4 ml-1" />
+                    </Button>
+                  </TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {inactiveTenants.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+                      No tenants found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  inactiveTenants.map((tenant) => (
+                    <TableRow key={tenant.id}>
+                      <TableCell className="font-medium">
+                        <div>
+                          <Link to={`/tenants/${tenant.id}`} className="hover:underline">
+                            {tenant.name}
+                          </Link>
+                          <div className="text-xs text-muted-foreground mt-1">{tenant.email}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <Link to={`/properties/${tenant.propertyId}`} className="hover:underline">
+                            {getPropertyName(tenant.propertyId)}
+                          </Link>
+                          {tenant.unitNumber && (
+                            <div className="text-xs text-muted-foreground">Unit {tenant.unitNumber}</div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>${tenant.rentAmount}</TableCell>
+                      <TableCell>
+                        {tenant.balance > 0 ? (
+                          <Badge variant="destructive">${tenant.balance}</Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
+                            Paid
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>{formatDate(tenant.leaseEnd)}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button variant="outline" size="icon" title="Record Payment">
+                            <Banknote className="h-4 w-4" />
+                          </Button>
+                          <Link to={`/tenants/${tenant.id}`}>
+                            <Button variant="outline" size="icon" title="View Details">
+                              <ClipboardList className="h-4 w-4" />
+                            </Button>
+                          </Link>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </TabsContent>
         <TabsContent value="all" className="mt-4">
-          {renderTenantTable(sortedTenants)}
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[250px]">
+                    <Button variant="ghost" className="p-0 h-8" onClick={() => toggleSort("name")}>
+                      Tenant Name <ArrowUpDown className="h-4 w-4 ml-1" />
+                    </Button>
+                  </TableHead>
+                  <TableHead>Property</TableHead>
+                  <TableHead>
+                    <Button variant="ghost" className="p-0 h-8" onClick={() => toggleSort("rentAmount")}>
+                      Rent <ArrowUpDown className="h-4 w-4 ml-1" />
+                    </Button>
+                  </TableHead>
+                  <TableHead>
+                    <Button variant="ghost" className="p-0 h-8" onClick={() => toggleSort("balance")}>
+                      Balance <ArrowUpDown className="h-4 w-4 ml-1" />
+                    </Button>
+                  </TableHead>
+                  <TableHead>
+                    <Button variant="ghost" className="p-0 h-8" onClick={() => toggleSort("leaseEnd")}>
+                      Lease End <ArrowUpDown className="h-4 w-4 ml-1" />
+                    </Button>
+                  </TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sortedTenants.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+                      No tenants found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  sortedTenants.map((tenant) => (
+                    <TableRow key={tenant.id}>
+                      <TableCell className="font-medium">
+                        <div>
+                          <Link to={`/tenants/${tenant.id}`} className="hover:underline">
+                            {tenant.name}
+                          </Link>
+                          <div className="text-xs text-muted-foreground mt-1">{tenant.email}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <Link to={`/properties/${tenant.propertyId}`} className="hover:underline">
+                            {getPropertyName(tenant.propertyId)}
+                          </Link>
+                          {tenant.unitNumber && (
+                            <div className="text-xs text-muted-foreground">Unit {tenant.unitNumber}</div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>${tenant.rentAmount}</TableCell>
+                      <TableCell>
+                        {tenant.balance > 0 ? (
+                          <Badge variant="destructive">${tenant.balance}</Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
+                            Paid
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>{formatDate(tenant.leaseEnd)}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button variant="outline" size="icon" title="Record Payment">
+                            <Banknote className="h-4 w-4" />
+                          </Button>
+                          <Link to={`/tenants/${tenant.id}`}>
+                            <Button variant="outline" size="icon" title="View Details">
+                              <ClipboardList className="h-4 w-4" />
+                            </Button>
+                          </Link>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </TabsContent>
       </Tabs>
 

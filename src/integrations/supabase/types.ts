@@ -9,7 +9,271 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      documents: {
+        Row: {
+          created_at: string | null
+          file_size: string
+          file_type: string
+          id: string
+          name: string
+          property_id: string | null
+          tenant_id: string | null
+          type: string
+          updated_at: string | null
+          upload_date: string
+          url: string
+        }
+        Insert: {
+          created_at?: string | null
+          file_size: string
+          file_type: string
+          id?: string
+          name: string
+          property_id?: string | null
+          tenant_id?: string | null
+          type: string
+          updated_at?: string | null
+          upload_date?: string
+          url: string
+        }
+        Update: {
+          created_at?: string | null
+          file_size?: string
+          file_type?: string
+          id?: string
+          name?: string
+          property_id?: string | null
+          tenant_id?: string | null
+          type?: string
+          updated_at?: string | null
+          upload_date?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance: {
+        Row: {
+          assigned_to: string | null
+          cost: number | null
+          created_at: string | null
+          date_completed: string | null
+          date_submitted: string
+          description: string
+          id: string
+          priority: string
+          property_id: string
+          status: string
+          tenant_id: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          cost?: number | null
+          created_at?: string | null
+          date_completed?: string | null
+          date_submitted?: string
+          description: string
+          id?: string
+          priority: string
+          property_id: string
+          status: string
+          tenant_id?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          cost?: number | null
+          created_at?: string | null
+          date_completed?: string | null
+          date_submitted?: string
+          description?: string
+          id?: string
+          priority?: string
+          property_id?: string
+          status?: string
+          tenant_id?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string | null
+          date: string
+          id: string
+          method: string
+          notes: string | null
+          status: string
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          date: string
+          id?: string
+          method: string
+          notes?: string | null
+          status: string
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          date?: string
+          id?: string
+          method?: string
+          notes?: string | null
+          status?: string
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      properties: {
+        Row: {
+          address: string
+          city: string
+          created_at: string | null
+          id: string
+          image: string | null
+          name: string
+          state: string
+          type: string
+          units: number
+          updated_at: string | null
+          zip_code: string
+        }
+        Insert: {
+          address: string
+          city: string
+          created_at?: string | null
+          id?: string
+          image?: string | null
+          name: string
+          state: string
+          type: string
+          units: number
+          updated_at?: string | null
+          zip_code: string
+        }
+        Update: {
+          address?: string
+          city?: string
+          created_at?: string | null
+          id?: string
+          image?: string | null
+          name?: string
+          state?: string
+          type?: string
+          units?: number
+          updated_at?: string | null
+          zip_code?: string
+        }
+        Relationships: []
+      }
+      tenants: {
+        Row: {
+          balance: number | null
+          created_at: string | null
+          deposit_amount: number
+          email: string
+          id: string
+          lease_end: string
+          lease_start: string
+          name: string
+          phone: string | null
+          property_id: string | null
+          rent_amount: number
+          status: string
+          unit_number: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          balance?: number | null
+          created_at?: string | null
+          deposit_amount: number
+          email: string
+          id?: string
+          lease_end: string
+          lease_start: string
+          name: string
+          phone?: string | null
+          property_id?: string | null
+          rent_amount: number
+          status: string
+          unit_number?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          balance?: number | null
+          created_at?: string | null
+          deposit_amount?: number
+          email?: string
+          id?: string
+          lease_end?: string
+          lease_start?: string
+          name?: string
+          phone?: string | null
+          property_id?: string | null
+          rent_amount?: number
+          status?: string
+          unit_number?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenants_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
