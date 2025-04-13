@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,6 +39,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
+        console.log("Auth state changed:", event, currentSession?.user?.email);
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
@@ -56,6 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      console.log("Retrieved session:", currentSession?.user?.email);
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
       
@@ -73,6 +76,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchProfile = async (userId: string) => {
     try {
+      console.log("Fetching profile for user:", userId);
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
@@ -85,8 +89,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (data) {
+        console.log("Profile found:", data);
         setProfile(data as UserProfile);
         setUserType(data.user_type as UserType);
+      } else {
+        console.log("No profile found for user:", userId);
       }
     } catch (error) {
       console.error("Error fetching user profile:", error);
@@ -95,9 +102,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = async (email: string, password: string) => {
     try {
+      console.log("Signing in user:", email);
       setIsLoading(true);
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      
+      if (error) {
+        console.error("Sign in error:", error.message);
+        throw error;
+      }
+      
+      console.log("Sign in successful:", data.user?.email);
     } catch (error: any) {
       console.error("Sign in error:", error.message);
       throw error;
@@ -108,8 +122,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, userType: UserType, fullName?: string) => {
     try {
+      console.log("Signing up user:", email, "as", userType);
       setIsLoading(true);
-      const { error } = await supabase.auth.signUp({ 
+      const { data, error } = await supabase.auth.signUp({ 
         email, 
         password,
         options: {
@@ -120,8 +135,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Sign up error:", error.message);
+        throw error;
+      }
       
+      console.log("Sign up successful, confirmation status:", data.user?.email);
       toast({
         title: "Account created",
         description: "Please check your email to confirm your account",
@@ -136,13 +155,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
+      console.log("Signing out user");
       setIsLoading(true);
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error("Sign out error:", error.message);
+        throw error;
+      }
+      
       toast({
         title: "Signed out",
         description: "You have been signed out successfully",
       });
     } catch (error: any) {
+      console.error("Sign out error:", error.message);
       toast({
         title: "Error signing out",
         description: error.message || "An unexpected error occurred",

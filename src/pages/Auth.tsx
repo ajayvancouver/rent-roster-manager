@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -31,6 +31,13 @@ const Auth = () => {
   const [error, setError] = useState<string | null>(null);
 
   // If already authenticated, redirect to dashboard
+  useEffect(() => {
+    if (user) {
+      navigate("/");
+    }
+  }, [user, navigate]);
+
+  // Redirect if already logged in
   if (user) {
     return <Navigate to="/" />;
   }
@@ -38,6 +45,11 @@ const Auth = () => {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    
+    if (!email.trim() || !password) {
+      setError("Please enter both email and password");
+      return;
+    }
     
     try {
       await signIn(email, password);
@@ -49,9 +61,9 @@ const Auth = () => {
     } catch (error: any) {
       console.error("Sign in error:", error);
       setError(
-        error.message.includes("Invalid login credentials") 
+        error.message?.includes("Invalid login credentials") 
           ? "Incorrect email or password. Please try again." 
-          : "An unexpected error occurred. Please try again later."
+          : error.message || "An unexpected error occurred. Please try again later."
       );
     }
   };
@@ -60,13 +72,18 @@ const Auth = () => {
     e.preventDefault();
     setError(null);
     
+    if (!email.trim()) {
+      setError("Please enter a valid email address");
+      return;
+    }
+    
     if (!fullName.trim()) {
-      setError("Please provide your full name.");
+      setError("Please provide your full name");
       return;
     }
     
     if (password.length < 6) {
-      setError("Password must be at least 6 characters long.");
+      setError("Password must be at least 6 characters long");
       return;
     }
     
@@ -80,9 +97,9 @@ const Auth = () => {
     } catch (error: any) {
       console.error("Sign up error:", error);
       setError(
-        error.message.includes("User already registered")
+        error.message?.includes("User already registered")
           ? "An account with this email already exists. Please sign in." 
-          : "Registration failed. Please try again."
+          : error.message || "Registration failed. Please try again."
       );
     }
   };
