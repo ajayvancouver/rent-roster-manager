@@ -18,6 +18,7 @@ import Maintenance from "./pages/Maintenance";
 import MaintenanceDetail from "./pages/MaintenanceDetail";
 import Documents from "./pages/Documents";
 import DocumentDetail from "./pages/DocumentDetail";
+import Account from "./pages/Account";
 import TenantDashboard from "./pages/tenant/TenantDashboard";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -129,6 +130,14 @@ const App = () => (
                   </SidebarLayout>
                 }
               />
+              <Route
+                path="/account"
+                element={
+                  <SidebarLayout>
+                    <Account />
+                  </SidebarLayout>
+                }
+              />
             </Route>
             
             {/* Protected Tenant Routes */}
@@ -136,6 +145,10 @@ const App = () => (
               <Route
                 path="/tenant"
                 element={<TenantDashboard />}
+              />
+              <Route
+                path="/account"
+                element={<Account />}
               />
             </Route>
             

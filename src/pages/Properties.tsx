@@ -8,7 +8,6 @@ import PropertyStats from "@/components/properties/PropertyStats";
 import PropertySearch from "@/components/properties/PropertySearch";
 import PropertyGrid from "@/components/properties/PropertyGrid";
 import PropertyList from "@/components/properties/PropertyList";
-import GenerateSampleDataButton from "@/components/properties/GenerateSampleDataButton";
 
 const Properties = () => {
   const { toast } = useToast();
@@ -33,18 +32,10 @@ const Properties = () => {
   // Handle successful property addition
   const onPropertyAdded = () => {
     setShowAddModal(false);
+    fetchProperties(); // Refresh properties after adding
     toast({
       title: "Success",
       description: "Property has been added successfully."
-    });
-  };
-
-  const handleDataGenerated = () => {
-    // Refresh the properties list after generating sample data
-    fetchProperties();
-    toast({
-      title: "Data Refreshed",
-      description: "Properties list has been updated with sample data."
     });
   };
 
@@ -70,7 +61,6 @@ const Properties = () => {
           setViewType={setViewType}
           onAddProperty={() => setShowAddModal(true)}
         />
-        <GenerateSampleDataButton onSuccess={handleDataGenerated} />
       </div>
 
       {/* Loading state */}

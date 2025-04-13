@@ -1,7 +1,9 @@
 
-import { useState } from "react";
-import { Wrench, AlertTriangle, User, Building2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Wrench, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,8 +14,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { Maintenance } from "@/types";
-import { properties, tenants } from "@/data/mockData";
+import { Maintenance, Property, Tenant } from "@/types";
 
 interface AddMaintenanceRequestFormProps {
   onSuccess: () => void;
@@ -21,7 +22,11 @@ interface AddMaintenanceRequestFormProps {
 
 const AddMaintenanceRequestForm = ({ onSuccess }: AddMaintenanceRequestFormProps) => {
   const { toast } = useToast();
+  const { user, profile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [loadingData, setLoadingData] = useState(true);
   
   const [formData, setFormData] = useState<Omit<Maintenance, "id" | "dateCompleted" | "assignedTo" | "cost">>({
     propertyId: "",
@@ -32,6 +37,75 @@ const AddMaintenanceRequestForm = ({ onSuccess }: AddMaintenanceRequestFormProps
     status: "pending",
     dateSubmitted: new Date().toISOString(),
   });
+
+  // Fetch properties and tenants from the database
+  useEffect(() => {
+    const fetchData = async () => {
+      const managerId = profile?.id || user?.id;
+      
+      if (!managerId) {
+        setLoadingData(false);
+        return;
+      }
+      
+      try {
+        // Fetch properties
+        const { data: propertiesData, error: propertiesError } = await supabase
+          .from('properties')
+          .select('*')
+          .eq('manager_id', managerId);
+        
+        if (propertiesError) throw propertiesError;
+        
+        // Fetch tenants
+        const { data: tenantsData, error: tenantsError } = await supabase
+          .from('tenants')
+          .select('*');
+        
+        if (tenantsError) throw tenantsError;
+        
+        // Map database results to our model
+        setProperties(propertiesData.map(item => ({
+          id: item.id,
+          name: item.name,
+          address: item.address,
+          city: item.city,
+          state: item.state,
+          zipCode: item.zip_code,
+          units: item.units,
+          type: item.type,
+          image: item.image,
+          managerId: item.manager_id
+        })));
+        
+        setTenants(tenantsData.map(item => ({
+          id: item.id,
+          name: item.name,
+          email: item.email,
+          phone: item.phone,
+          propertyId: item.property_id,
+          unitNumber: item.unit_number,
+          status: item.status,
+          rentAmount: item.rent_amount,
+          depositAmount: item.deposit_amount,
+          balance: item.balance,
+          leaseStart: item.lease_start,
+          leaseEnd: item.lease_end
+        })));
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load properties and tenants. Please try again.",
+          variant: "destructive"
+        });
+      } finally {
+        setLoadingData(false);
+      }
+    };
+    
+    fetchData();
+  }, [user, profile, toast]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -58,11 +132,34 @@ const AddMaintenanceRequestForm = ({ onSuccess }: AddMaintenanceRequestFormProps
     setIsLoading(true);
     
     try {
-      // In a real app, this would be an API call
-      console.log("Submitting maintenance request:", formData);
+      const managerId = profile?.id || user?.id;
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (!managerId) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to submit a maintenance request",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Create maintenance request in Supabase
+      const { data, error } = await supabase
+        .from('maintenance')
+        .insert([
+          {
+            title: formData.title,
+            description: formData.description,
+            priority: formData.priority,
+            status: formData.status,
+            property_id: formData.propertyId,
+            tenant_id: formData.tenantId || null,
+            date_submitted: formData.dateSubmitted
+          }
+        ])
+        .select();
+      
+      if (error) throw error;
       
       toast({
         title: "Maintenance request submitted!",
@@ -105,9 +202,10 @@ const AddMaintenanceRequestForm = ({ onSuccess }: AddMaintenanceRequestFormProps
         <Select 
           value={formData.propertyId} 
           onValueChange={(value) => handleSelectChange("propertyId", value)}
+          disabled={loadingData}
         >
           <SelectTrigger>
-            <SelectValue placeholder="Select property" />
+            <SelectValue placeholder={loadingData ? "Loading properties..." : "Select property"} />
           </SelectTrigger>
           <SelectContent>
             {properties.map(property => (
@@ -124,17 +222,30 @@ const AddMaintenanceRequestForm = ({ onSuccess }: AddMaintenanceRequestFormProps
         <Select 
           value={formData.tenantId} 
           onValueChange={(value) => handleSelectChange("tenantId", value)}
-          disabled={!formData.propertyId}
+          disabled={!formData.propertyId || loadingData}
         >
           <SelectTrigger>
-            <SelectValue placeholder={formData.propertyId ? "Select tenant" : "Select property first"} />
+            <SelectValue placeholder={
+              loadingData 
+                ? "Loading tenants..." 
+                : formData.propertyId 
+                  ? filteredTenants.length > 0 
+                    ? "Select tenant" 
+                    : "No tenants for this property" 
+                  : "Select property first"
+            } />
           </SelectTrigger>
           <SelectContent>
-            {filteredTenants.map(tenant => (
-              <SelectItem key={tenant.id} value={tenant.id}>
-                {tenant.name}
+            {filteredTenants.length > 0 ? 
+              filteredTenants.map(tenant => (
+                <SelectItem key={tenant.id} value={tenant.id}>
+                  {tenant.name}
+                </SelectItem>
+              )) : 
+              <SelectItem value="no-tenants" disabled>
+                No tenants found for this property
               </SelectItem>
-            ))}
+            }
           </SelectContent>
         </Select>
       </div>

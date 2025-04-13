@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
@@ -9,7 +10,8 @@ import {
   FileText, 
   Menu, 
   X,
-  ChevronRight
+  ChevronRight,
+  UserRound
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -60,6 +62,7 @@ const SidebarLayout = ({ children }: SidebarLayoutProps) => {
     { icon: Banknote, label: "Payments", path: "/payments" },
     { icon: Wrench, label: "Maintenance", path: "/maintenance" },
     { icon: FileText, label: "Documents", path: "/documents" },
+    { icon: UserRound, label: "Account", path: "/account" },
   ];
 
   // Close sidebar on route change when on mobile
