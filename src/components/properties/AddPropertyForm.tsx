@@ -12,6 +12,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { Property } from "@/types";
+import { propertiesService } from "@/services/supabaseService";
 
 interface AddPropertyFormProps {
   onSuccess: () => void;
@@ -48,14 +49,19 @@ const AddPropertyForm = ({ onSuccess }: AddPropertyFormProps) => {
   };
 
   const handleSubmit = async () => {
+    if (!formData.name || !formData.address || !formData.city || !formData.state || !formData.zipCode) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill out all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
-      // In a real app, this would be an API call
-      console.log("Submitting property:", formData);
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await propertiesService.create(formData);
       
       toast({
         title: "Property added!",
@@ -88,6 +94,7 @@ const AddPropertyForm = ({ onSuccess }: AddPropertyFormProps) => {
             className="pl-9"
             value={formData.name}
             onChange={handleChange}
+            disabled={isLoading}
             required
           />
         </div>
@@ -104,6 +111,7 @@ const AddPropertyForm = ({ onSuccess }: AddPropertyFormProps) => {
             className="pl-9"
             value={formData.address}
             onChange={handleChange}
+            disabled={isLoading}
             required
           />
         </div>
@@ -118,6 +126,7 @@ const AddPropertyForm = ({ onSuccess }: AddPropertyFormProps) => {
             placeholder="City"
             value={formData.city}
             onChange={handleChange}
+            disabled={isLoading}
             required
           />
         </div>
@@ -129,6 +138,7 @@ const AddPropertyForm = ({ onSuccess }: AddPropertyFormProps) => {
             placeholder="State"
             value={formData.state}
             onChange={handleChange}
+            disabled={isLoading}
             required
           />
         </div>
@@ -143,6 +153,7 @@ const AddPropertyForm = ({ onSuccess }: AddPropertyFormProps) => {
             placeholder="Zip Code"
             value={formData.zipCode}
             onChange={handleChange}
+            disabled={isLoading}
             required
           />
         </div>
@@ -156,6 +167,7 @@ const AddPropertyForm = ({ onSuccess }: AddPropertyFormProps) => {
             placeholder="Number of units"
             value={formData.units}
             onChange={handleChange}
+            disabled={isLoading}
             required
           />
         </div>
@@ -163,7 +175,12 @@ const AddPropertyForm = ({ onSuccess }: AddPropertyFormProps) => {
 
       <div className="space-y-2">
         <Label htmlFor="type">Property Type</Label>
-        <Select name="type" value={formData.type} onValueChange={handleTypeChange}>
+        <Select 
+          name="type" 
+          value={formData.type} 
+          onValueChange={handleTypeChange}
+          disabled={isLoading}
+        >
           <SelectTrigger>
             <SelectValue placeholder="Select property type" />
           </SelectTrigger>
@@ -184,6 +201,7 @@ const AddPropertyForm = ({ onSuccess }: AddPropertyFormProps) => {
           placeholder="Image URL"
           value={formData.image || ""}
           onChange={handleChange}
+          disabled={isLoading}
         />
       </div>
     </div>
