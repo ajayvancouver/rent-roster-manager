@@ -26,7 +26,7 @@ export const TenantStatusField: React.FC<TenantStatusFieldProps> = ({
         value={status} 
         onValueChange={(value) => onStatusChange(value as Tenant["status"])}
       >
-        <SelectTrigger>
+        <SelectTrigger id="status">
           <SelectValue placeholder="Select status" />
         </SelectTrigger>
         <SelectContent>
