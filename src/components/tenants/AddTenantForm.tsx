@@ -15,7 +15,7 @@ import { Tenant } from "@/types";
 import { properties } from "@/data/mockData";
 
 interface AddTenantFormProps {
-  onSuccess: () => void;
+  onSuccess: (tenantData: Omit<Tenant, "id">) => void;
 }
 
 const AddTenantForm = ({ onSuccess }: AddTenantFormProps) => {
@@ -68,7 +68,7 @@ const AddTenantForm = ({ onSuccess }: AddTenantFormProps) => {
         description: `${formData.name} has been added successfully.`
       });
       
-      onSuccess();
+      onSuccess(formData);
     } catch (error) {
       console.error("Error adding tenant:", error);
       toast({
