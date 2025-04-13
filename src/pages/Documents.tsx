@@ -1,10 +1,11 @@
 
 import { useState } from "react";
-import { Search, FileText, FileUp, File, Filter, Plus } from "lucide-react";
+import { Search, FileText, FileUp, File, Filter, Plus, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Link } from "react-router-dom";
 import {
   Select,
   SelectContent,
@@ -88,13 +89,15 @@ const Documents = () => {
               </div>
             </div>
             <div className="mt-4 flex justify-end gap-2">
-              <Button variant="outline" size="sm">
-                <File className="mr-1 h-4 w-4" />
-                View
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/documents/1">
+                  <File className="mr-1 h-4 w-4" />
+                  View Details
+                </Link>
               </Button>
               <Button variant="outline" size="sm">
-                <FileUp className="mr-1 h-4 w-4" />
-                Download
+                <ExternalLink className="mr-1 h-4 w-4" />
+                Open
               </Button>
             </div>
           </CardContent>
@@ -119,13 +122,15 @@ const Documents = () => {
               </div>
             </div>
             <div className="mt-4 flex justify-end gap-2">
-              <Button variant="outline" size="sm">
-                <File className="mr-1 h-4 w-4" />
-                View
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/documents/2">
+                  <File className="mr-1 h-4 w-4" />
+                  View Details
+                </Link>
               </Button>
               <Button variant="outline" size="sm">
-                <FileUp className="mr-1 h-4 w-4" />
-                Download
+                <ExternalLink className="mr-1 h-4 w-4" />
+                Open
               </Button>
             </div>
           </CardContent>
@@ -150,13 +155,15 @@ const Documents = () => {
               </div>
             </div>
             <div className="mt-4 flex justify-end gap-2">
-              <Button variant="outline" size="sm">
-                <File className="mr-1 h-4 w-4" />
-                View
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/documents/3">
+                  <File className="mr-1 h-4 w-4" />
+                  View Details
+                </Link>
               </Button>
               <Button variant="outline" size="sm">
-                <FileUp className="mr-1 h-4 w-4" />
-                Download
+                <ExternalLink className="mr-1 h-4 w-4" />
+                Open
               </Button>
             </div>
           </CardContent>

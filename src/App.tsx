@@ -13,8 +13,11 @@ import TenantDetail from "./pages/TenantDetail";
 import Properties from "./pages/Properties";
 import PropertyDetail from "./pages/PropertyDetail";
 import Payments from "./pages/Payments";
+import PaymentDetail from "./pages/PaymentDetail";
 import Maintenance from "./pages/Maintenance";
+import MaintenanceDetail from "./pages/MaintenanceDetail";
 import Documents from "./pages/Documents";
+import DocumentDetail from "./pages/DocumentDetail";
 import TenantDashboard from "./pages/tenant/TenantDashboard";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -86,6 +89,14 @@ const App = () => (
                 }
               />
               <Route
+                path="/payments/:id"
+                element={
+                  <SidebarLayout>
+                    <PaymentDetail />
+                  </SidebarLayout>
+                }
+              />
+              <Route
                 path="/maintenance"
                 element={
                   <SidebarLayout>
@@ -94,10 +105,26 @@ const App = () => (
                 }
               />
               <Route
+                path="/maintenance/:id"
+                element={
+                  <SidebarLayout>
+                    <MaintenanceDetail />
+                  </SidebarLayout>
+                }
+              />
+              <Route
                 path="/documents"
                 element={
                   <SidebarLayout>
                     <Documents />
+                  </SidebarLayout>
+                }
+              />
+              <Route
+                path="/documents/:id"
+                element={
+                  <SidebarLayout>
+                    <DocumentDetail />
                   </SidebarLayout>
                 }
               />

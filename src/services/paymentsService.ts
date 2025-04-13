@@ -26,6 +26,40 @@ export const paymentsService = {
     }));
   },
 
+  async getById(id: string) {
+    const { data, error } = await supabase
+      .from('payments')
+      .select('*, tenants(name, email, property_id, unit_number, properties(name))')
+      .eq('id', id)
+      .single();
+    
+    if (error) {
+      console.error("Error fetching payment:", error);
+      return { data: null, error };
+    }
+    
+    if (!data) {
+      return { data: null, error: null };
+    }
+    
+    // Map database columns to our TypeScript interface
+    const payment: Payment = {
+      id: data.id,
+      tenantId: data.tenant_id,
+      tenantName: data.tenants ? data.tenants.name : 'Unknown',
+      propertyId: data.tenants ? data.tenants.property_id : null,
+      propertyName: data.tenants && data.tenants.properties ? data.tenants.properties.name : null,
+      unitNumber: data.tenants ? data.tenants.unit_number : null,
+      amount: data.amount,
+      date: data.date,
+      method: data.method as 'cash' | 'check' | 'bank transfer' | 'credit card',
+      status: data.status as 'pending' | 'completed' | 'failed',
+      notes: data.notes || undefined
+    };
+    
+    return { data: payment, error: null };
+  },
+
   async getByTenantId(tenantId: string): Promise<Payment[]> {
     const { data, error } = await supabase
       .from('payments')

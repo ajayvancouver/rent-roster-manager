@@ -1,7 +1,6 @@
 
-import { Calendar, ArrowUpDown } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Link } from "react-router-dom";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -10,16 +9,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { Payment } from "@/types";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 interface PaymentsTableProps {
   payments: Payment[];
   isLoading: boolean;
-  toggleSort: (field: keyof Payment) => void;
+  toggleSort: (field: string) => void;
   getTenantName: (tenantId: string) => string;
-  getPropertyInfo: (tenantId: string) => { name: string; unit: string };
+  getPropertyInfo: (tenantId: string) => { name: string | null; unit: string | null };
   formatDate: (date: string) => string;
-  getStatusColor: (status: Payment["status"]) => string;
+  getStatusColor: (status: string) => string;
 }
 
 const PaymentsTable = ({
@@ -31,79 +33,77 @@ const PaymentsTable = ({
   formatDate,
   getStatusColor,
 }: PaymentsTableProps) => {
-  if (isLoading) {
-    return (
-      <div className="flex justify-center py-12">
-        <p>Loading payments data...</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="rounded-md border">
+    <div className="border rounded-md">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[200px]">Tenant</TableHead>
+            <TableHead className="w-[100px]">
+              <button
+                onClick={() => toggleSort("date")}
+                className="flex items-center gap-1"
+              >
+                Date
+                <ChevronDown className="h-4 w-4" />
+              </button>
+            </TableHead>
+            <TableHead>Tenant</TableHead>
             <TableHead>Property</TableHead>
             <TableHead>
-              <Button variant="ghost" className="p-0 h-8" onClick={() => toggleSort("date")}>
-                Date <ArrowUpDown className="h-4 w-4 ml-1" />
-              </Button>
-            </TableHead>
-            <TableHead>
-              <Button variant="ghost" className="p-0 h-8" onClick={() => toggleSort("amount")}>
-                Amount <ArrowUpDown className="h-4 w-4 ml-1" />
-              </Button>
+              <button
+                onClick={() => toggleSort("amount")}
+                className="flex items-center gap-1"
+              >
+                Amount
+                <ChevronDown className="h-4 w-4" />
+              </button>
             </TableHead>
             <TableHead>Method</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>Notes</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {payments.length === 0 ? (
+          {isLoading ? (
             <TableRow>
-              <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
-                No payments found
+              <TableCell colSpan={7} className="h-24 text-center">
+                Loading payments...
+              </TableCell>
+            </TableRow>
+          ) : payments.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={7} className="h-24 text-center">
+                No payments found.
               </TableCell>
             </TableRow>
           ) : (
             payments.map((payment) => {
-              const propertyInfo = getPropertyInfo(payment.tenantId);
-              
+              const property = getPropertyInfo(payment.tenantId);
               return (
                 <TableRow key={payment.id}>
                   <TableCell className="font-medium">
-                    {getTenantName(payment.tenantId)}
+                    {formatDate(payment.date)}
                   </TableCell>
+                  <TableCell>{payment.tenantName}</TableCell>
                   <TableCell>
-                    <div>
-                      {propertyInfo.name}
-                      {propertyInfo.unit && (
-                        <div className="text-xs text-muted-foreground">{propertyInfo.unit}</div>
-                      )}
-                    </div>
+                    {property.name} {property.unit ? `Unit ${property.unit}` : ""}
                   </TableCell>
-                  <TableCell>{formatDate(payment.date)}</TableCell>
-                  <TableCell className="font-semibold">${payment.amount.toLocaleString()}</TableCell>
+                  <TableCell>${payment.amount.toFixed(2)}</TableCell>
                   <TableCell className="capitalize">{payment.method}</TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={getStatusColor(payment.status)}>
+                    <Badge
+                      variant="outline"
+                      className={cn(getStatusColor(payment.status))}
+                    >
                       {payment.status}
                     </Badge>
                   </TableCell>
-                  <TableCell className="max-w-[200px] truncate">
-                    {payment.notes || "-"}
-                  </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button variant="outline" size="sm">
-                        <Calendar className="h-4 w-4 mr-1" />
-                        Details
-                      </Button>
-                    </div>
+                    <Button variant="ghost" size="sm" asChild>
+                      <Link to={`/payments/${payment.id}`}>
+                        View
+                      </Link>
+                    </Button>
                   </TableCell>
                 </TableRow>
               );

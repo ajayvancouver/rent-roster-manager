@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Document } from "@/types";
 
@@ -24,6 +23,40 @@ export const documentsService = {
       fileType: item.file_type, // Map file_type to fileType
       url: item.url
     }));
+  },
+
+  async getById(id: string) {
+    const { data, error } = await supabase
+      .from('documents')
+      .select('*, tenants(name, email), properties(name)')
+      .eq('id', id)
+      .single();
+    
+    if (error) {
+      console.error("Error fetching document:", error);
+      return { data: null, error };
+    }
+    
+    if (!data) {
+      return { data: null, error: null };
+    }
+    
+    // Map database columns to our TypeScript interface
+    const document: Document = {
+      id: data.id,
+      name: data.name,
+      type: data.type as 'lease' | 'payment' | 'maintenance' | 'other',
+      tenantId: data.tenant_id || undefined,
+      tenantName: data.tenants ? data.tenants.name : undefined,
+      propertyId: data.property_id || undefined,
+      propertyName: data.properties ? data.properties.name : undefined,
+      uploadDate: data.upload_date,
+      fileSize: data.file_size,
+      fileType: data.file_type,
+      url: data.url
+    };
+    
+    return { data: document, error: null };
   },
 
   async getByTenantId(tenantId: string): Promise<Document[]> {

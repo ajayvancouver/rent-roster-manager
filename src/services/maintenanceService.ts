@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Maintenance } from "@/types";
 
@@ -28,6 +27,44 @@ export const maintenanceService = {
       assignedTo: item.assigned_to || undefined,
       cost: item.cost || undefined
     }));
+  },
+
+  async getById(id: string) {
+    const { data, error } = await supabase
+      .from('maintenance')
+      .select('*, properties(name), tenants(name, email, unit_number)')
+      .eq('id', id)
+      .single();
+    
+    if (error) {
+      console.error("Error fetching maintenance request:", error);
+      return { data: null, error };
+    }
+    
+    if (!data) {
+      return { data: null, error: null };
+    }
+    
+    // Map database columns to our TypeScript interface
+    const maintenance: Maintenance = {
+      id: data.id,
+      propertyId: data.property_id,
+      propertyName: data.properties ? data.properties.name : 'Unknown',
+      tenantId: data.tenant_id || undefined,
+      tenantName: data.tenants ? data.tenants.name : 'Unknown Tenant',
+      tenantEmail: data.tenants ? data.tenants.email : null,
+      unitNumber: data.tenants ? data.tenants.unit_number : null,
+      title: data.title,
+      description: data.description,
+      priority: data.priority as 'low' | 'medium' | 'high' | 'emergency',
+      status: data.status as 'pending' | 'in-progress' | 'completed' | 'cancelled',
+      dateSubmitted: data.date_submitted,
+      dateCompleted: data.date_completed || undefined,
+      assignedTo: data.assigned_to || undefined,
+      cost: data.cost || undefined
+    };
+    
+    return { data: maintenance, error: null };
   },
 
   async getByTenantId(tenantId: string): Promise<Maintenance[]> {
