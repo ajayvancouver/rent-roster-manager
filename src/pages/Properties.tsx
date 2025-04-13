@@ -30,7 +30,8 @@ const Properties = () => {
     fetchProperties
   } = useProperties();
 
-  const handleAddProperty = () => {
+  // Handle successful property addition
+  const onPropertyAdded = () => {
     setShowAddModal(false);
     toast({
       title: "Success",
@@ -101,9 +102,9 @@ const Properties = () => {
         title="Add New Property"
         open={showAddModal}
         onOpenChange={setShowAddModal}
-        onSave={handleAddProperty}
+        onSave={onPropertyAdded}
       >
-        <AddPropertyForm onSuccess={handleAddProperty} />
+        <AddPropertyForm onSuccess={onPropertyAdded} />
       </AddEntityModal>
     </div>
   );
