@@ -480,7 +480,10 @@ const Tenants = () => {
         title="Add New Tenant"
         open={showAddModal}
         onOpenChange={setShowAddModal}
-        onSave={handleAddTenant}
+        onSave={() => {
+          // This is just a placeholder. The actual saving is triggered by the form component
+          // No operation needed here
+        }}
       >
         <AddTenantForm onSuccess={handleAddTenant} />
       </AddEntityModal>

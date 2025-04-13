@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { DialogProps } from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,14 @@ const AddEntityModal = ({
   isLoading = false,
   ...props
 }: AddEntityModalProps) => {
+  // This is just a placeholder. The actual form data is managed in the child component.
+  // We're not actually using this function in this component.
+  const handleSave = () => {
+    // The child component (AddTenantForm) will handle the actual saving process
+    // through its onSuccess prop
+    onSave();
+  };
+
   return (
     <Dialog {...props}>
       <DialogContent className="sm:max-w-[550px]">
@@ -41,7 +49,7 @@ const AddEntityModal = ({
           <Button variant="outline" type="button" asChild>
             <DialogClose>Cancel</DialogClose>
           </Button>
-          <Button type="button" onClick={() => onSave()} disabled={isLoading}>
+          <Button type="button" onClick={handleSave} disabled={isLoading}>
             {isLoading ? "Saving..." : "Save"}
           </Button>
         </DialogFooter>
