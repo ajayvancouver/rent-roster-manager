@@ -1,6 +1,5 @@
-
 import { useState } from "react";
-import { Calendar, ArrowUpDown, Search, DollarSign, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import { Calendar, ArrowUpDown, Search, DollarSign, CheckCircle2, XCircle, AlertCircle, Plus } from "lucide-react";
 import { payments, tenants, properties } from "@/data/mockData";
 import { Payment } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -22,12 +21,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useToast } from "@/hooks/use-toast";
+import AddEntityModal from "@/components/common/AddEntityModal";
+import AddPaymentForm from "@/components/payments/AddPaymentForm";
 
 const Payments = () => {
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<Payment["status"] | "all">("all");
   const [sortField, setSortField] = useState<keyof Payment>("date");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [showAddModal, setShowAddModal] = useState(false);
 
   // Get tenant name by ID
   const getTenantName = (tenantId: string) => {
@@ -114,6 +118,15 @@ const Payments = () => {
     }
   };
 
+  // Handle adding a payment
+  const handleAddPayment = () => {
+    setShowAddModal(false);
+    toast({
+      title: "Success",
+      description: "Payment has been recorded successfully."
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -192,7 +205,10 @@ const Payments = () => {
             <SelectItem value="failed">Failed</SelectItem>
           </SelectContent>
         </Select>
-        <Button>Record Payment</Button>
+        <Button onClick={() => setShowAddModal(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          Record Payment
+        </Button>
       </div>
 
       {/* Payments Table */}
@@ -268,6 +284,16 @@ const Payments = () => {
           </TableBody>
         </Table>
       </div>
+
+      {/* Add Payment Modal */}
+      <AddEntityModal
+        title="Record New Payment"
+        open={showAddModal}
+        onOpenChange={setShowAddModal}
+        onSave={handleAddPayment}
+      >
+        <AddPaymentForm onSuccess={handleAddPayment} />
+      </AddEntityModal>
     </div>
   );
 };

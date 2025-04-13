@@ -212,7 +212,7 @@ const AddTenantForm = ({ onSuccess }: AddTenantFormProps) => {
               min="0"
               placeholder="Monthly rent"
               className="pl-9"
-              value={formData.rentAmount}
+              value={formData.rentAmount || ""}
               onChange={handleChange}
               required
             />
@@ -229,7 +229,7 @@ const AddTenantForm = ({ onSuccess }: AddTenantFormProps) => {
               min="0"
               placeholder="Security deposit"
               className="pl-9"
-              value={formData.depositAmount}
+              value={formData.depositAmount || ""}
               onChange={handleChange}
               required
             />

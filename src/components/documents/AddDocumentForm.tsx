@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { File, FileText, Calendar, User, Building2 } from "lucide-react";
+import { File, FolderOpen, Calendar, Building2, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,16 +22,17 @@ const AddDocumentForm = ({ onSuccess }: AddDocumentFormProps) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   
-  const [formData, setFormData] = useState<Omit<Document, "id" | "fileSize" | "fileType">>({
+  const [formData, setFormData] = useState<Omit<Document, "id" | "uploadDate" | "fileSize" | "fileType">>({
     name: "",
     type: "lease",
-    tenantId: undefined,
-    propertyId: undefined,
-    uploadDate: new Date().toISOString(),
     url: "",
+    propertyId: "",
+    tenantId: ""
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -40,35 +41,15 @@ const AddDocumentForm = ({ onSuccess }: AddDocumentFormProps) => {
   };
 
   const handleSelectChange = (field: string, value: string) => {
-    if (value === "") {
-      // Handle clearing a selection
-      const newFormData = { ...formData };
-      if (field in newFormData) {
-        delete newFormData[field as keyof typeof newFormData];
-      }
-      setFormData(newFormData as typeof formData);
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [field]: value
-      }));
-    }
+    setFormData(prev => ({
+      ...prev,
+      [field]: field === "type" ? value as Document["type"] : value
+    }));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // In a real app, you would upload this file to a server
-      console.log("File selected:", file);
-      // Create a dummy URL for demo purposes
-      setFormData(prev => ({
-        ...prev,
-        fileSize: `${Math.round(file.size / 1024)} KB`,
-        fileType: file.type.split('/')[1],
-        url: URL.createObjectURL(file)
-      }));
-    }
-  };
+  const filteredTenants = formData.propertyId 
+    ? tenants.filter(tenant => tenant.propertyId === formData.propertyId)
+    : [];
 
   const handleSubmit = async () => {
     setIsLoading(true);
@@ -82,14 +63,14 @@ const AddDocumentForm = ({ onSuccess }: AddDocumentFormProps) => {
       
       toast({
         title: "Document added!",
-        description: `${formData.name} has been uploaded successfully.`
+        description: "The document has been added successfully."
       });
       
       onSuccess();
     } catch (error) {
       console.error("Error adding document:", error);
       toast({
-        title: "Failed to upload document",
+        title: "Failed to add document",
         description: "Please try again later.",
         variant: "destructive"
       });
@@ -101,13 +82,13 @@ const AddDocumentForm = ({ onSuccess }: AddDocumentFormProps) => {
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="name">Document Name</Label>
+        <Label htmlFor="name">Document Title</Label>
         <div className="relative">
-          <FileText className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <File className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
             id="name"
             name="name"
-            placeholder="Enter document name"
+            placeholder="Enter document title"
             className="pl-9"
             value={formData.name}
             onChange={handleChange}
@@ -126,9 +107,9 @@ const AddDocumentForm = ({ onSuccess }: AddDocumentFormProps) => {
             <SelectValue placeholder="Select document type" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="lease">Lease</SelectItem>
-            <SelectItem value="payment">Payment</SelectItem>
-            <SelectItem value="maintenance">Maintenance</SelectItem>
+            <SelectItem value="lease">Lease Agreement</SelectItem>
+            <SelectItem value="payment">Payment Receipt</SelectItem>
+            <SelectItem value="maintenance">Maintenance Record</SelectItem>
             <SelectItem value="other">Other</SelectItem>
           </SelectContent>
         </Select>
@@ -157,15 +138,16 @@ const AddDocumentForm = ({ onSuccess }: AddDocumentFormProps) => {
       <div className="space-y-2">
         <Label htmlFor="tenantId">Related Tenant (Optional)</Label>
         <Select 
-          value={formData.tenantId || ""}
+          value={formData.tenantId || ""} 
           onValueChange={(value) => handleSelectChange("tenantId", value)}
+          disabled={!formData.propertyId && formData.tenantId === ""}
         >
           <SelectTrigger>
-            <SelectValue placeholder="Select tenant" />
+            <SelectValue placeholder={formData.propertyId ? "Select tenant" : "Select property first (optional)"} />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="">None</SelectItem>
-            {tenants.map(tenant => (
+            {filteredTenants.map(tenant => (
               <SelectItem key={tenant.id} value={tenant.id}>
                 {tenant.name}
               </SelectItem>
@@ -175,33 +157,21 @@ const AddDocumentForm = ({ onSuccess }: AddDocumentFormProps) => {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="file">Upload Document</Label>
-        <Input
-          id="file"
-          type="file"
-          className="cursor-pointer"
-          onChange={handleFileChange}
-        />
-        <p className="text-xs text-muted-foreground mt-1">
-          Supported formats: PDF, DOC, DOCX, JPG, PNG
-        </p>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="url">Document URL (Optional)</Label>
+        <Label htmlFor="url">Document URL</Label>
         <div className="relative">
-          <File className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <FolderOpen className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
             id="url"
             name="url"
-            placeholder="External document URL"
+            placeholder="Enter document URL"
             className="pl-9"
             value={formData.url}
             onChange={handleChange}
+            required
           />
         </div>
-        <p className="text-xs text-muted-foreground mt-1">
-          For linking to externally hosted documents
+        <p className="text-xs text-muted-foreground">
+          Enter a URL to the document. In a real app, this would be a file upload.
         </p>
       </div>
     </div>
