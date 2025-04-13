@@ -13,7 +13,7 @@ export const paymentsService = {
     // Map database columns to our TypeScript interfaces
     return (data || []).map(item => ({
       id: item.id,
-      tenantId: item.tenant_id, // Map tenant_id to tenantId
+      tenantId: item.tenant_id,
       tenantName: item.tenants ? item.tenants.name : 'Unknown',
       propertyId: item.tenants ? item.tenants.property_id : null,
       propertyName: item.tenants && item.tenants.properties ? item.tenants.properties.name : null,
@@ -29,15 +29,18 @@ export const paymentsService = {
   async getByTenantId(tenantId: string): Promise<Payment[]> {
     const { data, error } = await supabase
       .from('payments')
-      .select('*')
+      .select('*, tenants(name, email, property_id, unit_number, properties(name))')
       .eq('tenant_id', tenantId);
     
     if (error) throw error;
     
-    // Map database columns to our TypeScript interfaces
     return (data || []).map(item => ({
       id: item.id,
-      tenantId: item.tenant_id, // Map tenant_id to tenantId
+      tenantId: item.tenant_id,
+      tenantName: item.tenants ? item.tenants.name : 'Unknown',
+      propertyId: item.tenants ? item.tenants.property_id : null,
+      propertyName: item.tenants && item.tenants.properties ? item.tenants.properties.name : null,
+      unitNumber: item.tenants ? item.tenants.unit_number : null,
       amount: item.amount,
       date: item.date,
       method: item.method as 'cash' | 'check' | 'bank transfer' | 'credit card',
@@ -57,10 +60,14 @@ export const paymentsService = {
       notes: payment.notes || null
     };
     
-    return await supabase
+    const { data, error } = await supabase
       .from('payments')
       .insert(dbPayment)
       .select()
       .single();
+      
+    if (error) throw error;
+    
+    return data;
   }
 };
