@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Tenant } from "@/types";
-import { tenantsService } from "@/services/supabaseService";
+import { tenantsService } from "@/services/tenantsService";
 
 interface UseTenantFormProps {
   onSuccess: (tenantData: Omit<Tenant, "id">) => void;
@@ -92,35 +92,16 @@ export const useTenantForm = ({ onSuccess }: UseTenantFormProps) => {
         return;
       }
       
-      // Prepare the data - convert empty propertyId to null
+      // Prepare the data with proper null handling
       const submitData = {
         ...formData,
-        propertyId: formData.propertyId || null,
-        unitNumber: formData.unitNumber || null
+        propertyId: formData.propertyId || "",
+        unitNumber: formData.unitNumber || ""
       };
       
       console.log("Submitting tenant data:", submitData);
       
-      // Use the actual Supabase service to create the tenant
-      const { data: newTenant, error } = await tenantsService.create(submitData);
-      
-      if (error) {
-        console.error("Supabase error creating tenant:", error);
-        toast({
-          title: "Failed to add tenant",
-          description: error.message || "Please try again later.",
-          variant: "destructive"
-        });
-        setIsLoading(false);
-        return;
-      }
-      
-      toast({
-        title: "Tenant added!",
-        description: `${formData.name} has been added successfully.`
-      });
-      
-      onSuccess(formData);
+      onSuccess(submitData);
     } catch (error) {
       console.error("Error adding tenant:", error);
       toast({

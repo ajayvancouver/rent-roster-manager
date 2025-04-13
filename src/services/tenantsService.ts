@@ -68,8 +68,8 @@ export const tenantsService = {
       name: tenant.name,
       email: tenant.email,
       phone: tenant.phone || null,
-      property_id: tenant.propertyId, // Already null if empty
-      unit_number: tenant.unitNumber, // Already null if empty
+      property_id: tenant.propertyId || null, // Convert empty string to null
+      unit_number: tenant.unitNumber || null, // Convert empty string to null
       lease_start: tenant.leaseStart, 
       lease_end: tenant.leaseEnd,
       rent_amount: tenant.rentAmount,
@@ -80,12 +80,10 @@ export const tenantsService = {
     
     console.log("Creating tenant in DB with data:", dbTenant);
     
-    const result = await supabase
+    return await supabase
       .from('tenants')
       .insert(dbTenant)
       .select()
       .single();
-    
-    return result;
   }
 };

@@ -78,17 +78,50 @@ export function useTenants() {
 
   const handleAddTenant = async (tenantData: Omit<Tenant, "id">) => {
     try {
-      const newTenant = await tenantsService.create(tenantData);
-      setTenants([...tenants, newTenant]);
-      toast({
-        title: "Success",
-        description: "Tenant has been added successfully."
-      });
-      return true;
-    } catch (error) {
+      const { data, error } = await tenantsService.create(tenantData);
+      
+      if (error) {
+        console.error("Error creating tenant:", error);
+        toast({
+          title: "Error",
+          description: "Failed to add tenant: " + error.message,
+          variant: "destructive"
+        });
+        return false;
+      }
+      
+      if (data) {
+        // Map the returned data to a Tenant object, similar to what tenantsService.getById does
+        const newTenant: Tenant = {
+          id: data.id,
+          name: data.name,
+          email: data.email,
+          phone: data.phone || '',
+          propertyId: data.property_id || '',
+          unitNumber: data.unit_number || '',
+          leaseStart: data.lease_start,
+          leaseEnd: data.lease_end,
+          rentAmount: data.rent_amount,
+          depositAmount: data.deposit_amount,
+          balance: data.balance || 0,
+          status: data.status as 'active' | 'inactive' | 'pending'
+        };
+        
+        setTenants([...tenants, newTenant]);
+        
+        toast({
+          title: "Success",
+          description: "Tenant has been added successfully."
+        });
+        return true;
+      }
+      
+      return false;
+    } catch (error: any) {
+      console.error("Error adding tenant:", error);
       toast({
         title: "Error",
-        description: "Failed to add tenant",
+        description: "Failed to add tenant: " + (error.message || "Please try again later."),
         variant: "destructive"
       });
       return false;
