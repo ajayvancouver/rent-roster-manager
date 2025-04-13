@@ -21,7 +21,7 @@ export async function getTenantByUserId(userId: string) {
   try {
     const { data, error } = await supabase
       .from('tenants')
-      .select('*, properties(*)')
+      .select('*, properties(id, name, address, city, state, zip_code, manager_id)')
       .eq('tenant_user_id', userId)
       .single();
     

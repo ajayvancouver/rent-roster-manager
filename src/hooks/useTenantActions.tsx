@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Tenant } from "@/types";
 import { tenantsService } from "@/services/tenantsService";
 import { useToast } from "@/hooks/use-toast";
-import { linkTenantToUser } from "@/services/authService"; 
+import { linkTenantToUser } from "@/services/linkTenantToUser"; 
 
 export function useTenantActions(tenants: Tenant[], setTenants: React.Dispatch<React.SetStateAction<Tenant[]>>, properties: any[]) {
   const { toast } = useToast();
@@ -38,7 +38,8 @@ export function useTenantActions(tenants: Tenant[], setTenants: React.Dispatch<R
           rentAmount: data.rent_amount,
           depositAmount: data.deposit_amount,
           balance: data.balance || 0,
-          status: data.status as 'active' | 'inactive' | 'pending'
+          status: data.status as 'active' | 'inactive' | 'pending',
+          managerId: data.manager_id
         };
         
         // Add property data if available

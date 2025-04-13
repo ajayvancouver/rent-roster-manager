@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Tenant, Property } from "@/types";
 import { propertiesService } from "@/services/supabaseService";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface TenantFormFieldsProps {
   formData: Omit<Tenant, "id">;
@@ -26,11 +27,13 @@ export const TenantFormFields: React.FC<TenantFormFieldsProps> = ({
 }) => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
+  const { profile, user } = useAuth();
+  
   useEffect(() => {
     const fetchProperties = async () => {
       try {
-        const data = await propertiesService.getAll();
+        const managerId = profile?.id || user?.id;
+        const data = await propertiesService.getAll(managerId);
         setProperties(data);
       } catch (error) {
         console.error("Error fetching properties:", error);
@@ -40,7 +43,7 @@ export const TenantFormFields: React.FC<TenantFormFieldsProps> = ({
     };
 
     fetchProperties();
-  }, []);
+  }, [profile, user]);
 
   return (
     <div className="space-y-4">
@@ -111,7 +114,7 @@ export const TenantFormFields: React.FC<TenantFormFieldsProps> = ({
             ) : (
               properties.map(property => (
                 <SelectItem key={property.id} value={property.id}>
-                  {property.name}
+                  {property.name} - {property.address}, {property.city}
                 </SelectItem>
               ))
             )}

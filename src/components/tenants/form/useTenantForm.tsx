@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Tenant } from "@/types";
 import { tenantsService } from "@/services/tenantsService";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface UseTenantFormProps {
   onSuccess: (tenantData: Omit<Tenant, "id" | "propertyName" | "propertyAddress">) => void;
@@ -10,6 +11,7 @@ interface UseTenantFormProps {
 
 export const useTenantForm = ({ onSuccess }: UseTenantFormProps) => {
   const { toast } = useToast();
+  const { user, profile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   
   const [formData, setFormData] = useState<Omit<Tenant, "id" | "propertyName" | "propertyAddress">>({
@@ -23,7 +25,8 @@ export const useTenantForm = ({ onSuccess }: UseTenantFormProps) => {
     rentAmount: 0,
     depositAmount: 0,
     balance: 0,
-    status: "active"
+    status: "active",
+    managerId: profile?.id || user?.id
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -96,7 +99,8 @@ export const useTenantForm = ({ onSuccess }: UseTenantFormProps) => {
       const submitData = {
         ...formData,
         propertyId: formData.propertyId || "",
-        unitNumber: formData.unitNumber || ""
+        unitNumber: formData.unitNumber || "",
+        managerId: profile?.id || user?.id
       };
       
       console.log("Submitting tenant data:", submitData);
