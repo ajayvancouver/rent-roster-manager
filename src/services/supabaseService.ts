@@ -11,16 +11,16 @@ export const propertiesService = {
     
     if (error) throw error;
     
-    // Map database columns to our TypeScript interfaces
+    // Map database columns to our TypeScript interfaces with proper type casting
     return (data || []).map(item => ({
       id: item.id,
       name: item.name,
       address: item.address,
       city: item.city,
       state: item.state,
-      zipCode: item.zip_code, // Map zip_code to zipCode
+      zipCode: item.zip_code, 
       units: item.units,
-      type: item.type,
+      type: item.type as 'apartment' | 'house' | 'duplex' | 'commercial', // Cast to correct union type
       image: item.image || undefined
     }));
   },
@@ -36,16 +36,16 @@ export const propertiesService = {
     
     if (!data) return null;
     
-    // Map to our TypeScript interface
+    // Map to our TypeScript interface with proper type casting
     return {
       id: data.id,
       name: data.name,
       address: data.address,
       city: data.city,
       state: data.state,
-      zipCode: data.zip_code, // Map zip_code to zipCode
+      zipCode: data.zip_code,
       units: data.units,
-      type: data.type,
+      type: data.type as 'apartment' | 'house' | 'duplex' | 'commercial', // Cast to correct union type
       image: data.image || undefined
     };
   },
@@ -71,16 +71,16 @@ export const propertiesService = {
     
     if (error) throw error;
     
-    // Map the response back to our TypeScript interface
+    // Map the response back to our TypeScript interface with proper type casting
     return {
       id: data.id,
       name: data.name,
       address: data.address,
       city: data.city,
       state: data.state,
-      zipCode: data.zip_code, // Map zip_code to zipCode
+      zipCode: data.zip_code,
       units: data.units,
-      type: data.type,
+      type: data.type as 'apartment' | 'house' | 'duplex' | 'commercial', // Cast to correct union type
       image: data.image || undefined
     };
   }
