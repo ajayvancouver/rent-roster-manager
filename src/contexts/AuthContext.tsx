@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -100,11 +99,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
     } catch (error: any) {
-      toast({
-        title: "Error signing in",
-        description: error.message || "An unexpected error occurred",
-        variant: "destructive",
-      });
+      console.error("Sign in error:", error.message);
       throw error;
     } finally {
       setIsLoading(false);
@@ -132,11 +127,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: "Please check your email to confirm your account",
       });
     } catch (error: any) {
-      toast({
-        title: "Error creating account",
-        description: error.message || "An unexpected error occurred",
-        variant: "destructive",
-      });
+      console.error("Sign up error:", error.message);
       throw error;
     } finally {
       setIsLoading(false);

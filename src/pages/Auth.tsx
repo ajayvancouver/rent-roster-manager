@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ExclamationTriangleIcon } from "lucide-react";
 
 const Auth = () => {
   const { user, signIn, signUp, isLoading } = useAuth();
@@ -24,6 +26,7 @@ const Auth = () => {
   const [fullName, setFullName] = useState("");
   const [userType, setUserType] = useState<"manager" | "tenant">("tenant");
   const [activeTab, setActiveTab] = useState("login");
+  const [error, setError] = useState<string | null>(null);
 
   // If already authenticated, redirect to dashboard
   if (user) {
@@ -32,22 +35,40 @@ const Auth = () => {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+    
     try {
       await signIn(email, password);
       navigate("/");
-    } catch (error) {
-      // Error is handled in the auth context
+    } catch (error: any) {
+      // Set a more user-friendly error message
+      if (error.message.includes("Invalid login credentials")) {
+        setError("The email or password you entered is incorrect. Please try again.");
+      } else {
+        setError(error.message || "An error occurred during sign in. Please try again.");
+      }
     }
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+    
     try {
       await signUp(email, password, userType, fullName);
       setActiveTab("login");
-    } catch (error) {
-      // Error is handled in the auth context
+    } catch (error: any) {
+      // Set a more user-friendly error message
+      if (error.message.includes("User already registered")) {
+        setError("An account with this email already exists. Please try signing in instead.");
+      } else {
+        setError(error.message || "An error occurred during registration. Please try again.");
+      }
     }
+  };
+
+  const clearError = () => {
+    setError(null);
   };
 
   return (
@@ -61,7 +82,14 @@ const Auth = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="login" value={activeTab} onValueChange={setActiveTab}>
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <ExclamationTriangleIcon className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            
+            <Tabs defaultValue="login" value={activeTab} onValueChange={(value) => { setActiveTab(value); clearError(); }}>
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="login">Login</TabsTrigger>
                 <TabsTrigger value="register">Register</TabsTrigger>
