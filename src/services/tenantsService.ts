@@ -10,7 +10,7 @@ export const tenantsService = {
     
     // If managerId is provided, filter tenants by properties with matching manager_id
     if (managerId) {
-      query = query.eq('manager_id', managerId);
+      query = query.eq('properties.manager_id', managerId);
     }
     
     const { data, error } = await query;
@@ -33,7 +33,7 @@ export const tenantsService = {
       depositAmount: item.deposit_amount,
       balance: item.balance || 0,
       status: item.status as 'active' | 'inactive' | 'pending',
-      managerId: item.manager_id
+      managerId: item.properties?.manager_id
     }));
   },
 
@@ -64,7 +64,7 @@ export const tenantsService = {
       depositAmount: data.deposit_amount,
       balance: data.balance || 0,
       status: data.status as 'active' | 'inactive' | 'pending',
-      managerId: data.manager_id
+      managerId: data.properties?.manager_id
     };
   },
 
@@ -104,5 +104,41 @@ export const tenantsService = {
       .from('profiles')
       .select('id')
       .eq('email', email);
+  },
+
+  async getTenantByUserId(userId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('tenants')
+        .select('*, properties(id, name, address, city, state, zip_code, manager_id)')
+        .eq('tenant_user_id', userId)
+        .single();
+      
+      if (error) throw error;
+      
+      if (!data) return null;
+      
+      return {
+        id: data.id,
+        name: data.name,
+        email: data.email,
+        phone: data.phone || '',
+        propertyId: data.property_id || '',
+        propertyName: data.properties ? data.properties.name : null,
+        propertyAddress: data.properties ? `${data.properties.address}, ${data.properties.city}, ${data.properties.state} ${data.properties.zip_code}` : null,
+        unitNumber: data.unit_number || '',
+        leaseStart: data.lease_start,
+        leaseEnd: data.lease_end,
+        rentAmount: data.rent_amount,
+        depositAmount: data.deposit_amount,
+        balance: data.balance || 0,
+        status: data.status as 'active' | 'inactive' | 'pending',
+        managerId: data.properties?.manager_id,
+        tenantUserId: data.tenant_user_id
+      };
+    } catch (error) {
+      console.error("Error getting tenant by user ID:", error);
+      throw error;
+    }
   }
 };
