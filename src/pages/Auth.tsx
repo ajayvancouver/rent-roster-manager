@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,12 +40,11 @@ const Auth = () => {
       await signIn(email, password);
       navigate("/");
     } catch (error: any) {
-      // Set a more user-friendly error message
-      if (error.message.includes("Invalid login credentials")) {
-        setError("The email or password you entered is incorrect. Please try again.");
-      } else {
-        setError(error.message || "An error occurred during sign in. Please try again.");
-      }
+      setError(
+        error.message.includes("Invalid login credentials") 
+          ? "Incorrect email or password. Please try again." 
+          : "An unexpected error occurred. Please try again later."
+      );
     }
   };
 
@@ -57,13 +55,13 @@ const Auth = () => {
     try {
       await signUp(email, password, userType, fullName);
       setActiveTab("login");
+      // Add a success toast to inform user to check email
     } catch (error: any) {
-      // Set a more user-friendly error message
-      if (error.message.includes("User already registered")) {
-        setError("An account with this email already exists. Please try signing in instead.");
-      } else {
-        setError(error.message || "An error occurred during registration. Please try again.");
-      }
+      setError(
+        error.message.includes("User already registered")
+          ? "An account with this email already exists. Please sign in." 
+          : "Registration failed. Please try again."
+      );
     }
   };
 
@@ -83,8 +81,8 @@ const Auth = () => {
           </CardHeader>
           <CardContent>
             {error && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertTriangle className="h-4 w-4" />
+              <Alert variant="destructive" className="mb-4 flex items-center">
+                <AlertTriangle className="h-5 w-5 mr-2" />
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
