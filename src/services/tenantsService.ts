@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Tenant } from "@/types";
 
@@ -8,7 +7,6 @@ export const tenantsService = {
       .from('tenants')
       .select('*, properties(name, address, city, state, zip_code, manager_id)');
     
-    // If managerId is provided, filter tenants by properties with matching manager_id
     if (managerId) {
       query = query.eq('properties.manager_id', managerId);
     }
@@ -17,7 +15,6 @@ export const tenantsService = {
     
     if (error) throw error;
     
-    // Map database columns to our TypeScript interfaces with proper type casting
     return (data || []).map(item => ({
       id: item.id,
       name: item.name,
@@ -34,7 +31,7 @@ export const tenantsService = {
       balance: item.balance || 0,
       status: item.status as 'active' | 'inactive' | 'pending',
       managerId: item.properties?.manager_id,
-      userId: item.tenant_user_id // Rename to userId for consistency
+      userId: item.tenant_user_id
     }));
   },
 
@@ -49,7 +46,6 @@ export const tenantsService = {
     
     if (!data) return null;
     
-    // Map to our TypeScript interface with proper type casting
     return {
       id: data.id,
       name: data.name,
@@ -66,7 +62,7 @@ export const tenantsService = {
       balance: data.balance || 0,
       status: data.status as 'active' | 'inactive' | 'pending',
       managerId: data.properties?.manager_id,
-      userId: data.tenant_user_id // Rename to userId for consistency
+      userId: data.tenant_user_id
     };
   },
 
@@ -78,12 +74,6 @@ export const tenantsService = {
   },
 
   async create(tenant: Omit<Tenant, "id" | "propertyName" | "propertyAddress">): Promise<any> {
-    // Ensure tenant_user_id is required
-    if (!tenant.userId) {
-      throw new Error("User ID is required to create a tenant");
-    }
-
-    // Map our TypeScript interface to database columns
     const dbTenant = {
       name: tenant.name,
       email: tenant.email,
@@ -96,7 +86,7 @@ export const tenantsService = {
       deposit_amount: tenant.depositAmount,
       balance: tenant.balance,
       status: tenant.status,
-      tenant_user_id: tenant.userId // Map userId to tenant_user_id
+      tenant_user_id: tenant.userId
     };
     
     return await supabase
@@ -107,7 +97,6 @@ export const tenantsService = {
   },
 
   async update(id: string, tenant: Partial<Omit<Tenant, "id" | "propertyName" | "propertyAddress">>): Promise<any> {
-    // Map our TypeScript interface to database columns
     const dbTenant: any = {};
     
     if (tenant.name !== undefined) dbTenant.name = tenant.name;
@@ -137,7 +126,6 @@ export const tenantsService = {
     
     if (!data) return null;
     
-    // Map to our TypeScript interface
     return {
       id: data.id,
       name: data.name,
@@ -157,7 +145,7 @@ export const tenantsService = {
       userId: data.tenant_user_id
     };
   },
-  
+
   async delete(id: string): Promise<boolean> {
     const { error } = await supabase
       .from('tenants')
@@ -207,7 +195,7 @@ export const tenantsService = {
         balance: data.balance || 0,
         status: data.status as 'active' | 'inactive' | 'pending',
         managerId: data.properties?.manager_id,
-        userId: data.tenant_user_id // Rename for consistency
+        userId: data.tenant_user_id
       };
     } catch (error) {
       console.error("Error getting tenant by user ID:", error);

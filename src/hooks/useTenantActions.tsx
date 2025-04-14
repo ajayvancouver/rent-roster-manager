@@ -43,7 +43,8 @@ export function useTenantActions(tenants: Tenant[], setTenants: React.Dispatch<R
           depositAmount: data.deposit_amount,
           balance: data.balance || 0,
           status: data.status as 'active' | 'inactive' | 'pending',
-          managerId: tenantData.managerId // Keep the managerId from the original data
+          managerId: tenantData.managerId, // Keep the managerId from the original data
+          userId: data.tenant_user_id // Get userId from the returned data
         };
         
         // Add property data if available
