@@ -135,6 +135,39 @@ export type Database = {
           },
         ]
       }
+      payment_methods: {
+        Row: {
+          card_brand: string | null
+          created_at: string | null
+          id: string
+          is_default: boolean | null
+          last_four: string | null
+          stripe_payment_method_id: string | null
+          tenant_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          card_brand?: string | null
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          last_four?: string | null
+          stripe_payment_method_id?: string | null
+          tenant_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          card_brand?: string | null
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          last_four?: string | null
+          stripe_payment_method_id?: string | null
+          tenant_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number
@@ -143,6 +176,7 @@ export type Database = {
           id: string
           method: string
           notes: string | null
+          payment_intent_id: string | null
           status: string
           tenant_id: string
           tenant_user_id: string | null
@@ -155,6 +189,7 @@ export type Database = {
           id?: string
           method: string
           notes?: string | null
+          payment_intent_id?: string | null
           status: string
           tenant_id: string
           tenant_user_id?: string | null
@@ -167,6 +202,7 @@ export type Database = {
           id?: string
           method?: string
           notes?: string | null
+          payment_intent_id?: string | null
           status?: string
           tenant_id?: string
           tenant_user_id?: string | null

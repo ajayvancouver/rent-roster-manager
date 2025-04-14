@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -8,13 +8,17 @@ import { DateRange } from "react-day-picker";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { format, isWithinInterval, parseISO, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import { useTenantPortal } from "@/hooks/useTenantPortal";
+import MakePaymentButton from "@/components/payments/MakePaymentButton";
+import { useToast } from "@/hooks/use-toast";
 
 const TenantPayments: React.FC = () => {
-  const { isLoading, payments, rentAmount, balance } = useTenantPortal();
+  const { isLoading, payments, rentAmount, balance, profile } = useTenantPortal();
+  const { toast } = useToast();
   const [dateRange, setDateRange] = useState<DateRange>({
     from: startOfMonth(subMonths(new Date(), 3)),
     to: endOfMonth(new Date())
   });
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -61,6 +65,18 @@ const TenantPayments: React.FC = () => {
     });
   };
 
+  const handlePaymentComplete = () => {
+    toast({
+      title: "Payment recorded",
+      description: "Your payment has been successfully recorded.",
+    });
+    setRefreshTrigger(prev => prev + 1);
+  };
+
+  useEffect(() => {
+    // This will reload component data when refreshTrigger changes
+  }, [refreshTrigger]);
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -101,9 +117,15 @@ const TenantPayments: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Payments</h1>
-        <p className="text-muted-foreground mt-2">View and track your payments</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Payments</h1>
+          <p className="text-muted-foreground mt-2">View and track your payments</p>
+        </div>
+        <MakePaymentButton 
+          amount={balance > 0 ? balance : rentAmount} 
+          onPaymentComplete={handlePaymentComplete} 
+        />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -199,7 +221,8 @@ const TenantPayments: React.FC = () => {
                 <div className="border rounded-md p-4">
                   <h4 className="font-medium mb-1">Payment Options</h4>
                   <ul className="list-disc pl-5 space-y-1 text-sm">
-                    <li>Online payment through tenant portal</li>
+                    <li>Online payment through tenant portal (Credit/Debit Card)</li>
+                    <li>Interac e-Transfer to property management</li>
                     <li>Check or money order delivered to management office</li>
                     <li>Automatic bank draft (contact property manager to set up)</li>
                   </ul>
