@@ -15,7 +15,7 @@ import {
 interface AddEntityModalProps extends DialogProps {
   title: string;
   children: React.ReactNode;
-  onSave: (formData: any) => void;
+  onSave: (formData?: any) => void;
   isLoading?: boolean;
 }
 
