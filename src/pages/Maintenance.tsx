@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import AddEntityModal from "@/components/common/AddEntityModal";
@@ -52,6 +51,11 @@ const MaintenancePage = () => {
     }
   };
 
+  const modalSaveHandler = () => {
+    // This is a no-op function to satisfy the type requirements
+    // The actual form submission is handled by onSuccess in AddMaintenanceRequestForm
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -84,7 +88,7 @@ const MaintenancePage = () => {
         title="New Maintenance Request"
         open={showAddModal}
         onOpenChange={setShowAddModal}
-        onSave={() => {}} // Provide an empty function to satisfy the type
+        onSave={modalSaveHandler}
       >
         <AddMaintenanceRequestForm onSuccess={handleAddRequestSuccess} />
       </AddEntityModal>
