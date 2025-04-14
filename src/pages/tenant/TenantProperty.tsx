@@ -1,13 +1,15 @@
+
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Building2, Home, Map, Calendar, CreditCard, Info, RefreshCw } from "lucide-react";
+import { Building2, Home, Map, Calendar, CreditCard, Info, RefreshCw, UserCheck } from "lucide-react";
 import { format } from "date-fns";
 import { useTenantPortal } from "@/hooks/useTenantPortal";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { linkTenantToUser } from "@/services/linkTenantToUser";
 
 const TenantProperty: React.FC = () => {
   const { isLoading, propertyData, leaseStart, leaseEnd, rentAmount, depositAmount } = useTenantPortal();
@@ -15,8 +17,15 @@ const TenantProperty: React.FC = () => {
   const { toast } = useToast();
   const [debugInfo, setDebugInfo] = useState<any>(null);
   const [isChecking, setIsChecking] = useState(false);
+  const [linkingAttempted, setLinkingAttempted] = useState(false);
 
   useEffect(() => {
+    // Auto-check for property assignment issues when the component loads
+    if (!isLoading && !propertyData && user && profile?.email && !linkingAttempted) {
+      console.log("No property found, automatically checking property assignment");
+      checkTenantRecords();
+    }
+    
     if (!isLoading && !propertyData && user) {
       toast({
         title: "No Property Assigned",
@@ -24,7 +33,7 @@ const TenantProperty: React.FC = () => {
         variant: "destructive",
       });
     }
-  }, [isLoading, propertyData, user, toast]);
+  }, [isLoading, propertyData, user, toast, profile?.email, linkingAttempted]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -57,8 +66,11 @@ const TenantProperty: React.FC = () => {
     if (!profile?.email) return;
     
     setIsChecking(true);
+    setLinkingAttempted(true);
     try {
-      // First try exact email match
+      console.log("Checking tenant records for email:", profile.email);
+      
+      // First try exact email match (case sensitive)
       const { data: exactMatch, error: exactError } = await supabase
         .from('tenants')
         .select('*, properties(*)')
@@ -67,7 +79,7 @@ const TenantProperty: React.FC = () => {
         
       if (exactError) console.error("Error checking exact email match:", exactError);
       
-      // Then try case-insensitive match
+      // Try case-insensitive match as fallback
       const { data: caseInsensitiveMatch, error: caseError } = await supabase
         .from('tenants')
         .select('*, properties(*)')
@@ -76,52 +88,143 @@ const TenantProperty: React.FC = () => {
         
       if (caseError) console.error("Error checking case-insensitive email match:", caseError);
       
+      // Set debug info for transparency
       setDebugInfo({
         userEmail: profile.email,
+        userId: user?.id,
         profilePropertyId: profile.property_id,
         exactEmailMatch: exactMatch,
-        caseInsensitiveMatch: caseInsensitiveMatch
+        caseInsensitiveMatch: caseInsensitiveMatch,
+        timestamp: new Date().toISOString()
       });
       
-      if (exactMatch && exactMatch.tenant_user_id !== user?.id) {
-        // Link user to tenant and update profile
-        const { error: linkError } = await supabase
-          .from('tenants')
-          .update({ tenant_user_id: user?.id })
-          .eq('id', exactMatch.id);
+      // First check if we have an exact email match
+      if (exactMatch) {
+        console.log("Found tenant with exact email match:", exactMatch);
+        
+        if (exactMatch.tenant_user_id !== user?.id) {
+          console.log("Linking tenant to user - tenant ID:", exactMatch.id, "user ID:", user?.id);
           
-        if (linkError) {
-          console.error("Error linking tenant to user:", linkError);
-        } else {
-          console.log("Successfully linked tenant to user on demand");
-          
-          // Update profile with tenant data
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .update({
-              property_id: exactMatch.property_id,
-              unit_number: exactMatch.unit_number,
-              rent_amount: exactMatch.rent_amount,
-              deposit_amount: exactMatch.deposit_amount,
-              balance: exactMatch.balance,
-              lease_start: exactMatch.lease_start,
-              lease_end: exactMatch.lease_end
-            })
-            .eq('id', user?.id);
+          // Link user to tenant
+          try {
+            await linkTenantToUser(exactMatch.id, user?.id || '');
             
-          if (profileError) {
-            console.error("Error updating profile with tenant data:", profileError);
-          } else {
+            // Update profile with tenant data
+            const { error: profileError } = await supabase
+              .from('profiles')
+              .update({
+                property_id: exactMatch.property_id,
+                unit_number: exactMatch.unit_number,
+                rent_amount: exactMatch.rent_amount,
+                deposit_amount: exactMatch.deposit_amount,
+                balance: exactMatch.balance,
+                lease_start: exactMatch.lease_start,
+                lease_end: exactMatch.lease_end
+              })
+              .eq('id', user?.id);
+              
+            if (profileError) {
+              console.error("Error updating profile with tenant data:", profileError);
+              toast({
+                title: "Error",
+                description: "Failed to update your profile with property information. Please try again.",
+                variant: "destructive",
+              });
+            } else {
+              console.log("Successfully updated profile with tenant data");
+              toast({
+                title: "Success",
+                description: "Property assignment fixed. Please refresh the page to see your property details.",
+                variant: "default",
+              });
+            }
+          } catch (linkError) {
+            console.error("Error linking tenant to user:", linkError);
             toast({
-              title: "Success",
-              description: "Property assignment fixed. Please refresh the page.",
-              variant: "default",
+              title: "Error",
+              description: "Failed to link your account to the tenant record. Please contact support.",
+              variant: "destructive",
             });
           }
+        } else {
+          console.log("Tenant is already linked to this user");
+          toast({
+            title: "Information",
+            description: "Your account is already linked to a tenant record. Try refreshing the page.",
+            variant: "default",
+          });
         }
+      } 
+      // If no exact match, try case-insensitive match
+      else if (caseInsensitiveMatch) {
+        console.log("Found tenant with case-insensitive email match:", caseInsensitiveMatch);
+        
+        if (caseInsensitiveMatch.tenant_user_id !== user?.id) {
+          console.log("Linking tenant to user - tenant ID:", caseInsensitiveMatch.id, "user ID:", user?.id);
+          
+          try {
+            await linkTenantToUser(caseInsensitiveMatch.id, user?.id || '');
+            
+            // Update profile with tenant data
+            const { error: profileError } = await supabase
+              .from('profiles')
+              .update({
+                property_id: caseInsensitiveMatch.property_id,
+                unit_number: caseInsensitiveMatch.unit_number,
+                rent_amount: caseInsensitiveMatch.rent_amount,
+                deposit_amount: caseInsensitiveMatch.deposit_amount,
+                balance: caseInsensitiveMatch.balance,
+                lease_start: caseInsensitiveMatch.lease_start,
+                lease_end: caseInsensitiveMatch.lease_end
+              })
+              .eq('id', user?.id);
+              
+            if (profileError) {
+              console.error("Error updating profile with tenant data:", profileError);
+              toast({
+                title: "Error",
+                description: "Failed to update your profile with property information. Please try again.",
+                variant: "destructive",
+              });
+            } else {
+              console.log("Successfully updated profile with tenant data");
+              toast({
+                title: "Success",
+                description: "Property assignment fixed. Please refresh the page to see your property details.",
+                variant: "default",
+              });
+            }
+          } catch (linkError) {
+            console.error("Error linking tenant to user:", linkError);
+            toast({
+              title: "Error",
+              description: "Failed to link your account to the tenant record. Please contact support.",
+              variant: "destructive",
+            });
+          }
+        } else {
+          console.log("Tenant is already linked to this user");
+          toast({
+            title: "Information",
+            description: "Your account is already linked to a tenant record. Try refreshing the page.",
+            variant: "default",
+          });
+        }
+      } else {
+        console.log("No tenant record found for this email:", profile.email);
+        toast({
+          title: "No Tenant Record Found",
+          description: "No tenant record was found with your email address. Please contact your property manager.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error("Error checking tenant records:", error);
+      toast({
+        title: "Error",
+        description: "An error occurred while checking tenant records. Please try again later.",
+        variant: "destructive",
+      });
     } finally {
       setIsChecking(false);
     }
@@ -159,7 +262,7 @@ const TenantProperty: React.FC = () => {
           <h1 className="text-3xl font-bold">My Property</h1>
           <p className="text-muted-foreground mt-2">Your property information</p>
         </div>
-        <Card className="py-12">
+        <Card className="py-8">
           <CardContent>
             <div className="text-center">
               <Building2 className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
@@ -179,29 +282,40 @@ const TenantProperty: React.FC = () => {
                 </div>
               </div>
               
-              <Button 
-                variant="outline" 
-                onClick={checkTenantRecords}
-                disabled={isChecking}
-                className="mb-4"
-              >
-                {isChecking ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    Checking...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Check Property Assignment
-                  </>
-                )}
-              </Button>
+              <div className="flex flex-col space-y-4 items-center">
+                <Button 
+                  variant="default" 
+                  onClick={checkTenantRecords}
+                  disabled={isChecking}
+                  className="mb-4"
+                >
+                  {isChecking ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Checking Property Assignment...
+                    </>
+                  ) : (
+                    <>
+                      <UserCheck className="h-4 w-4 mr-2" />
+                      Link My Account to Property
+                    </>
+                  )}
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  onClick={() => window.location.reload()}
+                  className="mb-4"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh Page
+                </Button>
+              </div>
               
               {debugInfo && (
-                <div className="mt-4 p-4 border rounded text-xs bg-slate-50 text-left overflow-x-auto">
+                <div className="mt-6 p-4 border rounded text-xs bg-slate-50 text-left overflow-x-auto">
                   <p className="font-medium mb-1">Debug Info:</p>
-                  <pre>{JSON.stringify(debugInfo, null, 2)}</pre>
+                  <pre className="whitespace-pre-wrap">{JSON.stringify(debugInfo, null, 2)}</pre>
                 </div>
               )}
             </div>
