@@ -27,9 +27,9 @@ const PropertyGrid = ({
         <div key={property.id} className="relative">
           <PropertyCard
             property={property}
-            tenantCount={getTenantCount(property.id)}
-            vacancyCount={getVacancyCount(property)}
-            occupancyRate={getOccupancyRate(property)}
+            getTenantCount={() => getTenantCount(property.id)}
+            getVacancyCount={() => getVacancyCount(property)}
+            getOccupancyRate={() => getOccupancyRate(property)}
           />
           <div className="absolute top-2 right-2 z-10">
             <PropertyActionButtons 

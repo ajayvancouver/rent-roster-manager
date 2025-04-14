@@ -15,9 +15,9 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import TenantFormFields from "./form/TenantFormFields";
-import LeaseInfoFields from "./form/LeaseInfoFields";
-import TenantStatusField from "./form/TenantStatusField";
+import { TenantFormFields } from "./form/TenantFormFields";
+import { LeaseInfoFields } from "./form/LeaseInfoFields";
+import { TenantStatusField } from "./form/TenantStatusField";
 
 const tenantFormSchema = z.object({
   name: z.string().min(1, "Tenant name is required"),
