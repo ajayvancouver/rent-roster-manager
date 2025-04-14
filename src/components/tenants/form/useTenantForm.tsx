@@ -31,7 +31,7 @@ export const useTenantForm = ({ onSuccess }: UseTenantFormProps) => {
     balance: 0,
     status: "active",
     managerId: managerId,
-    userId: "" // This will be populated during submission
+    userId: "" // Keep this field as it's now part of the Tenant interface
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -77,7 +77,7 @@ export const tenantsService = {
       .eq('email', email);
   },
 
-  async create(tenant: Omit<Tenant, 'id' | 'propertyName' | 'propertyAddress'>): Promise<any> {
+  async create(tenant: Omit<Tenant, "id" | "propertyName" | "propertyAddress">): Promise<any> {
     // Ensure tenant_user_id is required
     if (!tenant.userId) {
       throw new Error("User ID is required to create a tenant");
@@ -96,7 +96,7 @@ export const tenantsService = {
       deposit_amount: tenant.depositAmount,
       balance: tenant.balance,
       status: tenant.status,
-      tenant_user_id: tenant.userId // Ensure this is required
+      tenant_user_id: tenant.userId // Map userId to tenant_user_id
     };
     
     return await supabase

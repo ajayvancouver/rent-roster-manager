@@ -16,5 +16,5 @@ export interface Tenant {
   balance: number;
   status: 'active' | 'inactive' | 'pending';
   managerId: string | undefined;
-  userId: string; // Add the userId field
+  userId: string; // Ensure this field exists and is required
 }
