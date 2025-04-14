@@ -1,28 +1,49 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 const Index: React.FC = () => {
   const { user, userType, isLoading } = useAuth();
   const navigate = useNavigate();
+  const [pageLoading, setPageLoading] = useState(true);
 
   useEffect(() => {
+    // Set a timeout to ensure the page renders even if auth is taking too long
+    const timer = setTimeout(() => {
+      setPageLoading(false);
+    }, 2000);
+
     // Auto-redirect logged in users to their appropriate dashboard
-    if (!isLoading && user) {
-      if (userType === "tenant") {
-        navigate("/tenant/dashboard");
-      } else if (userType === "manager") {
-        navigate("/dashboard");
+    if (!isLoading) {
+      setPageLoading(false);
+      if (user && userType) {
+        if (userType === "tenant") {
+          navigate("/tenant/dashboard");
+        } else if (userType === "manager") {
+          navigate("/dashboard");
+        }
       }
     }
+
+    return () => clearTimeout(timer);
   }, [user, userType, isLoading, navigate]);
 
   const handleGetStarted = () => {
     navigate("/auth");
   };
+
+  // Show a loading spinner while checking auth status (but not too long)
+  if (pageLoading && isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen">

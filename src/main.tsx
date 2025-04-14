@@ -8,20 +8,24 @@ import { defineCustomElements } from '@ionic/pwa-elements/loader';
 // Call the element loader for Capacitor features like camera
 defineCustomElements(window);
 
-// Wait for the deviceready event before bootstrapping the app
-document.addEventListener('deviceready', () => {
-  createRoot(document.getElementById("root")!).render(
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
-  );
-}, false);
+// Create root instance once
+const rootElement = document.getElementById("root");
+if (!rootElement) throw new Error("Root element not found");
+const root = createRoot(rootElement);
 
-// Also handle scenario when not in native app
-if (typeof (window as any).Capacitor === 'undefined') {
-  createRoot(document.getElementById("root")!).render(
+// Handle both native and web environments
+const renderApp = () => {
+  root.render(
     <BrowserRouter>
       <App />
     </BrowserRouter>
   );
+};
+
+// Wait for the deviceready event in Capacitor environment
+if (typeof (window as any).Capacitor !== 'undefined') {
+  document.addEventListener('deviceready', renderApp, false);
+} else {
+  // Standard web environment
+  renderApp();
 }
