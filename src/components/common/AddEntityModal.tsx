@@ -15,7 +15,7 @@ import {
 interface AddEntityModalProps extends DialogProps {
   title: string;
   children: React.ReactNode;
-  onSave: (...args: any[]) => void;  // Changed to accept any arguments
+  onSave: (...args: any[]) => void;  // This accepts any number of arguments
   isLoading?: boolean;
 }
 
