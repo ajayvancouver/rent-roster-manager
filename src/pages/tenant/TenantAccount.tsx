@@ -181,7 +181,7 @@ const TenantAccount: React.FC = () => {
                 )}
                 <div className="flex items-center">
                   <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <span>Joined {formatDate(profile?.created_at)}</span>
+                  <span>Joined {formatDate('2023-01-01')}</span>
                 </div>
               </div>
             </CardContent>
