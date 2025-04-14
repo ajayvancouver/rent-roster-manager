@@ -11,20 +11,22 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { Document } from "@/types";
-import { properties, tenants } from "@/data/mockData";
+import { Document, Property, Tenant } from "@/types";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Button } from "@/components/ui/button";
 
 interface AddDocumentFormProps {
-  onSuccess: () => void;
+  onSuccess: (documentData: Omit<Document, "id" | "uploadDate" | "tenantName" | "propertyName">) => Promise<boolean>;
+  properties: Property[];
+  tenants: Tenant[];
 }
 
-const AddDocumentForm = ({ onSuccess }: AddDocumentFormProps) => {
+const AddDocumentForm = ({ onSuccess, properties, tenants }: AddDocumentFormProps) => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const [isLoading, setIsLoading] = useState(false);
   
-  const [formData, setFormData] = useState<Omit<Document, "id" | "uploadDate" | "fileSize" | "fileType">>({
+  const [formData, setFormData] = useState<Omit<Document, "id" | "uploadDate" | "tenantName" | "propertyName" | "fileSize" | "fileType">>({
     name: "",
     type: "lease",
     url: "",
@@ -45,30 +47,51 @@ const AddDocumentForm = ({ onSuccess }: AddDocumentFormProps) => {
   const handleSelectChange = (field: string, value: string) => {
     setFormData(prev => ({
       ...prev,
-      [field]: field === "type" ? value as Document["type"] : value
+      [field]: value === "none" ? "" : value
     }));
   };
 
   const filteredTenants = formData.propertyId 
     ? tenants.filter(tenant => tenant.propertyId === formData.propertyId)
-    : [];
+    : tenants;
 
   const handleSubmit = async () => {
+    if (!formData.name || !formData.url) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
-      // In a real app, this would be an API call
-      console.log("Submitting document:", formData);
+      // Add file size and type as placeholders since we don't have actual file upload
+      const documentData = {
+        ...formData,
+        fileSize: "10 KB", // Placeholder
+        fileType: "application/pdf" // Placeholder
+      };
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const success = await onSuccess(documentData);
       
-      toast({
-        title: "Document added!",
-        description: "The document has been added successfully."
-      });
-      
-      onSuccess();
+      if (success) {
+        toast({
+          title: "Document added!",
+          description: "The document has been added successfully."
+        });
+        
+        // Reset form
+        setFormData({
+          name: "",
+          type: "lease",
+          url: "",
+          propertyId: "",
+          tenantId: ""
+        });
+      }
     } catch (error) {
       console.error("Error adding document:", error);
       toast({
@@ -175,6 +198,15 @@ const AddDocumentForm = ({ onSuccess }: AddDocumentFormProps) => {
         <p className="text-xs text-muted-foreground">
           Enter a URL to the document. In a real app, this would be a file upload.
         </p>
+      </div>
+
+      <div className="flex justify-end">
+        <Button 
+          onClick={handleSubmit} 
+          disabled={isLoading}
+        >
+          {isLoading ? "Adding..." : "Add Document"}
+        </Button>
       </div>
     </div>
   );

@@ -20,22 +20,35 @@ export function useDocuments() {
       try {
         const managerId = profile?.id || user?.id;
         
-        const [fetchedDocuments, fetchedTenants, fetchedProperties] = await Promise.all([
-          documentsService.getAll(managerId),
+        // Fetch properties and tenants first
+        const [fetchedTenants, fetchedProperties] = await Promise.all([
           tenantsService.getAll(managerId),
           propertiesService.getAll(managerId)
         ]);
         
-        console.log("Fetched documents:", fetchedDocuments);
-        setDocuments(fetchedDocuments);
         setTenants(fetchedTenants);
         setProperties(fetchedProperties);
+        
+        // Then fetch documents
+        try {
+          const fetchedDocuments = await documentsService.getAll(managerId);
+          console.log("Fetched documents:", fetchedDocuments);
+          setDocuments(fetchedDocuments);
+        } catch (docError) {
+          console.error("Error fetching documents:", docError);
+          toast({
+            title: "Error",
+            description: "Failed to load documents data",
+            variant: "destructive"
+          });
+        }
+        
         setIsLoading(false);
       } catch (error) {
-        console.error("Error fetching documents data:", error);
+        console.error("Error fetching data:", error);
         toast({
           title: "Error",
-          description: "Failed to load documents data",
+          description: "Failed to load data",
           variant: "destructive"
         });
         setIsLoading(false);
@@ -91,21 +104,39 @@ export function useDocuments() {
       const documentData = {
         ...formData,
         managerId,
-        uploadDate: new Date().toISOString() // Add the missing uploadDate property
+        uploadDate: new Date().toISOString()
       };
       
-      const result = await documentsService.create(documentData);
+      const { data, error } = await documentsService.create(documentData);
       
-      // Refresh documents data after adding new document
-      const updatedDocuments = await documentsService.getAll(managerId);
-      setDocuments(updatedDocuments);
+      if (error) {
+        console.error("Error creating document:", error);
+        toast({
+          title: "Failed to add document",
+          description: error.message || "Please try again later.",
+          variant: "destructive"
+        });
+        return false;
+      }
       
-      return true;
-    } catch (error) {
+      if (data) {
+        // Refresh documents data after adding new document
+        const updatedDocuments = await documentsService.getAll(managerId);
+        setDocuments(updatedDocuments);
+        
+        toast({
+          title: "Success",
+          description: "Document has been added successfully."
+        });
+        return true;
+      }
+      
+      return false;
+    } catch (error: any) {
       console.error("Error adding document:", error);
       toast({
         title: "Failed to add document",
-        description: "Please try again later.",
+        description: error.message || "Please try again later.",
         variant: "destructive"
       });
       return false;

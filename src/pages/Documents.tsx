@@ -17,13 +17,14 @@ import { useToast } from "@/hooks/use-toast";
 import AddEntityModal from "@/components/common/AddEntityModal";
 import AddDocumentForm from "@/components/documents/AddDocumentForm";
 import { useDocuments } from "@/hooks/useDocuments";
+import { useTenantData } from "@/hooks/useTenantData";
 
 const Documents = () => {
   const { toast } = useToast();
   const [showAddModal, setShowAddModal] = useState(false);
   const {
     filteredDocuments,
-    isLoading,
+    isLoading: isLoadingDocuments,
     searchQuery,
     setSearchQuery,
     typeFilter,
@@ -34,13 +35,21 @@ const Documents = () => {
     handleAddDocument
   } = useDocuments();
 
-  const handleAddDocumentSuccess = () => {
-    setShowAddModal(false);
-    toast({
-      title: "Success",
-      description: "Document has been added successfully."
-    });
+  const {
+    tenants,
+    properties,
+    isLoading: isLoadingTenantData
+  } = useTenantData();
+
+  const handleAddDocumentSuccess = async (documentData: any) => {
+    const success = await handleAddDocument(documentData);
+    if (success) {
+      setShowAddModal(false);
+    }
+    return success;
   };
+
+  const isLoading = isLoadingDocuments || isLoadingTenantData;
 
   return (
     <div className="space-y-6">
@@ -150,9 +159,13 @@ const Documents = () => {
         title="Add New Document"
         open={showAddModal}
         onOpenChange={setShowAddModal}
-        onSave={handleAddDocumentSuccess}
+        onSave={() => {}}
       >
-        <AddDocumentForm onSuccess={handleAddDocumentSuccess} />
+        <AddDocumentForm 
+          onSuccess={handleAddDocumentSuccess} 
+          properties={properties} 
+          tenants={tenants}
+        />
       </AddEntityModal>
     </div>
   );
