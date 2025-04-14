@@ -25,7 +25,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
+      async (event, currentSession) => {
         console.log("Auth state changed:", event, currentSession?.user?.email);
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
@@ -33,7 +33,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (currentSession?.user) {
           // Use setTimeout to avoid recursion
           setTimeout(() => {
-            handleProfileFetch(currentSession.user.id);
+            handleProfileFetch(currentSession.user.id, currentSession.user.email || '');
           }, 0);
         } else {
           setProfile(null);
@@ -50,7 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(currentSession?.user ?? null);
       
       if (currentSession?.user) {
-        handleProfileFetch(currentSession.user.id);
+        handleProfileFetch(currentSession.user.id, currentSession.user.email || '');
       } else {
         setIsLoading(false);
       }
@@ -65,19 +65,66 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const handleProfileFetch = async (userId: string) => {
+  const handleProfileFetch = async (userId: string, email: string) => {
     try {
       let userProfile = await fetchUserProfile(userId);
       
-      if (!userProfile && user?.email) {
-        // No profile found, create a default one
+      if (!userProfile) {
+        // No profile found, create a default one with tenant data if possible
         console.log("No profile found, creating default profile");
-        userProfile = await createDefaultProfile(userId, user.email);
+        userProfile = await createDefaultProfile(userId, email);
       }
       
       if (userProfile) {
         setProfile(userProfile);
         setUserType(userProfile.user_type);
+        
+        // If the profile has no property data but there's a matching tenant, update the profile
+        if (userProfile.user_type === 'tenant' && !userProfile.property_id) {
+          // Check if there's tenant data for this email
+          const { data: tenantData, error: tenantError } = await supabase
+            .from("tenants")
+            .select("*")
+            .eq("email", email)
+            .maybeSingle();
+            
+          if (!tenantError && tenantData) {
+            console.log("Found tenant data for email:", email);
+            // Link tenant to user if not already linked
+            if (!tenantData.tenant_user_id) {
+              await supabase
+                .from("tenants")
+                .update({ tenant_user_id: userId })
+                .eq("id", tenantData.id);
+            }
+            
+            // Update profile with tenant data
+            const updatedProfile = {
+              property_id: tenantData.property_id,
+              unit_number: tenantData.unit_number,
+              rent_amount: tenantData.rent_amount,
+              deposit_amount: tenantData.deposit_amount,
+              balance: tenantData.balance,
+              lease_start: tenantData.lease_start,
+              lease_end: tenantData.lease_end
+            };
+            
+            const { data: profileData, error: profileError } = await supabase
+              .from("profiles")
+              .update(updatedProfile)
+              .eq("id", userId)
+              .select()
+              .single();
+              
+            if (!profileError && profileData) {
+              console.log("Updated profile with tenant data:", profileData);
+              setProfile({
+                ...userProfile,
+                ...updatedProfile
+              });
+            }
+          }
+        }
       } else {
         // If we still couldn't get a profile, set default values
         console.log("Setting default userType as tenant");
@@ -87,6 +134,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error("Error handling profile fetch:", error);
       // Set a default user type to prevent auth loops
       setUserType("tenant");
+      setAuthError(true);
     } finally {
       setIsLoading(false);
     }

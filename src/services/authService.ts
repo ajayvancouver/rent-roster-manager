@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { UserProfile, UserType } from "@/types/auth";
 
@@ -101,13 +102,33 @@ export const createDefaultProfile = async (userId: string, email: string): Promi
   try {
     console.log("Creating default profile for user:", userId);
     
-    // Create new profile
+    // Check if the user already exists as a tenant in the tenants table
+    const { data: existingTenant, error: tenantError } = await supabase
+      .from("tenants")
+      .select("*")
+      .eq("email", email)
+      .maybeSingle();
+      
+    if (tenantError) {
+      console.error("Error checking existing tenant:", tenantError);
+    }
+    
+    // Create new profile with tenant data if available
     const defaultProfile = {
       id: userId,
       email: email,
-      full_name: email.split('@')[0] || email,
+      full_name: existingTenant?.name || email.split('@')[0] || email,
       user_type: 'tenant' as UserType,
-      status: 'active'
+      status: 'active',
+      // If we found matching tenant data, add it to the profile
+      property_id: existingTenant?.property_id || null,
+      unit_number: existingTenant?.unit_number || null,
+      phone: existingTenant?.phone || null,
+      rent_amount: existingTenant?.rent_amount || null,
+      deposit_amount: existingTenant?.deposit_amount || null,
+      balance: existingTenant?.balance || 0,
+      lease_start: existingTenant?.lease_start || null,
+      lease_end: existingTenant?.lease_end || null
     };
     
     const { data, error } = await supabase
@@ -122,6 +143,12 @@ export const createDefaultProfile = async (userId: string, email: string): Promi
     }
     
     console.log("Created default profile for user:", userId, data);
+    
+    // If tenant record exists, link the user ID to the tenant record
+    if (existingTenant && existingTenant.id) {
+      await linkTenantToUser(existingTenant.id, userId);
+      console.log(`Linked tenant ${existingTenant.id} to user ${userId}`);
+    }
     
     if (!data) {
       console.warn("No data returned after profile creation");

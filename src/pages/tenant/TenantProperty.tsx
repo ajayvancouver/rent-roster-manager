@@ -1,13 +1,27 @@
-
-import React from "react";
+import React, { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Building2, Home, Map, Calendar, CreditCard } from "lucide-react";
+import { Building2, Home, Map, Calendar, CreditCard, Info } from "lucide-react";
 import { format } from "date-fns";
 import { useTenantPortal } from "@/hooks/useTenantPortal";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
 
 const TenantProperty: React.FC = () => {
   const { isLoading, propertyData, leaseStart, leaseEnd, rentAmount, depositAmount } = useTenantPortal();
+  const { user, profile } = useAuth();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (!isLoading && !propertyData && user) {
+      toast({
+        title: "No Property Assigned",
+        description: "You don't have a property assigned to your account. Please contact your property manager.",
+        variant: "destructive",
+      });
+    }
+  }, [isLoading, propertyData, user, toast]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -73,9 +87,20 @@ const TenantProperty: React.FC = () => {
             <div className="text-center">
               <Building2 className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
               <h2 className="text-xl font-semibold mb-2">No Property Assigned</h2>
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground mb-6">
                 You don't have a property assigned to your account yet.
               </p>
+              <div className="bg-amber-50 border border-amber-200 rounded-md p-4 flex items-start space-x-3 max-w-md mx-auto">
+                <Info className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                <div className="text-left">
+                  <h3 className="font-medium text-amber-800 text-sm">Account Information</h3>
+                  <p className="text-amber-700 text-sm">
+                    Email: {user?.email}<br />
+                    User Type: {profile?.user_type || 'tenant'}<br />
+                    Account ID: {user?.id?.substring(0, 8) || 'Unknown'}
+                  </p>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
