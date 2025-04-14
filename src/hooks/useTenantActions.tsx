@@ -93,8 +93,86 @@ export function useTenantActions(tenants: Tenant[], setTenants: React.Dispatch<R
     }
   };
 
+  const handleUpdateTenant = async (id: string, tenantData: Partial<Omit<Tenant, "id" | "propertyName" | "propertyAddress">>) => {
+    try {
+      setIsProcessing(true);
+      
+      // Remove managerId from update data if present
+      const { managerId, ...tenantUpdateData } = tenantData;
+      
+      const result = await tenantsService.update(id, tenantUpdateData);
+      
+      if (result) {
+        // Update the tenant in local state
+        setTenants(prevTenants => 
+          prevTenants.map(tenant => 
+            tenant.id === id 
+              ? { 
+                  ...tenant, 
+                  ...tenantData,
+                  propertyName: result.propertyName,
+                  propertyAddress: result.propertyAddress
+                } 
+              : tenant
+          )
+        );
+        
+        toast({
+          title: "Success",
+          description: "Tenant has been updated successfully."
+        });
+        return true;
+      }
+      
+      return false;
+    } catch (error: any) {
+      console.error("Error updating tenant:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update tenant: " + (error.message || "Please try again later."),
+        variant: "destructive"
+      });
+      return false;
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleDeleteTenant = async (id: string) => {
+    try {
+      setIsProcessing(true);
+      
+      const success = await tenantsService.delete(id);
+      
+      if (success) {
+        // Remove the tenant from local state
+        setTenants(prevTenants => prevTenants.filter(tenant => tenant.id !== id));
+        
+        toast({
+          title: "Success",
+          description: "Tenant has been deleted successfully."
+        });
+        return true;
+      }
+      
+      return false;
+    } catch (error: any) {
+      console.error("Error deleting tenant:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete tenant: " + (error.message || "Please try again later."),
+        variant: "destructive"
+      });
+      return false;
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   return {
     isProcessing,
-    handleAddTenant
+    handleAddTenant,
+    handleUpdateTenant,
+    handleDeleteTenant
   };
 }

@@ -2,54 +2,74 @@
 import React from "react";
 import { Tenant } from "@/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import TenantTable from "./TenantTable";
+import TenantTable, { TenantTableSkeleton } from "./TenantTable";
+import { Badge } from "@/components/ui/badge";
 
 interface TenantTabsProps {
   activeTenants: Tenant[];
   inactiveTenants: Tenant[];
   allTenants: Tenant[];
   getPropertyName: (propertyId: string) => string;
-  toggleSort: (field: keyof Tenant) => void;
-  formatDate: (dateString: string) => string;
+  toggleSort: (field: string) => void;
+  formatDate: (date: string) => string;
+  onEditTenant?: (id: string, data: Partial<Omit<Tenant, "id" | "propertyName" | "propertyAddress">>) => Promise<boolean>;
+  onDeleteTenant?: (id: string) => Promise<boolean>;
 }
 
-const TenantTabs: React.FC<TenantTabsProps> = ({
+const TenantTabs = ({
   activeTenants,
   inactiveTenants,
   allTenants,
   getPropertyName,
   toggleSort,
-  formatDate
-}) => {
+  formatDate,
+  onEditTenant,
+  onDeleteTenant
+}: TenantTabsProps) => {
   return (
-    <Tabs defaultValue="active" className="w-full">
-      <TabsList>
-        <TabsTrigger value="active">Active Tenants</TabsTrigger>
-        <TabsTrigger value="inactive">Inactive Tenants</TabsTrigger>
-        <TabsTrigger value="all">All Tenants</TabsTrigger>
+    <Tabs defaultValue="all">
+      <TabsList className="flex mb-6">
+        <TabsTrigger value="all" className="flex-1">
+          All Tenants <Badge className="ml-2" variant="outline">{allTenants.length}</Badge>
+        </TabsTrigger>
+        <TabsTrigger value="active" className="flex-1">
+          Active <Badge className="ml-2" variant="outline">{activeTenants.length}</Badge>
+        </TabsTrigger>
+        <TabsTrigger value="inactive" className="flex-1">
+          Inactive <Badge className="ml-2" variant="outline">{inactiveTenants.length}</Badge>
+        </TabsTrigger>
       </TabsList>
-      <TabsContent value="active" className="mt-4">
-        <TenantTable
-          tenants={activeTenants}
-          getPropertyName={getPropertyName}
-          toggleSort={toggleSort}
-          formatDate={formatDate}
+
+      <TabsContent value="all">
+        <TenantTable 
+          tenants={allTenants} 
+          getPropertyName={getPropertyName} 
+          formatDate={formatDate} 
+          onSort={toggleSort}
+          onEditTenant={onEditTenant}
+          onDeleteTenant={onDeleteTenant}
         />
       </TabsContent>
-      <TabsContent value="inactive" className="mt-4">
-        <TenantTable
-          tenants={inactiveTenants}
-          getPropertyName={getPropertyName}
-          toggleSort={toggleSort}
+
+      <TabsContent value="active">
+        <TenantTable 
+          tenants={activeTenants} 
+          getPropertyName={getPropertyName} 
           formatDate={formatDate}
+          onSort={toggleSort}
+          onEditTenant={onEditTenant}
+          onDeleteTenant={onDeleteTenant}
         />
       </TabsContent>
-      <TabsContent value="all" className="mt-4">
-        <TenantTable
-          tenants={allTenants}
-          getPropertyName={getPropertyName}
-          toggleSort={toggleSort}
+
+      <TabsContent value="inactive">
+        <TenantTable 
+          tenants={inactiveTenants} 
+          getPropertyName={getPropertyName} 
           formatDate={formatDate}
+          onSort={toggleSort}
+          onEditTenant={onEditTenant}
+          onDeleteTenant={onDeleteTenant}
         />
       </TabsContent>
     </Tabs>

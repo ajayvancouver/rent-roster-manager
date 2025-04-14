@@ -137,6 +137,78 @@ export function useProperties() {
     }
   };
 
+  // Update property
+  const handleUpdateProperty = async (id: string, formData: Partial<Omit<Property, "id">>) => {
+    try {
+      const result = await propertiesService.update(id, formData);
+      
+      if (result) {
+        // Update the property in local state
+        setProperties(prevProperties => 
+          prevProperties.map(property => 
+            property.id === id ? { ...property, ...formData } : property
+          )
+        );
+        
+        toast({
+          title: "Success",
+          description: "Property has been updated successfully."
+        });
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error("Error updating property:", error);
+      toast({
+        title: "Failed to update property",
+        description: "Please try again later.",
+        variant: "destructive"
+      });
+      return false;
+    }
+  };
+
+  // Delete property
+  const handleDeleteProperty = async (id: string) => {
+    try {
+      // Check if there are tenants linked to this property
+      const propertyTenants = tenants.filter(tenant => tenant.propertyId === id);
+      
+      if (propertyTenants.length > 0) {
+        toast({
+          title: "Cannot delete property",
+          description: `This property has ${propertyTenants.length} tenants. Remove all tenants before deleting.`,
+          variant: "destructive"
+        });
+        return false;
+      }
+      
+      const success = await propertiesService.delete(id);
+      
+      if (success) {
+        // Remove the property from local state
+        setProperties(prevProperties => prevProperties.filter(property => property.id !== id));
+        
+        toast({
+          title: "Success",
+          description: "Property has been deleted successfully."
+        });
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error("Error deleting property:", error);
+      toast({
+        title: "Failed to delete property",
+        description: "Please try again later.",
+        variant: "destructive"
+      });
+      return false;
+    }
+  };
+
   return {
     properties,
     tenants,
@@ -153,6 +225,8 @@ export function useProperties() {
     getOccupancyRate,
     getOverallOccupancyRate,
     handleAddProperty,
+    handleUpdateProperty,
+    handleDeleteProperty,
     fetchProperties
   };
 }

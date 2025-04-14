@@ -24,7 +24,9 @@ export function useTenants() {
   } = useTenantFilters(tenants);
   
   const { 
-    handleAddTenant 
+    handleAddTenant,
+    handleUpdateTenant,
+    handleDeleteTenant 
   } = useTenantActions(tenants, setTenants, properties);
 
   const filteredTenants = getFilteredTenants(getPropertyName);
@@ -49,6 +51,8 @@ export function useTenants() {
     getPropertyName,
     toggleSort,
     handleAddTenant,
+    handleUpdateTenant,
+    handleDeleteTenant,
     sortedTenants,
     activeTenants: filteredTenants.filter(t => t.status === "active"),
     inactiveTenants: filteredTenants.filter(t => t.status !== "active"),

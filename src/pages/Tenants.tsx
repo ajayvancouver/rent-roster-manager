@@ -15,20 +15,15 @@ const Tenants = () => {
     getPropertyName,
     toggleSort,
     handleAddTenant,
+    handleUpdateTenant,
+    handleDeleteTenant,
     sortedTenants,
     activeTenants,
-    inactiveTenants
+    inactiveTenants,
+    formatDate
   } = useTenants();
   
   const [showAddModal, setShowAddModal] = useState(false);
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -56,6 +51,8 @@ const Tenants = () => {
         getPropertyName={getPropertyName}
         toggleSort={toggleSort}
         formatDate={formatDate}
+        onEditTenant={handleUpdateTenant}
+        onDeleteTenant={handleDeleteTenant}
       />
 
       <AddTenantModal

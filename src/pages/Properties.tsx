@@ -36,6 +36,8 @@ const Properties = () => {
     getOccupancyRate,
     getOverallOccupancyRate,
     handleAddProperty,
+    handleUpdateProperty,
+    handleDeleteProperty,
     fetchProperties
   } = useProperties();
 
@@ -180,6 +182,8 @@ const Properties = () => {
               getTenantCount={getTenantCount}
               getVacancyCount={getVacancyCount}
               getOccupancyRate={getOccupancyRate}
+              onEditProperty={handleUpdateProperty}
+              onDeleteProperty={handleDeleteProperty}
             />
           ) : (
             <PropertyList
@@ -187,6 +191,8 @@ const Properties = () => {
               getTenantCount={getTenantCount}
               getVacancyCount={getVacancyCount}
               getOccupancyRate={getOccupancyRate}
+              onEditProperty={handleUpdateProperty}
+              onDeleteProperty={handleDeleteProperty}
             />
           )
         ) : (

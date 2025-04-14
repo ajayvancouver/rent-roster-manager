@@ -123,5 +123,62 @@ export const propertiesService = {
       image: data.image || undefined,
       managerId: data.manager_id
     };
+  },
+
+  async update(id: string, property: Partial<Omit<Property, 'id'>>): Promise<Property | null> {
+    // Map our TypeScript interface to database columns
+    const dbProperty: any = {};
+    
+    if (property.name !== undefined) dbProperty.name = property.name;
+    if (property.address !== undefined) dbProperty.address = property.address;
+    if (property.city !== undefined) dbProperty.city = property.city;
+    if (property.state !== undefined) dbProperty.state = property.state;
+    if (property.zipCode !== undefined) dbProperty.zip_code = property.zipCode;
+    if (property.units !== undefined) dbProperty.units = property.units;
+    if (property.type !== undefined) dbProperty.type = property.type;
+    if (property.image !== undefined) dbProperty.image = property.image;
+    if (property.managerId !== undefined) dbProperty.manager_id = property.managerId;
+    
+    const { data, error } = await supabase
+      .from('properties')
+      .update(dbProperty)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error("Error updating property:", error);
+      throw error;
+    }
+    
+    if (!data) return null;
+    
+    // Map the response back to our TypeScript interface
+    return {
+      id: data.id,
+      name: data.name,
+      address: data.address,
+      city: data.city,
+      state: data.state,
+      zipCode: data.zip_code,
+      units: data.units,
+      type: data.type as 'apartment' | 'house' | 'duplex' | 'commercial',
+      image: data.image || undefined,
+      managerId: data.manager_id
+    };
+  },
+  
+  async delete(id: string): Promise<boolean> {
+    const { error } = await supabase
+      .from('properties')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error("Error deleting property:", error);
+      throw error;
+    }
+    
+    return true;
   }
 };
