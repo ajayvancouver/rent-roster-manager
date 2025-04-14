@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/contexts/AuthProvider";
 
 import SidebarLayout from "@/components/layout/SidebarLayout";
+import TenantSidebarLayout from "@/components/layout/TenantSidebarLayout";
 import ProtectedRoute from "@/components/common/ProtectedRoute";
 import Auth from "@/pages/Auth";
 import Dashboard from "@/pages/Dashboard";
@@ -60,8 +61,9 @@ function App() {
           
           {/* Tenant Routes */}
           <Route element={<ProtectedRoute allowedUserTypes={["tenant"]} />}>
-            <Route element={<SidebarLayout><Outlet /></SidebarLayout>}>
-              <Route path="/tenant" element={<TenantDashboard />} />
+            <Route element={<TenantSidebarLayout><Outlet /></TenantSidebarLayout>}>
+              <Route path="/tenant" element={<Navigate to="/tenant/dashboard" replace />} />
+              <Route path="/tenant/dashboard" element={<TenantDashboard />} />
               <Route path="/tenant/property" element={<TenantProperty />} />
               <Route path="/tenant/payments" element={<TenantPayments />} />
               <Route path="/tenant/maintenance" element={<TenantMaintenance />} />

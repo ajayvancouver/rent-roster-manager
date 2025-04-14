@@ -1,8 +1,10 @@
+
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { UserType } from "@/types/auth";
 
 interface ProtectedRouteProps {
-  allowedUserTypes?: string[];
+  allowedUserTypes?: UserType[];
   redirectTo?: string;
   element?: React.ReactElement;
 }
@@ -14,7 +16,7 @@ const ProtectedRoute = ({
 }: ProtectedRouteProps) => {
   const { user, userType, isLoading } = useAuth();
 
-  // While checking authentication status, show nothing
+  // While checking authentication status, show loading
   if (isLoading) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
@@ -24,8 +26,17 @@ const ProtectedRoute = ({
     return <Navigate to={redirectTo} />;
   }
 
-  // If a specific user type is required and doesn't match, redirect
+  // If a specific user type is required and doesn't match, redirect to appropriate dashboard
   if (allowedUserTypes && !allowedUserTypes.includes(userType)) {
+    // If user is tenant but trying to access manager routes, redirect to tenant dashboard
+    if (userType === "tenant") {
+      return <Navigate to="/tenant/dashboard" />;
+    }
+    // If user is manager but trying to access tenant routes, redirect to manager dashboard
+    if (userType === "manager") {
+      return <Navigate to="/dashboard" />;
+    }
+    // Default fallback
     return <Navigate to="/" />;
   }
 

@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useAuth } from "@/hooks/useAuth";
+import UserMenu from "@/components/common/UserMenu";
 
 interface SidebarItemProps {
   icon: React.ElementType;
@@ -54,7 +55,7 @@ const TenantSidebarLayout = ({ children }: TenantSidebarLayoutProps) => {
   const { user } = useAuth();
   
   const navItems = [
-    { icon: Home, label: "Dashboard", path: "/tenant" },
+    { icon: Home, label: "Dashboard", path: "/tenant/dashboard" },
     { icon: Building2, label: "My Property", path: "/tenant/property" },
     { icon: CreditCard, label: "Payments", path: "/tenant/payments" },
     { icon: Wrench, label: "Maintenance", path: "/tenant/maintenance" },
@@ -159,6 +160,7 @@ const TenantSidebarLayout = ({ children }: TenantSidebarLayoutProps) => {
         <header className="bg-background border-b sticky top-0 z-40 w-full">
           <div className="container flex h-16 items-center justify-between px-4">
             <h1 className="text-xl font-bold">Tenant Portal</h1>
+            <UserMenu />
           </div>
         </header>
         <div className="container mx-auto py-6 px-4">
