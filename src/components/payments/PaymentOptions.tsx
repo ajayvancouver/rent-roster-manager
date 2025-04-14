@@ -11,6 +11,7 @@ import { loadStripe } from "@stripe/stripe-js";
 import StripePaymentForm from "./StripePaymentForm";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Copy, CheckCircle } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 // Initialize Stripe
 const stripePromise = loadStripe("pk_test_51OusGOBvxCgN8hIpkkpK94Wr8rJQ9gXWsZuZM45RWLsBRG07Gl1a4fPuQEWO8Zx2dAWZMa0MYrIY19zHPaLQfG1800v3qvofNu");
@@ -22,6 +23,7 @@ interface PaymentOptionsProps {
 
 const PaymentOptions = ({ amount, onPaymentComplete }: PaymentOptionsProps) => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [paymentTab, setPaymentTab] = useState("stripe");
   const [isLoading, setIsLoading] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
@@ -70,6 +72,15 @@ const PaymentOptions = ({ amount, onPaymentComplete }: PaymentOptionsProps) => {
   };
 
   const handleInteracPayment = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "You must be logged in to make a payment.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
@@ -77,6 +88,8 @@ const PaymentOptions = ({ amount, onPaymentComplete }: PaymentOptionsProps) => {
       const { data, error } = await supabase
         .from("payments")
         .insert({
+          tenant_id: user.id,
+          tenant_user_id: user.id,
           amount,
           method: "bank transfer",
           status: "pending",
