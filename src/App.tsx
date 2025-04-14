@@ -23,7 +23,13 @@ import Account from "@/pages/Account";
 import NotFound from "@/pages/NotFound";
 import Index from "@/pages/Index";
 
+// Tenant pages
 import TenantDashboard from "@/pages/tenant/TenantDashboard";
+import TenantProperty from "@/pages/tenant/TenantProperty";
+import TenantPayments from "@/pages/tenant/TenantPayments";
+import TenantMaintenance from "@/pages/tenant/TenantMaintenance";
+import TenantDocuments from "@/pages/tenant/TenantDocuments";
+import TenantAccount from "@/pages/tenant/TenantAccount";
 
 function App() {
   return (
@@ -34,9 +40,7 @@ function App() {
           <Route path="/" element={<Index />} />
           
           {/* Property Manager Routes */}
-          <Route 
-            element={<ProtectedRoute allowedUserTypes={["manager"]} />}
-          >
+          <Route element={<ProtectedRoute allowedUserTypes={["manager"]} />}>
             <Route element={<SidebarLayout><Outlet /></SidebarLayout>}>
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={<Dashboard />} />
@@ -55,12 +59,14 @@ function App() {
           </Route>
           
           {/* Tenant Routes */}
-          <Route 
-            element={<ProtectedRoute allowedUserTypes={["tenant"]} />}
-          >
+          <Route element={<ProtectedRoute allowedUserTypes={["tenant"]} />}>
             <Route element={<SidebarLayout><Outlet /></SidebarLayout>}>
               <Route path="/tenant" element={<TenantDashboard />} />
-              <Route path="/tenant/account" element={<Account />} />
+              <Route path="/tenant/property" element={<TenantProperty />} />
+              <Route path="/tenant/payments" element={<TenantPayments />} />
+              <Route path="/tenant/maintenance" element={<TenantMaintenance />} />
+              <Route path="/tenant/documents" element={<TenantDocuments />} />
+              <Route path="/tenant/account" element={<TenantAccount />} />
             </Route>
           </Route>
           
