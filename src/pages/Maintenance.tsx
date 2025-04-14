@@ -52,10 +52,10 @@ const MaintenancePage = () => {
     }
   };
 
-  const modalSaveHandler = (formData?: any) => {
-    // This function is now explicitly typed to match the required signature
-    // It's still a no-op function as the actual submission is handled by onSuccess
-    return Promise.resolve();
+  const modalSaveHandler = () => {
+    // This is a no-op function to satisfy type requirements
+    // The actual form submission is handled by onSuccess
+    return;
   };
 
   return (
