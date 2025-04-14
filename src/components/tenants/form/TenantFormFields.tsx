@@ -33,14 +33,14 @@ export const TenantFormFields: React.FC<TenantFormFieldsProps> = ({
   isLoadingProperties: propIsLoading
 }) => {
   const [properties, setProperties] = useState<Property[]>(propProperties || []);
-  const [isLoading, setIsLoading] = useState(propIsLoading || true);
+  const [isLoading, setIsLoading] = useState<boolean>(propIsLoading || true);
   const { profile, user } = useAuth();
   
   useEffect(() => {
     // If properties are provided externally, use those
     if (propProperties) {
       setProperties(propProperties);
-      setIsLoading(propIsLoading || false);
+      setIsLoading(!!propIsLoading);
       return;
     }
 

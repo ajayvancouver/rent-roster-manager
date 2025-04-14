@@ -73,9 +73,9 @@ const TenantTable: React.FC<TenantTableProps> = ({
               Lease End{renderSortIndicator("leaseEnd")}
             </TableHead>
             <TableHead 
-              className={onSort ? "cursor-pointer" : ""} 
+              className={onSort ? "cursor-pointer" : ""}
               onClick={() => handleHeaderClick("rentAmount")}
-              className="text-right"
+              style={{ textAlign: "right" }}
             >
               Rent{renderSortIndicator("rentAmount")}
             </TableHead>
@@ -113,9 +113,9 @@ const TenantTable: React.FC<TenantTableProps> = ({
                 <Badge
                   variant={
                     tenant.status === "active"
-                      ? "success"
+                      ? "default"
                       : tenant.status === "pending"
-                      ? "warning"
+                      ? "outline"
                       : "secondary"
                   }
                 >

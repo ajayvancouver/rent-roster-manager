@@ -34,9 +34,9 @@ const PropertyList = ({
         <div key={property.id} className="relative">
           <PropertyListItem
             property={property}
-            tenantCount={getTenantCount(property.id)}
-            vacancyCount={getVacancyCount(property)}
-            occupancyRate={getOccupancyRate(property)}
+            getTenantCount={() => getTenantCount(property.id)}
+            getVacancyCount={() => getVacancyCount(property)}
+            getOccupancyRate={() => getOccupancyRate(property)}
             onClick={() => handlePropertyClick(property.id)}
           />
           <div className="absolute top-2 right-2 z-10">
