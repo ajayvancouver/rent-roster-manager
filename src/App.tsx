@@ -1,5 +1,5 @@
 
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/contexts/AuthProvider";
 
@@ -37,7 +37,7 @@ function App() {
           <Route 
             element={<ProtectedRoute allowedUserTypes={["manager"]} />}
           >
-            <Route element={<SidebarLayout />}>
+            <Route element={<SidebarLayout><Outlet /></SidebarLayout>}>
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/tenants" element={<Tenants />} />
@@ -58,7 +58,7 @@ function App() {
           <Route 
             element={<ProtectedRoute allowedUserTypes={["tenant"]} />}
           >
-            <Route element={<SidebarLayout />}>
+            <Route element={<SidebarLayout><Outlet /></SidebarLayout>}>
               <Route path="/tenant" element={<TenantDashboard />} />
               <Route path="/tenant/account" element={<Account />} />
             </Route>
