@@ -33,7 +33,8 @@ export const tenantsService = {
       depositAmount: item.deposit_amount,
       balance: item.balance || 0,
       status: item.status as 'active' | 'inactive' | 'pending',
-      managerId: item.properties?.manager_id
+      managerId: item.properties?.manager_id,
+      userId: item.tenant_user_id // Rename to userId for consistency
     }));
   },
 
@@ -64,7 +65,8 @@ export const tenantsService = {
       depositAmount: data.deposit_amount,
       balance: data.balance || 0,
       status: data.status as 'active' | 'inactive' | 'pending',
-      managerId: data.properties?.manager_id
+      managerId: data.properties?.manager_id,
+      userId: data.tenant_user_id // Rename to userId for consistency
     };
   },
 
@@ -76,8 +78,12 @@ export const tenantsService = {
   },
 
   async create(tenant: Omit<Tenant, 'id' | 'propertyName' | 'propertyAddress'>): Promise<any> {
+    // Ensure tenant_user_id is required
+    if (!tenant.userId) {
+      throw new Error("User ID is required to create a tenant");
+    }
+
     // Map our TypeScript interface to database columns
-    // IMPORTANT: We removed manager_id from the dbTenant object as it's not a column in the tenants table
     const dbTenant = {
       name: tenant.name,
       email: tenant.email,
@@ -89,7 +95,8 @@ export const tenantsService = {
       rent_amount: tenant.rentAmount,
       deposit_amount: tenant.depositAmount,
       balance: tenant.balance,
-      status: tenant.status
+      status: tenant.status,
+      tenant_user_id: tenant.userId // Ensure this is required
     };
     
     return await supabase
@@ -134,7 +141,7 @@ export const tenantsService = {
         balance: data.balance || 0,
         status: data.status as 'active' | 'inactive' | 'pending',
         managerId: data.properties?.manager_id,
-        tenantUserId: data.tenant_user_id
+        userId: data.tenant_user_id // Rename for consistency
       };
     } catch (error) {
       console.error("Error getting tenant by user ID:", error);

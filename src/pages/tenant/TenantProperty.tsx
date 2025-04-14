@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -63,81 +62,77 @@ const TenantProperty: React.FC = () => {
   };
 
   const checkTenantRecords = async () => {
-    if (!profile?.email) return;
+    if (!profile?.email || !user?.id) return;
     
     setIsChecking(true);
     setLinkingAttempted(true);
     try {
-      console.log("Checking tenant records for email:", profile.email);
+      console.log("Checking tenant records for user ID:", user.id, "email:", profile.email);
       
-      // First try exact email match (case sensitive)
-      const { data: exactMatch, error: exactError } = await supabase
+      // First check if the user already has a tenant record
+      const { data: tenantByUserId, error: userIdError } = await supabase
+        .from('tenants')
+        .select('*, properties(*)')
+        .eq('tenant_user_id', user.id)
+        .maybeSingle();
+        
+      if (userIdError) console.error("Error checking tenant by user ID:", userIdError);
+      
+      // If found by user ID, update the debug info and return
+      if (tenantByUserId) {
+        console.log("Found tenant record by user ID:", tenantByUserId);
+        setDebugInfo({
+          userId: user.id,
+          userEmail: profile.email,
+          tenantRecord: tenantByUserId,
+          lookupMethod: "user_id",
+          timestamp: new Date().toISOString()
+        });
+        
+        // Update profile with tenant data if not already set
+        if (!profile.property_id) {
+          await updateProfileWithTenantData(user.id, tenantByUserId);
+        }
+        
+        setIsChecking(false);
+        return;
+      }
+      
+      // If not found by user ID, try email match
+      const { data: tenantByEmail, error: emailError } = await supabase
         .from('tenants')
         .select('*, properties(*)')
         .eq('email', profile.email)
         .maybeSingle();
         
-      if (exactError) console.error("Error checking exact email match:", exactError);
-      
-      // Try case-insensitive match as fallback
-      const { data: caseInsensitiveMatch, error: caseError } = await supabase
-        .from('tenants')
-        .select('*, properties(*)')
-        .ilike('email', profile.email)
-        .maybeSingle();
-        
-      if (caseError) console.error("Error checking case-insensitive email match:", caseError);
+      if (emailError) console.error("Error checking tenant by email:", emailError);
       
       // Set debug info for transparency
       setDebugInfo({
+        userId: user.id,
         userEmail: profile.email,
-        userId: user?.id,
-        profilePropertyId: profile.property_id,
-        exactEmailMatch: exactMatch,
-        caseInsensitiveMatch: caseInsensitiveMatch,
+        tenantRecordByEmail: tenantByEmail,
+        lookupMethod: "email",
         timestamp: new Date().toISOString()
       });
       
-      // First check if we have an exact email match
-      if (exactMatch) {
-        console.log("Found tenant with exact email match:", exactMatch);
+      // If found by email, link the tenant to this user
+      if (tenantByEmail) {
+        console.log("Found tenant with email match:", tenantByEmail);
         
-        if (exactMatch.tenant_user_id !== user?.id) {
-          console.log("Linking tenant to user - tenant ID:", exactMatch.id, "user ID:", user?.id);
+        if (!tenantByEmail.tenant_user_id) {
+          console.log("Linking tenant to user - tenant ID:", tenantByEmail.id, "user ID:", user.id);
           
           // Link user to tenant
           try {
-            await linkTenantToUser(exactMatch.id, user?.id || '');
+            await linkTenantToUser(tenantByEmail.id, user.id);
+            await updateProfileWithTenantData(user.id, tenantByEmail);
             
-            // Update profile with tenant data
-            const { error: profileError } = await supabase
-              .from('profiles')
-              .update({
-                property_id: exactMatch.property_id,
-                unit_number: exactMatch.unit_number,
-                rent_amount: exactMatch.rent_amount,
-                deposit_amount: exactMatch.deposit_amount,
-                balance: exactMatch.balance,
-                lease_start: exactMatch.lease_start,
-                lease_end: exactMatch.lease_end
-              })
-              .eq('id', user?.id);
-              
-            if (profileError) {
-              console.error("Error updating profile with tenant data:", profileError);
-              toast({
-                title: "Error",
-                description: "Failed to update your profile with property information. Please try again.",
-                variant: "destructive",
-              });
-            } else {
-              console.log("Successfully updated profile with tenant data");
-              toast({
-                title: "Success",
-                description: "Property assignment fixed. Please refresh the page to see your property details.",
-                variant: "default",
-              });
-            }
+            toast({
+              title: "Success",
+              description: "Property assignment linked to your account. Please refresh the page to see your property details.",
+              variant: "default",
+            });
           } catch (linkError) {
             console.error("Error linking tenant to user:", linkError);
             toast({
@@ -146,75 +141,30 @@ const TenantProperty: React.FC = () => {
               variant: "destructive",
             });
           }
-        } else {
-          console.log("Tenant is already linked to this user");
+        } else if (tenantByEmail.tenant_user_id !== user.id) {
+          // Tenant is already linked to another user - this shouldn't happen now
+          console.log("Tenant is already linked to another user:", tenantByEmail.tenant_user_id);
           toast({
-            title: "Information",
-            description: "Your account is already linked to a tenant record. Try refreshing the page.",
-            variant: "default",
+            title: "Account Conflict",
+            description: "This tenant is already linked to another user account. Please contact your property manager.",
+            variant: "destructive",
           });
-        }
-      } 
-      // If no exact match, try case-insensitive match
-      else if (caseInsensitiveMatch) {
-        console.log("Found tenant with case-insensitive email match:", caseInsensitiveMatch);
-        
-        if (caseInsensitiveMatch.tenant_user_id !== user?.id) {
-          console.log("Linking tenant to user - tenant ID:", caseInsensitiveMatch.id, "user ID:", user?.id);
-          
-          try {
-            await linkTenantToUser(caseInsensitiveMatch.id, user?.id || '');
-            
-            // Update profile with tenant data
-            const { error: profileError } = await supabase
-              .from('profiles')
-              .update({
-                property_id: caseInsensitiveMatch.property_id,
-                unit_number: caseInsensitiveMatch.unit_number,
-                rent_amount: caseInsensitiveMatch.rent_amount,
-                deposit_amount: caseInsensitiveMatch.deposit_amount,
-                balance: caseInsensitiveMatch.balance,
-                lease_start: caseInsensitiveMatch.lease_start,
-                lease_end: caseInsensitiveMatch.lease_end
-              })
-              .eq('id', user?.id);
-              
-            if (profileError) {
-              console.error("Error updating profile with tenant data:", profileError);
-              toast({
-                title: "Error",
-                description: "Failed to update your profile with property information. Please try again.",
-                variant: "destructive",
-              });
-            } else {
-              console.log("Successfully updated profile with tenant data");
-              toast({
-                title: "Success",
-                description: "Property assignment fixed. Please refresh the page to see your property details.",
-                variant: "default",
-              });
-            }
-          } catch (linkError) {
-            console.error("Error linking tenant to user:", linkError);
-            toast({
-              title: "Error",
-              description: "Failed to link your account to the tenant record. Please contact support.",
-              variant: "destructive",
-            });
-          }
         } else {
-          console.log("Tenant is already linked to this user");
+          // Tenant is correctly linked, but profile data might be missing
+          console.log("Tenant is already linked to this user, updating profile data");
+          await updateProfileWithTenantData(user.id, tenantByEmail);
+          
           toast({
             title: "Information",
-            description: "Your account is already linked to a tenant record. Try refreshing the page.",
+            description: "Your account is already linked to this tenant record. Try refreshing the page.",
             variant: "default",
           });
         }
       } else {
-        console.log("No tenant record found for this email:", profile.email);
+        console.log("No tenant record found for this user:", user.id);
         toast({
           title: "No Tenant Record Found",
-          description: "No tenant record was found with your email address. Please contact your property manager.",
+          description: "No tenant record was found for your account. Please contact your property manager.",
           variant: "destructive",
         });
       }
@@ -227,6 +177,35 @@ const TenantProperty: React.FC = () => {
       });
     } finally {
       setIsChecking(false);
+    }
+  };
+  
+  const updateProfileWithTenantData = async (userId: string, tenantData: any) => {
+    try {
+      console.log("Updating profile with tenant data:", tenantData);
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          property_id: tenantData.property_id,
+          unit_number: tenantData.unit_number,
+          rent_amount: tenantData.rent_amount,
+          deposit_amount: tenantData.deposit_amount,
+          balance: tenantData.balance,
+          lease_start: tenantData.lease_start,
+          lease_end: tenantData.lease_end
+        })
+        .eq('id', userId);
+        
+      if (profileError) {
+        console.error("Error updating profile with tenant data:", profileError);
+        throw profileError;
+      }
+      
+      console.log("Successfully updated profile with tenant data");
+      return true;
+    } catch (error) {
+      console.error("Error in updateProfileWithTenantData:", error);
+      throw error;
     }
   };
 

@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Tenant } from "@/types";
 import { tenantsService } from "@/services/tenantsService";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 interface UseTenantFormProps {
   onSuccess: (tenantData: Omit<Tenant, "id" | "propertyName" | "propertyAddress">) => void;
@@ -13,6 +14,7 @@ export const useTenantForm = ({ onSuccess }: UseTenantFormProps) => {
   const { toast } = useToast();
   const { user, profile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [isCreatingUser, setIsCreatingUser] = useState(false);
   
   const managerId = profile?.id || user?.id;
   
@@ -28,7 +30,8 @@ export const useTenantForm = ({ onSuccess }: UseTenantFormProps) => {
     depositAmount: 0,
     balance: 0,
     status: "active",
-    managerId: managerId
+    managerId: managerId,
+    userId: "" // This will be populated during submission
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -46,6 +49,64 @@ export const useTenantForm = ({ onSuccess }: UseTenantFormProps) => {
       ...prev,
       [field]: field === "status" ? value as Tenant["status"] : value
     }));
+  };
+
+  // Find or create a user account for the tenant
+  const findOrCreateTenantUser = async (email: string, name: string) => {
+    setIsCreatingUser(true);
+    try {
+      // First check if a user with this email already exists
+      const { data: existingUsers, error: userCheckError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', email)
+        .maybeSingle();
+        
+      if (userCheckError) throw userCheckError;
+      
+      // If user exists, return their ID
+      if (existingUsers) {
+        console.log("User account already exists:", existingUsers.id);
+        return existingUsers.id;
+      }
+      
+      // Generate a temporary password for the user
+      const tempPassword = Math.random().toString(36).slice(-8);
+      
+      // Create a new user account
+      const { data: newUser, error: createError } = await supabase.auth.signUp({
+        email,
+        password: tempPassword,
+        options: {
+          data: {
+            full_name: name,
+            user_type: 'tenant'
+          }
+        }
+      });
+      
+      if (createError) throw createError;
+      
+      if (!newUser.user) {
+        throw new Error("Failed to create user account");
+      }
+      
+      console.log("Created new user account:", newUser.user.id);
+      
+      // Send notification to property manager about password
+      toast({
+        title: "User Account Created",
+        description: `Created account for ${email}. Temporary password: ${tempPassword}`,
+        variant: "default"
+      });
+      
+      return newUser.user.id;
+    } catch (error) {
+      console.error("Error finding/creating tenant user:", error);
+      throw error;
+    } finally {
+      setIsCreatingUser(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -97,12 +158,16 @@ export const useTenantForm = ({ onSuccess }: UseTenantFormProps) => {
         return;
       }
       
+      // Find or create a user account for this tenant
+      const userId = await findOrCreateTenantUser(formData.email, formData.name);
+      
       // Prepare the data with proper null handling and ensure managerId is present
       const submitData = {
         ...formData,
         propertyId: formData.propertyId || "",
         unitNumber: formData.unitNumber || "",
-        managerId: managerId
+        managerId: managerId,
+        userId: userId // Set the userId from auth
       };
       
       console.log("Submitting tenant data:", submitData);
@@ -122,7 +187,7 @@ export const useTenantForm = ({ onSuccess }: UseTenantFormProps) => {
 
   return {
     formData,
-    isLoading,
+    isLoading: isLoading || isCreatingUser,
     handleChange,
     handleSelectChange,
     handleSubmit
