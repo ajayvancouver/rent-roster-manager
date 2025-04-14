@@ -1,7 +1,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Property } from "@/types";
-import { propertiesService, tenantsService } from "@/services/supabaseService";
+import { propertiesService } from "@/services/propertiesService";
+import { tenantsService } from "@/services/supabaseService";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -82,7 +83,7 @@ export function useProperties() {
     return totalUnits > 0 ? Math.round((totalTenants / totalUnits) * 100) : 0;
   };
 
-  // Add property (we'll implement this in AddPropertyForm)
+  // Add property
   const handleAddProperty = async (formData: Omit<Property, "id">) => {
     try {
       // Ensure managerId is set
@@ -94,8 +95,10 @@ export function useProperties() {
       
       const result = await propertiesService.create(propertyData);
       
-      // Refresh properties data after adding new property
-      await fetchProperties();
+      // Add the new property to the local state
+      if (result) {
+        setProperties(prevProperties => [...prevProperties, result]);
+      }
       
       return true;
     } catch (error) {

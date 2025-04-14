@@ -1,10 +1,10 @@
 
-import { Link } from "react-router-dom";
-import { Building, Building2, Home } from "lucide-react";
-import { Property } from "@/types";
+import { Building, Building2, Home, Warehouse } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { Property } from "@/types";
 
 interface PropertyListItemProps {
   property: Property;
@@ -13,71 +13,93 @@ interface PropertyListItemProps {
   getOccupancyRate: (property: Property) => number;
 }
 
-const PropertyListItem = ({ 
-  property, 
-  getTenantCount, 
-  getVacancyCount, 
-  getOccupancyRate 
+const PropertyListItem = ({
+  property,
+  getTenantCount,
+  getVacancyCount,
+  getOccupancyRate,
 }: PropertyListItemProps) => {
-  // Get property type icon
-  const renderPropertyTypeIcon = (type: Property["type"]) => {
-    switch (type) {
-      case "apartment":
-        return <Building2 className="h-5 w-5" />;
-      case "house":
+  const navigate = useNavigate();
+  
+  const tenantCount = getTenantCount(property.id);
+  const vacancyCount = getVacancyCount(property);
+  const occupancyRate = getOccupancyRate(property);
+
+  const PropertyTypeIcon = () => {
+    switch (property.type) {
+      case 'house':
         return <Home className="h-5 w-5" />;
-      case "duplex":
+      case 'apartment':
+        return <Building2 className="h-5 w-5" />;
+      case 'duplex':
         return <Building className="h-5 w-5" />;
-      case "commercial":
-        return <Building className="h-5 w-5" />;
+      case 'commercial':
+        return <Warehouse className="h-5 w-5" />;
       default:
         return <Building2 className="h-5 w-5" />;
     }
   };
 
+  const handleViewDetails = () => {
+    navigate(`/properties/${property.id}`);
+  };
+
   return (
-    <Card key={property.id} className="card-hover">
-      <CardContent className="p-6">
+    <Card>
+      <CardContent className="p-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <div className="p-2 rounded-full bg-primary/10 text-primary">
-                {renderPropertyTypeIcon(property.type)}
+          {/* Property Info */}
+          <div className="flex items-center space-x-4">
+            {/* Property Image or Icon */}
+            <div className="h-16 w-16 bg-muted flex items-center justify-center rounded">
+              {property.image ? (
+                <img
+                  src={property.image}
+                  alt={property.name}
+                  className="h-full w-full object-cover rounded"
+                />
+              ) : (
+                <PropertyTypeIcon />
+              )}
+            </div>
+            
+            {/* Property Details */}
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold">{property.name}</h3>
+                <Badge className="capitalize text-xs">
+                  {property.type}
+                </Badge>
               </div>
-              <div>
-                <Link to={`/properties/${property.id}`}>
-                  <h3 className="font-semibold hover:underline">{property.name}</h3>
-                </Link>
-                <p className="text-sm text-muted-foreground">
-                  {property.address}, {property.city}, {property.state} {property.zipCode}
-                </p>
-              </div>
+              <p className="text-muted-foreground text-sm">{property.address}</p>
+              <p className="text-muted-foreground text-sm">{property.city}, {property.state} {property.zipCode}</p>
             </div>
           </div>
           
-          <div className="flex flex-row gap-4 md:gap-8">
+          {/* Stats */}
+          <div className="flex items-center gap-6">
             <div className="text-center">
-              <p className="text-xs text-muted-foreground">Units</p>
+              <p className="text-sm text-muted-foreground">Units</p>
               <p className="font-medium">{property.units}</p>
             </div>
             <div className="text-center">
-              <p className="text-xs text-muted-foreground">Tenants</p>
-              <p className="font-medium">{getTenantCount(property.id)}</p>
+              <p className="text-sm text-muted-foreground">Occupied</p>
+              <p className="font-medium">{tenantCount}</p>
             </div>
             <div className="text-center">
-              <p className="text-xs text-muted-foreground">Vacancies</p>
-              <p className="font-medium">{getVacancyCount(property)}</p>
+              <p className="text-sm text-muted-foreground">Vacant</p>
+              <p className="font-medium">{vacancyCount}</p>
             </div>
             <div className="text-center">
-              <Badge>
-                {getOccupancyRate(property)}% Occupied
-              </Badge>
+              <p className="text-sm text-muted-foreground">Occupancy</p>
+              <p className="font-medium">{occupancyRate}%</p>
             </div>
+            
+            {/* View Button */}
+            <Button variant="outline" onClick={handleViewDetails}>
+              View Details
+            </Button>
           </div>
-          
-          <Link to={`/properties/${property.id}`}>
-            <Button variant="outline" size="sm">View Details</Button>
-          </Link>
         </div>
       </CardContent>
     </Card>

@@ -236,9 +236,14 @@ const Account = () => {
     <div className="container max-w-4xl py-10">
       <div className="mb-10">
         <h1 className="text-3xl font-bold">Account Settings</h1>
-        <p className="text-muted-foreground mt-2">
-          Manage your account settings and profile information
-        </p>
+        <div className="flex items-center mt-2">
+          <p className="text-muted-foreground">
+            Manage your account settings and profile information
+          </p>
+          <Badge className="ml-2 capitalize" variant={profile.user_type === "manager" ? "default" : "outline"}>
+            {profile.user_type} Account
+          </Badge>
+        </div>
       </div>
 
       <Tabs defaultValue="profile" className="space-y-8">

@@ -15,6 +15,8 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { Maintenance, Property, Tenant } from "@/types";
+import { propertiesService } from "@/services/propertiesService";
+import { tenantsService } from "@/services/tenantsService";
 
 interface AddMaintenanceRequestFormProps {
   onSuccess: () => void;
@@ -49,49 +51,12 @@ const AddMaintenanceRequestForm = ({ onSuccess }: AddMaintenanceRequestFormProps
       }
       
       try {
-        // Fetch properties
-        const { data: propertiesData, error: propertiesError } = await supabase
-          .from('properties')
-          .select('*')
-          .eq('manager_id', managerId);
+        // Use our services to fetch properties and tenants
+        const fetchedProperties = await propertiesService.getAll(managerId);
+        const fetchedTenants = await tenantsService.getAll(managerId);
         
-        if (propertiesError) throw propertiesError;
-        
-        // Fetch tenants
-        const { data: tenantsData, error: tenantsError } = await supabase
-          .from('tenants')
-          .select('*');
-        
-        if (tenantsError) throw tenantsError;
-        
-        // Map database results to our model with proper type casting
-        setProperties(propertiesData.map(item => ({
-          id: item.id,
-          name: item.name,
-          address: item.address,
-          city: item.city,
-          state: item.state,
-          zipCode: item.zip_code,
-          units: item.units,
-          type: item.type as 'apartment' | 'house' | 'duplex' | 'commercial', // Add type casting here
-          image: item.image,
-          managerId: item.manager_id
-        })));
-        
-        setTenants(tenantsData.map(item => ({
-          id: item.id,
-          name: item.name,
-          email: item.email,
-          phone: item.phone,
-          propertyId: item.property_id,
-          unitNumber: item.unit_number,
-          status: item.status as 'active' | 'inactive' | 'pending', // Add type casting here
-          rentAmount: item.rent_amount,
-          depositAmount: item.deposit_amount,
-          balance: item.balance,
-          leaseStart: item.lease_start,
-          leaseEnd: item.lease_end
-        })));
+        setProperties(fetchedProperties);
+        setTenants(fetchedTenants);
       } catch (error) {
         console.error("Error fetching data:", error);
         toast({
