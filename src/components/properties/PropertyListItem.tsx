@@ -1,4 +1,3 @@
-
 import { Building, Building2, Home, Warehouse } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,9 +7,10 @@ import { Property } from "@/types";
 
 interface PropertyListItemProps {
   property: Property;
-  getTenantCount: (propertyId: string) => number;
-  getVacancyCount: (property: Property) => number;
-  getOccupancyRate: (property: Property) => number;
+  getTenantCount: () => number;
+  getVacancyCount: () => number;
+  getOccupancyRate: () => number;
+  onClick?: () => void; // Make onClick optional
 }
 
 const PropertyListItem = ({
@@ -18,12 +18,13 @@ const PropertyListItem = ({
   getTenantCount,
   getVacancyCount,
   getOccupancyRate,
+  onClick,
 }: PropertyListItemProps) => {
   const navigate = useNavigate();
   
-  const tenantCount = getTenantCount(property.id);
-  const vacancyCount = getVacancyCount(property);
-  const occupancyRate = getOccupancyRate(property);
+  const tenantCount = getTenantCount();
+  const vacancyCount = getVacancyCount();
+  const occupancyRate = getOccupancyRate();
 
   const PropertyTypeIcon = () => {
     switch (property.type) {
@@ -41,7 +42,13 @@ const PropertyListItem = ({
   };
 
   const handleViewDetails = () => {
-    navigate(`/properties/${property.id}`);
+    if (onClick) {
+      // Use the provided onClick handler if available
+      onClick();
+    } else {
+      // Otherwise, use default navigation
+      navigate(`/properties/${property.id}`);
+    }
   };
 
   return (
