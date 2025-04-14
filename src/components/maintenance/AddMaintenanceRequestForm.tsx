@@ -64,7 +64,7 @@ const AddMaintenanceRequestForm = ({ onSuccess }: AddMaintenanceRequestFormProps
         
         if (tenantsError) throw tenantsError;
         
-        // Map database results to our model
+        // Map database results to our model with proper type casting
         setProperties(propertiesData.map(item => ({
           id: item.id,
           name: item.name,
@@ -73,7 +73,7 @@ const AddMaintenanceRequestForm = ({ onSuccess }: AddMaintenanceRequestFormProps
           state: item.state,
           zipCode: item.zip_code,
           units: item.units,
-          type: item.type,
+          type: item.type as 'apartment' | 'house' | 'duplex' | 'commercial', // Add type casting here
           image: item.image,
           managerId: item.manager_id
         })));
@@ -85,7 +85,7 @@ const AddMaintenanceRequestForm = ({ onSuccess }: AddMaintenanceRequestFormProps
           phone: item.phone,
           propertyId: item.property_id,
           unitNumber: item.unit_number,
-          status: item.status,
+          status: item.status as 'active' | 'inactive' | 'pending', // Add type casting here
           rentAmount: item.rent_amount,
           depositAmount: item.deposit_amount,
           balance: item.balance,
