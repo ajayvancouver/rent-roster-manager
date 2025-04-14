@@ -13,9 +13,9 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useAuth } from "@/hooks/useAuth";
 import UserMenu from "@/components/common/UserMenu";
+import { useTenantPortal } from "@/hooks/useTenantPortal";
 
 interface SidebarItemProps {
   icon: React.ElementType;
@@ -53,6 +53,7 @@ const TenantSidebarLayout = ({ children }: TenantSidebarLayoutProps) => {
   const location = useLocation();
   const isMobile = useIsMobile();
   const { user } = useAuth();
+  const { tenantData } = useTenantPortal();
   
   const navItems = [
     { icon: Home, label: "Dashboard", path: "/tenant/dashboard" },
@@ -75,6 +76,8 @@ const TenantSidebarLayout = ({ children }: TenantSidebarLayoutProps) => {
       setSidebarOpen(false);
     }
   };
+  
+  const userName = tenantData?.name || user?.email || "Tenant";
 
   // Render a different layout for mobile and desktop
   if (isMobile) {
@@ -99,7 +102,7 @@ const TenantSidebarLayout = ({ children }: TenantSidebarLayoutProps) => {
           <SheetContent side="left" className="p-0 bg-sidebar w-[80%] max-w-[300px]">
             <div className="p-4 border-b border-sidebar-border">
               <h1 className="text-xl font-bold text-sidebar-foreground">Tenant Portal</h1>
-              <p className="text-sm text-sidebar-foreground/80">Welcome, {user?.email}</p>
+              <p className="text-sm text-sidebar-foreground/80">Welcome, {userName}</p>
             </div>
             
             <nav className="p-4">
@@ -139,7 +142,7 @@ const TenantSidebarLayout = ({ children }: TenantSidebarLayoutProps) => {
       >
         <div className="p-4 border-b border-sidebar-border">
           <h1 className="text-xl font-bold text-sidebar-foreground">Tenant Portal</h1>
-          <p className="text-sm text-sidebar-foreground/80">Welcome, {user?.email}</p>
+          <p className="text-sm text-sidebar-foreground/80">Welcome, {userName}</p>
         </div>
         
         <nav className="p-4">
