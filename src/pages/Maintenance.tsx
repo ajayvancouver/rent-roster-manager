@@ -84,7 +84,7 @@ const MaintenancePage = () => {
         title="New Maintenance Request"
         open={showAddModal}
         onOpenChange={setShowAddModal}
-        onSave={() => {}}  // Simplified onSave prop since we're using onSuccess in the child component
+        onSave={(formData) => formData && handleAddRequestSuccess(formData)}
       >
         <AddMaintenanceRequestForm onSuccess={handleAddRequestSuccess} />
       </AddEntityModal>
