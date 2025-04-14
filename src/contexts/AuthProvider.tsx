@@ -1,4 +1,3 @@
-
 import React, { createContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +20,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [userType, setUserType] = useState<UserType | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [authError, setAuthError] = useState<boolean>(false);
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -38,6 +38,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           setProfile(null);
           setUserType(null);
+          setIsLoading(false);
         }
       }
     );
@@ -53,6 +54,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         setIsLoading(false);
       }
+    }).catch(error => {
+      console.error("Error retrieving session:", error);
+      setIsLoading(false);
+      setAuthError(true);
     });
 
     return () => {
@@ -65,19 +70,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       let userProfile = await fetchUserProfile(userId);
       
       if (!userProfile && user?.email) {
-        // Profile should have been created by the trigger
-        // But as a fallback, attempt to create it manually
+        // No profile found, create a default one
+        console.log("No profile found, creating default profile");
         userProfile = await createDefaultProfile(userId, user.email);
       }
       
       if (userProfile) {
         setProfile(userProfile);
         setUserType(userProfile.user_type);
+      } else {
+        // If we still couldn't get a profile, set default values
+        console.log("Setting default userType as tenant");
+        setUserType("tenant");
       }
-      
-      setIsLoading(false);
     } catch (error) {
       console.error("Error handling profile fetch:", error);
+      // Set a default user type to prevent auth loops
+      setUserType("tenant");
+    } finally {
       setIsLoading(false);
     }
   };
@@ -146,6 +156,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         profile,
         userType,
         isLoading,
+        authError,
         signIn,
         signUp,
         signOut,

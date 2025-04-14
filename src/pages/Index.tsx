@@ -7,7 +7,7 @@ import { ArrowRight } from "lucide-react";
 import { Loader2 } from "lucide-react";
 
 const Index: React.FC = () => {
-  const { user, userType, isLoading } = useAuth();
+  const { user, userType, isLoading, authError } = useAuth();
   const navigate = useNavigate();
   const [pageLoading, setPageLoading] = useState(true);
 
@@ -37,7 +37,7 @@ const Index: React.FC = () => {
   };
 
   // Show a loading spinner while checking auth status (but not too long)
-  if (pageLoading && isLoading) {
+  if (pageLoading && isLoading && !authError) {
     return (
       <div className="flex items-center justify-center h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

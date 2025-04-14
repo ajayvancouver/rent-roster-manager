@@ -58,7 +58,7 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile | nu
       .from("profiles")
       .select("*")
       .eq("id", userId)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error("Error fetching profile:", error);
@@ -101,40 +101,11 @@ export const createDefaultProfile = async (userId: string, email: string): Promi
   try {
     console.log("Creating default profile for user:", userId);
     
-    // Check if profile already exists
-    const { data: existingProfile } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .single();
-      
-    if (existingProfile) {
-      console.log("Profile already exists:", existingProfile);
-      
-      // Map the database fields to our UserProfile interface
-      return {
-        id: existingProfile.id,
-        email: existingProfile.email,
-        full_name: existingProfile.full_name,
-        avatar_url: existingProfile.avatar_url,
-        user_type: existingProfile.user_type as UserType,
-        property_id: existingProfile.property_id,
-        unit_number: existingProfile.unit_number,
-        phone: existingProfile.phone,
-        rent_amount: existingProfile.rent_amount,
-        deposit_amount: existingProfile.deposit_amount,
-        balance: existingProfile.balance,
-        lease_start: existingProfile.lease_start,
-        lease_end: existingProfile.lease_end,
-        status: existingProfile.status
-      };
-    }
-    
     // Create new profile
     const defaultProfile = {
       id: userId,
       email: email,
-      full_name: email,
+      full_name: email.split('@')[0] || email,
       user_type: 'tenant' as UserType,
       status: 'active'
     };
@@ -143,7 +114,7 @@ export const createDefaultProfile = async (userId: string, email: string): Promi
       .from("profiles")
       .insert([defaultProfile])
       .select()
-      .single();
+      .maybeSingle();
       
     if (error) {
       console.error("Error creating default profile:", error);
@@ -151,6 +122,11 @@ export const createDefaultProfile = async (userId: string, email: string): Promi
     }
     
     console.log("Created default profile for user:", userId, data);
+    
+    if (!data) {
+      console.warn("No data returned after profile creation");
+      return defaultProfile as UserProfile;
+    }
     
     // Map the database fields to our UserProfile interface
     return {
@@ -175,7 +151,6 @@ export const createDefaultProfile = async (userId: string, email: string): Promi
   }
 };
 
-// New function to link a tenant record with a user profile
 export const linkTenantToUser = async (tenantId: string, userId: string) => {
   try {
     console.log(`Linking tenant ${tenantId} to user ${userId}`);
@@ -199,7 +174,6 @@ export const linkTenantToUser = async (tenantId: string, userId: string) => {
   }
 };
 
-// New function to update user profile with tenant data
 export const updateProfileWithTenantData = async (userId: string, tenantData: any) => {
   try {
     console.log(`Updating profile for user ${userId} with tenant data:`, tenantData);
