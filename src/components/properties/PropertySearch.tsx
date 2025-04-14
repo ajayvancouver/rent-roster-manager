@@ -19,7 +19,7 @@ const PropertySearch = ({
   onAddProperty
 }: PropertySearchProps) => {
   return (
-    <div className="flex flex-col sm:flex-row gap-4">
+    <div className="flex flex-col sm:flex-row gap-4 w-full">
       <div className="relative grow">
         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input

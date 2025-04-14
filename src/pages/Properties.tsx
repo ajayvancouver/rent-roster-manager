@@ -23,13 +23,21 @@ export default function Properties() {
     properties,
     isLoading,
     error,
-    totalProperties,
-    totalUnits,
-    occupiedUnits,
-    vacantUnits,
-    addProperty,
-    refreshProperties
+    tenants,
+    getTenantCount,
+    getVacancyCount,
+    getOccupancyRate,
+    handleAddProperty,
+    handleUpdateProperty,
+    handleDeleteProperty,
+    fetchProperties
   } = useProperties();
+
+  // Calculate totals for statistics display
+  const totalProperties = properties.length;
+  const totalUnits = properties.reduce((sum, p) => sum + p.units, 0);
+  const occupiedUnits = tenants.length;
+  const vacantUnits = totalUnits - occupiedUnits;
 
   // Filter properties based on search query
   const filteredProperties = properties.filter(property => 
@@ -38,9 +46,9 @@ export default function Properties() {
   );
 
   // Handle adding a new property
-  const handleAddProperty = async (formData: Omit<Property, "id">) => {
+  const handleAddPropertySubmit = async (formData: Omit<Property, "id">) => {
     try {
-      await addProperty(formData);
+      await handleAddProperty(formData);
       setShowAddModal(false);
       toast({
         title: "Success",
@@ -48,7 +56,7 @@ export default function Properties() {
       });
       
       // Refresh properties list to show the new property
-      refreshProperties();
+      fetchProperties();
     } catch (error) {
       console.error("Error adding property:", error);
       toast({
@@ -71,7 +79,7 @@ export default function Properties() {
             variant="outline" 
             size="sm" 
             className="gap-2"
-            onClick={() => refreshProperties()}
+            onClick={() => fetchProperties()}
           >
             <RefreshCcw className="h-4 w-4" />
             Refresh
@@ -135,26 +143,32 @@ export default function Properties() {
         <PropertySearch 
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
+          viewType={viewMode}
+          setViewType={setViewMode}
+          onAddProperty={() => setShowAddModal(true)}
         />
-        
-        <Tabs 
-          value={viewMode} 
-          onValueChange={(value) => setViewMode(value as "grid" | "list")}
-          className="w-full sm:w-auto"
-        >
-          <TabsList className="grid w-full grid-cols-2 sm:w-[200px]">
-            <TabsTrigger value="grid">Grid View</TabsTrigger>
-            <TabsTrigger value="list">List View</TabsTrigger>
-          </TabsList>
-        </Tabs>
       </div>
       
       {/* Properties Display */}
       <div>
         {viewMode === "grid" ? (
-          <PropertyGrid properties={filteredProperties} isLoading={isLoading} />
+          <PropertyGrid 
+            properties={filteredProperties} 
+            getTenantCount={getTenantCount}
+            getVacancyCount={getVacancyCount}
+            getOccupancyRate={getOccupancyRate}
+            onEditProperty={handleUpdateProperty}
+            onDeleteProperty={handleDeleteProperty}
+          />
         ) : (
-          <PropertyList properties={filteredProperties} isLoading={isLoading} />
+          <PropertyList 
+            properties={filteredProperties} 
+            getTenantCount={getTenantCount}
+            getVacancyCount={getVacancyCount}
+            getOccupancyRate={getOccupancyRate}
+            onEditProperty={handleUpdateProperty}
+            onDeleteProperty={handleDeleteProperty}
+          />
         )}
         
         {filteredProperties.length === 0 && !isLoading && (
@@ -181,11 +195,11 @@ export default function Properties() {
         onOpenChange={setShowAddModal}
         onSave={(formData) => {
           if (formData) {
-            handleAddProperty(formData as Omit<Property, "id">);
+            handleAddPropertySubmit(formData as Omit<Property, "id">);
           }
         }}
       >
-        <AddPropertyForm onSuccess={handleAddProperty} />
+        <AddPropertyForm onSuccess={handleAddPropertySubmit} />
       </AddEntityModal>
     </div>
   );
