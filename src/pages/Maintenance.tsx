@@ -7,6 +7,7 @@ import MaintenanceSummaryCards from "@/components/maintenance/MaintenanceSummary
 import MaintenanceFilters from "@/components/maintenance/MaintenanceFilters";
 import MaintenanceTabs from "@/components/maintenance/MaintenanceTabs";
 import { useMaintenanceData } from "@/hooks/useMaintenanceData";
+import { Maintenance } from "@/types";
 
 const MaintenancePage = () => {
   const { toast } = useToast();
@@ -72,7 +73,7 @@ const MaintenancePage = () => {
         openRequests={openRequests}
         closedRequests={closedRequests}
         allRequests={sortedRequests}
-        sortField={sortField}
+        sortField={sortField as keyof Maintenance}
         sortDirection={sortDirection}
         onSort={toggleSort}
         getTenantName={getTenantName}
@@ -83,7 +84,7 @@ const MaintenancePage = () => {
         title="New Maintenance Request"
         open={showAddModal}
         onOpenChange={setShowAddModal}
-        onSave={() => {}}
+        onSave={(formData) => handleAddRequestSuccess(formData)}
       >
         <AddMaintenanceRequestForm onSuccess={handleAddRequestSuccess} />
       </AddEntityModal>
