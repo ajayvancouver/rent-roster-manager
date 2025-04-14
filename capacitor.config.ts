@@ -10,7 +10,15 @@ const config: CapacitorConfig = {
     cleartext: true
   },
   ios: {
-    contentInset: 'always'
+    contentInset: 'always',
+    scheme: 'RentRosterManager'
+  },
+  android: {
+    buildOptions: {
+      keystorePath: 'rent-roster-manager.keystore',
+      keystoreAlias: 'rent-roster-manager',
+      releaseType: 'AAB'
+    }
   }
 };
 
