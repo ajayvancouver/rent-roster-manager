@@ -1,4 +1,3 @@
-
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/contexts/AuthProvider";
@@ -24,7 +23,6 @@ import Account from "@/pages/Account";
 import NotFound from "@/pages/NotFound";
 import Index from "@/pages/Index";
 
-// Tenant pages
 import TenantDashboard from "@/pages/tenant/TenantDashboard";
 import TenantProperty from "@/pages/tenant/TenantProperty";
 import TenantPayments from "@/pages/tenant/TenantPayments";
@@ -32,23 +30,24 @@ import TenantMaintenance from "@/pages/tenant/TenantMaintenance";
 import TenantDocuments from "@/pages/tenant/TenantDocuments";
 import TenantAccount from "@/pages/tenant/TenantAccount";
 
+import DatabaseTest from "./pages/DatabaseTest";
+
 function App() {
   return (
     <>
       <AuthProvider>
         <Routes>
-          <Route path="/auth" element={<Auth />} />
           <Route path="/" element={<Index />} />
+          <Route path="/auth" element={<Auth />} />
           
-          {/* Property Manager Routes */}
           <Route element={<ProtectedRoute allowedUserTypes={["manager"]} />}>
             <Route element={<SidebarLayout><Outlet /></SidebarLayout>}>
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/properties" element={<Properties />} />
+              <Route path="/properties/:id" element={<PropertyDetail />} />
               <Route path="/tenants" element={<Tenants />} />
               <Route path="/tenants/:id" element={<TenantDetailView />} />
-              <Route path="/properties" element={<Properties />} />
-              <Route path="/properties/:id" element={<PropertyDetailView />} />
               <Route path="/payments" element={<Payments />} />
               <Route path="/payments/:id" element={<PaymentDetail />} />
               <Route path="/maintenance" element={<Maintenance />} />
@@ -56,10 +55,10 @@ function App() {
               <Route path="/documents" element={<Documents />} />
               <Route path="/documents/:id" element={<DocumentDetail />} />
               <Route path="/account" element={<Account />} />
+              <Route path="/database-test" element={<DatabaseTest />} />
             </Route>
           </Route>
           
-          {/* Tenant Routes */}
           <Route element={<ProtectedRoute allowedUserTypes={["tenant"]} />}>
             <Route element={<TenantSidebarLayout><Outlet /></TenantSidebarLayout>}>
               <Route path="/tenant" element={<Navigate to="/tenant/dashboard" replace />} />

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import AddEntityModal from "@/components/common/AddEntityModal";
 import AddPropertyForm from "@/components/properties/AddPropertyForm";
@@ -12,6 +12,7 @@ import { RefreshCw, Bug, ChevronUp, ChevronDown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
+import { Property } from "@/types";
 
 const Properties = () => {
   const { toast } = useToast();
@@ -211,7 +212,11 @@ const Properties = () => {
         title="Add New Property"
         open={showAddModal}
         onOpenChange={setShowAddModal}
-        onSave={onPropertyAdded}
+        onSave={(formData) => {
+          if (formData) {
+            handleAddPropertyFormSubmit(formData);
+          }
+        }}
       >
         <AddPropertyForm onSuccess={handleAddPropertyFormSubmit} />
       </AddEntityModal>

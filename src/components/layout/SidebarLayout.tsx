@@ -1,171 +1,200 @@
-
-import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { 
-  Home, 
-  Users, 
-  Building2, 
-  Banknote, 
-  Wrench, 
-  FileText, 
-  Menu, 
-  X,
+import { useState } from "react";
+import {
+  HomeIcon,
+  Building2Icon,
+  UsersIcon,
+  DollarSignIcon,
+  WrenchIcon,
+  FileTextIcon,
+  UserIcon,
+  DatabaseIcon,
+  ChevronLeft,
   ChevronRight,
-  UserRound
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
-import Header from "@/components/layout/Header";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 
-interface SidebarItemProps {
-  icon: React.ElementType;
-  label: string;
-  path: string;
-  isActive: boolean;
-  onClick?: () => void;
-}
-
-const SidebarItem = ({ icon: Icon, label, path, isActive, onClick }: SidebarItemProps) => {
-  return (
-    <Link to={path} onClick={onClick}>
-      <Button
-        variant="ghost"
-        className={cn(
-          "w-full justify-start gap-2 pl-2 mb-1",
-          isActive 
-            ? "bg-sidebar-accent text-sidebar-accent-foreground" 
-            : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-        )}
-      >
-        <Icon size={20} />
-        <span>{label}</span>
-      </Button>
-    </Link>
-  );
-};
-
-interface SidebarLayoutProps {
+interface SidebarProps {
   children: React.ReactNode;
 }
 
-const SidebarLayout = ({ children }: SidebarLayoutProps) => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const location = useLocation();
-  const isMobile = useIsMobile();
-  
-  const navItems = [
-    { icon: Home, label: "Dashboard", path: "/" },
-    { icon: Users, label: "Tenants", path: "/tenants" },
-    { icon: Building2, label: "Properties", path: "/properties" },
-    { icon: Banknote, label: "Payments", path: "/payments" },
-    { icon: Wrench, label: "Maintenance", path: "/maintenance" },
-    { icon: FileText, label: "Documents", path: "/documents" },
-    { icon: UserRound, label: "Account", path: "/account" },
-  ];
+const SidebarLayout = ({ children }: SidebarProps) => {
+  const { pathname } = useLocation();
+  const { userType } = useAuth();
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
-  // Close sidebar on route change when on mobile
-  useEffect(() => {
-    if (isMobile) {
-      setSidebarOpen(false);
-    }
-  }, [location.pathname, isMobile]);
-
-  const handleCloseSidebar = () => {
-    if (isMobile) {
-      setSidebarOpen(false);
-    }
+  const toggleSidebar = () => {
+    setIsCollapsed(!isCollapsed);
   };
 
-  // Render a different layout for mobile and desktop
-  if (isMobile) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        {/* Mobile header with menu button */}
-        <header className="bg-sidebar px-4 py-3 flex items-center justify-between sticky top-0 z-30">
-          <Button 
-            variant="ghost"
-            size="icon"
-            onClick={() => setSidebarOpen(true)}
-            className="text-sidebar-foreground"
-          >
-            <Menu size={24} />
+  const sidebarItems = [
+    {
+      title: "Dashboard",
+      href: "/dashboard",
+      icon: <HomeIcon className="h-4 w-4" />,
+    },
+    {
+      title: "Properties",
+      href: "/properties",
+      icon: <Building2Icon className="h-4 w-4" />,
+    },
+    {
+      title: "Tenants",
+      href: "/tenants",
+      icon: <UsersIcon className="h-4 w-4" />,
+    },
+    {
+      title: "Payments",
+      href: "/payments",
+      icon: <DollarSignIcon className="h-4 w-4" />,
+    },
+    {
+      title: "Maintenance",
+      href: "/maintenance",
+      icon: <WrenchIcon className="h-4 w-4" />,
+    },
+    {
+      title: "Documents",
+      href: "/documents",
+      icon: <FileTextIcon className="h-4 w-4" />,
+    },
+    {
+      title: "Account",
+      href: "/account",
+      icon: <UserIcon className="h-4 w-4" />,
+    },
+    {
+      title: "Database Test",
+      href: "/database-test",
+      icon: <DatabaseIcon className="h-4 w-4" />,
+    },
+  ];
+
+  const tenantSidebarItems = [
+    {
+      title: "Dashboard",
+      href: "/tenant/dashboard",
+      icon: <HomeIcon className="h-4 w-4" />,
+    },
+    {
+      title: "Property",
+      href: "/tenant/property",
+      icon: <Building2Icon className="h-4 w-4" />,
+    },
+    {
+      title: "Payments",
+      href: "/tenant/payments",
+      icon: <DollarSignIcon className="h-4 w-4" />,
+    },
+    {
+      title: "Maintenance",
+      href: "/tenant/maintenance",
+      icon: <WrenchIcon className="h-4 w-4" />,
+    },
+    {
+      title: "Documents",
+      href: "/tenant/documents",
+      icon: <FileTextIcon className="h-4 w-4" />,
+    },
+    {
+      title: "Account",
+      href: "/tenant/account",
+      icon: <UserIcon className="h-4 w-4" />,
+    },
+  ];
+
+  const filteredSidebarItems = userType === "tenant" ? tenantSidebarItems : sidebarItems;
+
+  return (
+    <div className="flex h-screen bg-gray-50">
+      {/* Mobile Sidebar */}
+      <Sheet>
+        <SheetTrigger asChild className="md:hidden">
+          <Button variant="outline" size="icon" className="ml-4">
+            <ChevronRight className="h-4 w-4" />
           </Button>
-          <h1 className="text-xl font-bold text-sidebar-foreground">Rent Roster</h1>
-          <div className="w-10">
-            
-          </div>
-        </header>
-        
-        {/* Mobile Sidebar as a Sheet */}
-        <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-          <SheetContent side="left" className="p-0 bg-sidebar w-[80%] max-w-[300px]">
-            <div className="p-4 border-b border-sidebar-border">
-              <h1 className="text-xl font-bold text-sidebar-foreground">Rent Roster</h1>
-              <p className="text-sm text-sidebar-foreground/80">Property Management</p>
+        </SheetTrigger>
+        <SheetContent side="left" className="w-60 p-0">
+          <div className="flex flex-col h-full">
+            <div className="px-4 py-6">
+              <Link to="/" className="font-bold text-lg">
+                Property Manager
+              </Link>
             </div>
-            
-            <nav className="p-4">
-              {navItems.map((item) => (
-                <SidebarItem
-                  key={item.path}
-                  icon={item.icon}
-                  label={item.label}
-                  path={item.path}
-                  isActive={location.pathname === item.path}
-                  onClick={handleCloseSidebar}
-                />
+            <Separator />
+            <nav className="flex flex-col flex-1 px-2 py-4 space-y-1">
+              {filteredSidebarItems.map((item) => (
+                <Link
+                  key={item.href}
+                  to={item.href}
+                  className={cn(
+                    "flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-gray-100",
+                    pathname === item.href
+                      ? "bg-gray-100 text-gray-900"
+                      : "text-gray-700"
+                  )}
+                >
+                  {item.icon && <item.icon className="mr-2 h-4 w-4" />}
+                  <span>{item.title}</span>
+                </Link>
               ))}
             </nav>
-          </SheetContent>
-        </Sheet>
-        
-        {/* Main Content */}
-        <main className="flex-1">
-          <div className="container mx-auto py-4 px-4">
-            {children}
           </div>
-        </main>
-      </div>
-    );
-  }
+        </SheetContent>
+      </Sheet>
 
-  // Desktop layout
-  return (
-    <div className="min-h-screen flex">
       {/* Desktop Sidebar */}
-      <aside 
+      <div
         className={cn(
-          "bg-sidebar fixed inset-y-0 left-0 z-40 w-64 transition-transform duration-300 ease-in-out",
-          sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+          "hidden md:flex md:flex-col md:fixed md:inset-y-0",
+          "md:z-50 md:w-64",
+          "md:bg-gray-100 md:border-r md:border-gray-200",
+          isCollapsed ? "md:w-16" : "md:w-64"
         )}
       >
-        <div className="p-4 border-b border-sidebar-border">
-          <h1 className="text-xl font-bold text-sidebar-foreground">Rent Roster</h1>
-          <p className="text-sm text-sidebar-foreground/80">Property Management</p>
+        <div className="flex flex-col h-full">
+          <div className="flex items-center justify-between px-4 py-3">
+            <Link to="/" className="font-bold text-lg">
+              Property Manager
+            </Link>
+            <Button variant="ghost" size="icon" onClick={toggleSidebar}>
+              {isCollapsed ? (
+                <ChevronRight className="h-4 w-4" />
+              ) : (
+                <ChevronLeft className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+          <Separator />
+          <nav className="flex flex-col flex-1 px-2 py-4 space-y-1">
+            {filteredSidebarItems.map((item) => (
+              <Link
+                key={item.href}
+                to={item.href}
+                className={cn(
+                  "flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-gray-100",
+                  pathname === item.href
+                    ? "bg-gray-200 text-gray-900"
+                    : "text-gray-700",
+                  isCollapsed ? "justify-center" : ""
+                )}
+              >
+                {item.icon && <item.icon className="mr-2 h-4 w-4" />}
+                <span className={isCollapsed ? "sr-only" : ""}>{item.title}</span>
+              </Link>
+            ))}
+          </nav>
         </div>
-        
-        <nav className="p-4">
-          {navItems.map((item) => (
-            <SidebarItem
-              key={item.path}
-              icon={item.icon}
-              label={item.label}
-              path={item.path}
-              isActive={location.pathname === item.path}
-            />
-          ))}
-        </nav>
-      </aside>
-      
-      {/* Desktop Content */}
-      <main className="lg:ml-64 flex-1 transition-all duration-300 ease-in-out">
-        <Header />
-        <div className="container mx-auto py-6 px-4">
-          {children}
-        </div>
-      </main>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 md:ml-64 p-6">
+        {children}
+      </div>
     </div>
   );
 };
