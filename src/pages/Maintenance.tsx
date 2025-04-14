@@ -84,7 +84,7 @@ const MaintenancePage = () => {
         title="New Maintenance Request"
         open={showAddModal}
         onOpenChange={setShowAddModal}
-        onSave={(formData) => {
+        onSave={(formData: any) => {
           if (formData) {
             handleAddRequestSuccess(formData);
           }

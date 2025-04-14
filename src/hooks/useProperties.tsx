@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { Property } from "@/types";
 import { propertiesService } from "@/services/propertiesService";
@@ -111,6 +110,7 @@ export function useProperties() {
   // Add property
   const handleAddProperty = async (formData: Omit<Property, "id">) => {
     try {
+      setIsLoading(true);
       // Ensure managerId is set
       const managerId = profile?.id || user?.id;
       const propertyData = {
@@ -123,8 +123,14 @@ export function useProperties() {
       // Add the new property to the local state
       if (result) {
         setProperties(prevProperties => [...prevProperties, result]);
+        
+        toast({
+          title: "Property added!",
+          description: `${formData.name} has been added successfully.`
+        });
       }
       
+      setIsLoading(false);
       return true;
     } catch (error) {
       console.error("Error adding property:", error);
@@ -133,6 +139,7 @@ export function useProperties() {
         description: "Please try again later.",
         variant: "destructive"
       });
+      setIsLoading(false);
       return false;
     }
   };

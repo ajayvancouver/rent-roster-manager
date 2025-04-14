@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Building2, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -12,7 +11,6 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { Property } from "@/types";
-import { propertiesService } from "@/services/supabaseService";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface AddPropertyFormProps {
@@ -64,13 +62,6 @@ const AddPropertyForm = ({ onSuccess }: AddPropertyFormProps) => {
     setIsLoading(true);
     
     try {
-      await propertiesService.create(formData);
-      
-      toast({
-        title: "Property added!",
-        description: `${formData.name} has been added successfully.`
-      });
-      
       onSuccess();
     } catch (error) {
       console.error("Error adding property:", error);

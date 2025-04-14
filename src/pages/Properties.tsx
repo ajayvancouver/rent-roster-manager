@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import AddEntityModal from "@/components/common/AddEntityModal";
@@ -41,14 +40,18 @@ const Properties = () => {
     fetchProperties
   } = useProperties();
 
+  // Handle form submission from AddPropertyForm
+  const handleAddPropertyFormSubmit = async (formData: Omit<Property, "id">) => {
+    const success = await handleAddProperty(formData);
+    if (success) {
+      setShowAddModal(false);
+      fetchProperties(); // Explicitly refresh the properties list
+    }
+  };
+
   // Handle successful property addition
   const onPropertyAdded = () => {
-    setShowAddModal(false);
     fetchProperties(); // Refresh properties after adding
-    toast({
-      title: "Success",
-      description: "Property has been added successfully."
-    });
   };
 
   // Force refresh properties
@@ -210,7 +213,7 @@ const Properties = () => {
         onOpenChange={setShowAddModal}
         onSave={onPropertyAdded}
       >
-        <AddPropertyForm onSuccess={onPropertyAdded} />
+        <AddPropertyForm onSuccess={handleAddPropertyFormSubmit} />
       </AddEntityModal>
     </div>
   );
