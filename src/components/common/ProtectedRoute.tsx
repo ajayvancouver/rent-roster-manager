@@ -1,15 +1,16 @@
-
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 
 interface ProtectedRouteProps {
-  requiredUserType?: "manager" | "tenant" | null;
+  allowedUserTypes?: string[];
   redirectTo?: string;
+  element?: React.ReactElement;
 }
 
 const ProtectedRoute = ({ 
-  requiredUserType = null, 
-  redirectTo = "/auth" 
+  allowedUserTypes = null, 
+  redirectTo = "/auth",
+  element
 }: ProtectedRouteProps) => {
   const { user, userType, isLoading } = useAuth();
 
@@ -24,11 +25,16 @@ const ProtectedRoute = ({
   }
 
   // If a specific user type is required and doesn't match, redirect
-  if (requiredUserType && userType !== requiredUserType) {
+  if (allowedUserTypes && !allowedUserTypes.includes(userType)) {
     return <Navigate to="/" />;
   }
 
-  // Otherwise, render the protected component
+  // If a custom element is provided, return it
+  if (element) {
+    return element;
+  }
+
+  // Otherwise, render the outlet for nested routes
   return <Outlet />;
 };
 

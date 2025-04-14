@@ -35,35 +35,33 @@ function App() {
           
           {/* Property Manager Routes */}
           <Route 
-            element={<ProtectedRoute 
-              allowedUserTypes={["manager"]} 
-              element={<SidebarLayout />} 
-            />}
+            element={<ProtectedRoute allowedUserTypes={["manager"]} />}
           >
-            <Route index element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/tenants" element={<Tenants />} />
-            <Route path="/tenants/:id" element={<TenantDetailView />} />
-            <Route path="/properties" element={<Properties />} />
-            <Route path="/properties/:id" element={<PropertyDetailView />} />
-            <Route path="/payments" element={<Payments />} />
-            <Route path="/payments/:id" element={<PaymentDetail />} />
-            <Route path="/maintenance" element={<Maintenance />} />
-            <Route path="/maintenance/:id" element={<MaintenanceDetail />} />
-            <Route path="/documents" element={<Documents />} />
-            <Route path="/documents/:id" element={<DocumentDetail />} />
-            <Route path="/account" element={<Account />} />
+            <Route element={<SidebarLayout />}>
+              <Route index element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/tenants" element={<Tenants />} />
+              <Route path="/tenants/:id" element={<TenantDetailView />} />
+              <Route path="/properties" element={<Properties />} />
+              <Route path="/properties/:id" element={<PropertyDetailView />} />
+              <Route path="/payments" element={<Payments />} />
+              <Route path="/payments/:id" element={<PaymentDetail />} />
+              <Route path="/maintenance" element={<Maintenance />} />
+              <Route path="/maintenance/:id" element={<MaintenanceDetail />} />
+              <Route path="/documents" element={<Documents />} />
+              <Route path="/documents/:id" element={<DocumentDetail />} />
+              <Route path="/account" element={<Account />} />
+            </Route>
           </Route>
           
           {/* Tenant Routes */}
           <Route 
-            element={<ProtectedRoute 
-              allowedUserTypes={["tenant"]} 
-              element={<SidebarLayout />} 
-            />}
+            element={<ProtectedRoute allowedUserTypes={["tenant"]} />}
           >
-            <Route path="/tenant" element={<TenantDashboard />} />
-            <Route path="/tenant/account" element={<Account />} />
+            <Route element={<SidebarLayout />}>
+              <Route path="/tenant" element={<TenantDashboard />} />
+              <Route path="/tenant/account" element={<Account />} />
+            </Route>
           </Route>
           
           <Route path="*" element={<NotFound />} />
