@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
@@ -12,6 +11,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/hooks/useAuth";
 import UserMenu from "@/components/common/UserMenu";
@@ -64,7 +64,6 @@ const TenantSidebarLayout = ({ children }: TenantSidebarLayoutProps) => {
     { icon: UserRound, label: "Account", path: "/tenant/account" },
   ];
 
-  // Close sidebar on route change when on mobile
   useEffect(() => {
     if (isMobile) {
       setSidebarOpen(false);
@@ -79,11 +78,9 @@ const TenantSidebarLayout = ({ children }: TenantSidebarLayoutProps) => {
   
   const userName = tenantData?.name || user?.email || "Tenant";
 
-  // Render a different layout for mobile and desktop
   if (isMobile) {
     return (
       <div className="min-h-screen flex flex-col">
-        {/* Mobile header with menu button */}
         <header className="bg-sidebar px-4 py-3 flex items-center justify-between sticky top-0 z-30">
           <Button 
             variant="ghost"
@@ -97,7 +94,6 @@ const TenantSidebarLayout = ({ children }: TenantSidebarLayoutProps) => {
           <div className="w-10"></div>
         </header>
         
-        {/* Mobile Sidebar as a Sheet */}
         <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
           <SheetContent side="left" className="p-0 bg-sidebar w-[80%] max-w-[300px]">
             <div className="p-4 border-b border-sidebar-border">
@@ -120,7 +116,6 @@ const TenantSidebarLayout = ({ children }: TenantSidebarLayoutProps) => {
           </SheetContent>
         </Sheet>
         
-        {/* Main Content */}
         <main className="flex-1">
           <div className="container mx-auto py-4 px-4">
             {children}
@@ -130,10 +125,8 @@ const TenantSidebarLayout = ({ children }: TenantSidebarLayoutProps) => {
     );
   }
 
-  // Desktop layout
   return (
     <div className="min-h-screen flex">
-      {/* Desktop Sidebar */}
       <aside 
         className={cn(
           "bg-sidebar fixed inset-y-0 left-0 z-40 w-64 transition-transform duration-300 ease-in-out",
@@ -158,7 +151,6 @@ const TenantSidebarLayout = ({ children }: TenantSidebarLayoutProps) => {
         </nav>
       </aside>
       
-      {/* Desktop Content */}
       <main className="lg:ml-64 flex-1 transition-all duration-300 ease-in-out">
         <header className="bg-background border-b sticky top-0 z-40 w-full">
           <div className="container flex h-16 items-center justify-between px-4">
