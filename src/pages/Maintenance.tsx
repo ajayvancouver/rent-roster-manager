@@ -63,8 +63,8 @@ const MaintenancePage = () => {
       <MaintenanceFilters
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
-        priorityFilter={priorityFilter}
-        setPriorityFilter={setPriorityFilter}
+        priorityFilter={priorityFilter as "all" | "low" | "medium" | "high" | "emergency"}
+        setPriorityFilter={setPriorityFilter as React.Dispatch<React.SetStateAction<"all" | "low" | "medium" | "high" | "emergency">>}
         onAddRequest={() => setShowAddModal(true)}
       />
 

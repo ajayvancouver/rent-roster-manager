@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { documentsService } from "@/services/documentsService";
+import { documentsService } from "@/services/documents";
 import { Document } from "@/types";
 
 const DocumentDetail = () => {

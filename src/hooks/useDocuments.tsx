@@ -1,9 +1,9 @@
-
 import { useState, useEffect } from "react";
 import { Document, Tenant, Property } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { documentsService, tenantsService, propertiesService } from "@/services/supabaseService";
+import { documentsService } from "@/services/documents";
+import { tenantsService, propertiesService } from "@/services/supabaseService";
 
 export function useDocuments() {
   const { toast } = useToast();

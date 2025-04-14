@@ -4,7 +4,7 @@ import { paymentsService } from "./paymentsService";
 import { propertiesService } from "./propertiesService";
 import { tenantsService } from "./tenantsService";
 import { maintenanceService } from "./maintenanceService";
-import { documentsService } from "./documentsService";
+import { documentsService } from "./documents";
 
 // Export all services from a single file
 export {
