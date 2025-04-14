@@ -1,33 +1,42 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Property } from "@/types";
 
 export const propertiesService = {
   async getAll(managerId?: string): Promise<Property[]> {
-    let query = supabase.from('properties').select('*');
-    
-    // Filter by manager_id if provided
-    if (managerId) {
-      query = query.eq('manager_id', managerId);
+    try {
+      let query = supabase.from('properties').select('*');
+      
+      // Filter by manager_id if provided
+      if (managerId) {
+        query = query.eq('manager_id', managerId);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) {
+        console.error("Error fetching properties:", error);
+        throw error;
+      }
+      
+      console.log("Raw properties data from Supabase:", data);
+      
+      // Map database columns to our TypeScript interfaces with proper type casting
+      return (data || []).map(item => ({
+        id: item.id,
+        name: item.name,
+        address: item.address,
+        city: item.city,
+        state: item.state,
+        zipCode: item.zip_code, 
+        units: item.units,
+        type: item.type as 'apartment' | 'house' | 'duplex' | 'commercial', // Cast to correct union type
+        image: item.image || undefined,
+        managerId: item.manager_id
+      }));
+    } catch (error) {
+      console.error("Error in propertiesService.getAll:", error);
+      return [];
     }
-    
-    const { data, error } = await query;
-    
-    if (error) throw error;
-    
-    // Map database columns to our TypeScript interfaces with proper type casting
-    return (data || []).map(item => ({
-      id: item.id,
-      name: item.name,
-      address: item.address,
-      city: item.city,
-      state: item.state,
-      zipCode: item.zip_code, 
-      units: item.units,
-      type: item.type as 'apartment' | 'house' | 'duplex' | 'commercial', // Cast to correct union type
-      image: item.image || undefined,
-      managerId: item.manager_id
-    }));
   },
 
   async getById(id: string): Promise<Property | null> {

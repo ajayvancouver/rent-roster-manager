@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Property } from "@/types";
 import { propertiesService } from "@/services/propertiesService";
-import { tenantsService } from "@/services/supabaseService";
+import { tenantsService } from "@/services/tenantsService";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -20,12 +20,16 @@ export function useProperties() {
       setIsLoading(true);
       const managerId = profile?.id || user?.id;
       
+      console.log("Fetching properties with managerId:", managerId);
+      
       const [fetchedProperties, fetchedTenants] = await Promise.all([
         propertiesService.getAll(managerId),
         tenantsService.getAll(managerId)
       ]);
       
       console.log("Fetched properties:", fetchedProperties);
+      console.log("Fetched tenants:", fetchedTenants);
+      
       setProperties(fetchedProperties);
       setTenants(fetchedTenants);
       setIsLoading(false);
