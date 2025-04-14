@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import {
   HomeIcon,
@@ -22,6 +23,12 @@ interface SidebarProps {
   children: React.ReactNode;
 }
 
+interface SidebarItem {
+  title: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
 const SidebarLayout = ({ children }: SidebarProps) => {
   const { pathname } = useLocation();
   const { userType } = useAuth();
@@ -31,79 +38,79 @@ const SidebarLayout = ({ children }: SidebarProps) => {
     setIsCollapsed(!isCollapsed);
   };
 
-  const sidebarItems = [
+  const sidebarItems: SidebarItem[] = [
     {
       title: "Dashboard",
       href: "/dashboard",
-      icon: <HomeIcon className="h-4 w-4" />,
+      icon: HomeIcon,
     },
     {
       title: "Properties",
       href: "/properties",
-      icon: <Building2Icon className="h-4 w-4" />,
+      icon: Building2Icon,
     },
     {
       title: "Tenants",
       href: "/tenants",
-      icon: <UsersIcon className="h-4 w-4" />,
+      icon: UsersIcon,
     },
     {
       title: "Payments",
       href: "/payments",
-      icon: <DollarSignIcon className="h-4 w-4" />,
+      icon: DollarSignIcon,
     },
     {
       title: "Maintenance",
       href: "/maintenance",
-      icon: <WrenchIcon className="h-4 w-4" />,
+      icon: WrenchIcon,
     },
     {
       title: "Documents",
       href: "/documents",
-      icon: <FileTextIcon className="h-4 w-4" />,
+      icon: FileTextIcon,
     },
     {
       title: "Account",
       href: "/account",
-      icon: <UserIcon className="h-4 w-4" />,
+      icon: UserIcon,
     },
     {
       title: "Database Test",
       href: "/database-test",
-      icon: <DatabaseIcon className="h-4 w-4" />,
+      icon: DatabaseIcon,
     },
   ];
 
-  const tenantSidebarItems = [
+  const tenantSidebarItems: SidebarItem[] = [
     {
       title: "Dashboard",
       href: "/tenant/dashboard",
-      icon: <HomeIcon className="h-4 w-4" />,
+      icon: HomeIcon,
     },
     {
       title: "Property",
       href: "/tenant/property",
-      icon: <Building2Icon className="h-4 w-4" />,
+      icon: Building2Icon,
     },
     {
       title: "Payments",
       href: "/tenant/payments",
-      icon: <DollarSignIcon className="h-4 w-4" />,
+      icon: DollarSignIcon,
     },
     {
       title: "Maintenance",
       href: "/tenant/maintenance",
-      icon: <WrenchIcon className="h-4 w-4" />,
+      icon: WrenchIcon,
     },
     {
       title: "Documents",
       href: "/tenant/documents",
-      icon: <FileTextIcon className="h-4 w-4" />,
+      icon: FileTextIcon,
     },
     {
       title: "Account",
       href: "/tenant/account",
-      icon: <UserIcon className="h-4 w-4" />,
+      icon: UserIcon,
     },
   ];
 
@@ -127,21 +134,24 @@ const SidebarLayout = ({ children }: SidebarProps) => {
             </div>
             <Separator />
             <nav className="flex flex-col flex-1 px-2 py-4 space-y-1">
-              {filteredSidebarItems.map((item) => (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  className={cn(
-                    "flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-gray-100",
-                    pathname === item.href
-                      ? "bg-gray-100 text-gray-900"
-                      : "text-gray-700"
-                  )}
-                >
-                  {item.icon && <item.icon className="mr-2 h-4 w-4" />}
-                  <span>{item.title}</span>
-                </Link>
-              ))}
+              {filteredSidebarItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.href}
+                    to={item.href}
+                    className={cn(
+                      "flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-gray-100",
+                      pathname === item.href
+                        ? "bg-gray-100 text-gray-900"
+                        : "text-gray-700"
+                    )}
+                  >
+                    <Icon className="mr-2 h-4 w-4" />
+                    <span>{item.title}</span>
+                  </Link>
+                );
+              })}
             </nav>
           </div>
         </SheetContent>
@@ -171,28 +181,31 @@ const SidebarLayout = ({ children }: SidebarProps) => {
           </div>
           <Separator />
           <nav className="flex flex-col flex-1 px-2 py-4 space-y-1">
-            {filteredSidebarItems.map((item) => (
-              <Link
-                key={item.href}
-                to={item.href}
-                className={cn(
-                  "flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-gray-100",
-                  pathname === item.href
-                    ? "bg-gray-200 text-gray-900"
-                    : "text-gray-700",
-                  isCollapsed ? "justify-center" : ""
-                )}
-              >
-                {item.icon && <item.icon className="mr-2 h-4 w-4" />}
-                <span className={isCollapsed ? "sr-only" : ""}>{item.title}</span>
-              </Link>
-            ))}
+            {filteredSidebarItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  to={item.href}
+                  className={cn(
+                    "flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-gray-100",
+                    pathname === item.href
+                      ? "bg-gray-200 text-gray-900"
+                      : "text-gray-700",
+                    isCollapsed ? "justify-center" : ""
+                  )}
+                >
+                  <Icon className="mr-2 h-4 w-4" />
+                  <span className={isCollapsed ? "sr-only" : ""}>{item.title}</span>
+                </Link>
+              );
+            })}
           </nav>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 md:ml-64 p-6">
+      <div className={cn("flex-1 p-6", isCollapsed ? "md:ml-16" : "md:ml-64")}>
         {children}
       </div>
     </div>
