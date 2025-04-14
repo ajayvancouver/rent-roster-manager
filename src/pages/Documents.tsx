@@ -32,12 +32,15 @@ const Documents = () => {
     getTenantName,
     getPropertyName,
     formatDate,
-    handleAddDocument
+    handleAddDocument,
+    refreshData,
+    tenants,
+    properties
   } = useDocuments();
 
   const {
-    tenants,
-    properties,
+    tenants: tenantsFromData,
+    properties: propertiesFromData,
     isLoading: isLoadingTenantData
   } = useTenantData();
 
@@ -45,11 +48,16 @@ const Documents = () => {
     const success = await handleAddDocument(documentData);
     if (success) {
       setShowAddModal(false);
+      refreshData(); // Refresh data after adding a document
     }
     return success;
   };
 
   const isLoading = isLoadingDocuments || isLoadingTenantData;
+  
+  // Use tenants and properties from useDocuments if available, otherwise fallback to useTenantData
+  const displayTenants = tenants.length > 0 ? tenants : tenantsFromData;
+  const displayProperties = properties.length > 0 ? properties : propertiesFromData;
 
   return (
     <div className="space-y-6">
@@ -163,8 +171,8 @@ const Documents = () => {
       >
         <AddDocumentForm 
           onSuccess={handleAddDocumentSuccess} 
-          properties={properties} 
-          tenants={tenants}
+          properties={displayProperties} 
+          tenants={displayTenants}
         />
       </AddEntityModal>
     </div>

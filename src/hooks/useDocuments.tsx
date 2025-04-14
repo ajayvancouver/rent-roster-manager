@@ -14,10 +14,16 @@ export function useDocuments() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<Document["type"] | "all">("all");
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const refreshData = () => {
+    setRefreshTrigger(prev => prev + 1);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setIsLoading(true);
         const managerId = profile?.id || user?.id;
         
         // Fetch properties and tenants first
@@ -56,7 +62,7 @@ export function useDocuments() {
     };
 
     fetchData();
-  }, [toast, user, profile]);
+  }, [toast, user, profile, refreshTrigger]);
 
   const getTenantName = (tenantId?: string) => {
     if (!tenantId) return "Unassigned";
@@ -121,8 +127,7 @@ export function useDocuments() {
       
       if (data) {
         // Refresh documents data after adding new document
-        const updatedDocuments = await documentsService.getAll(managerId);
-        setDocuments(updatedDocuments);
+        refreshData();
         
         toast({
           title: "Success",
@@ -154,6 +159,9 @@ export function useDocuments() {
     getTenantName,
     getPropertyName,
     formatDate,
-    handleAddDocument
+    handleAddDocument,
+    refreshData,
+    tenants,
+    properties
   };
 }

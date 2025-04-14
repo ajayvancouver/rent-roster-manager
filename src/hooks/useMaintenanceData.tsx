@@ -1,158 +1,155 @@
 
-import { useState, useEffect } from "react";
-import { Maintenance, Tenant, Property } from "@/types";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
-import { maintenanceService, tenantsService, propertiesService } from "@/services/supabaseService";
+import { useState, useEffect, useCallback } from "react";
+import { Maintenance } from "@/types";
+import { usePropertyManager } from "@/hooks/usePropertyManager";
+import { maintenanceService } from "@/services/supabaseService";
 
 export function useMaintenanceData() {
-  const { toast } = useToast();
-  const { user, profile } = useAuth();
-  const [maintenanceRequests, setMaintenanceRequests] = useState<Maintenance[]>([]);
-  const [tenants, setTenants] = useState<Tenant[]>([]);
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const {
+    tenants,
+    properties,
+    maintenance: maintenanceRequests,
+    isLoading: isDataLoading,
+    refreshData: refreshPropertyManagerData
+  } = usePropertyManager();
+  
   const [searchQuery, setSearchQuery] = useState("");
-  const [priorityFilter, setPriorityFilter] = useState<Maintenance["priority"] | "all">("all");
-  const [sortField, setSortField] = useState<keyof Maintenance>("dateSubmitted");
+  const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [sortField, setSortField] = useState<string>("date");
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const managerId = profile?.id || user?.id;
-        
-        const [fetchedRequests, fetchedTenants, fetchedProperties] = await Promise.all([
-          maintenanceService.getAll(managerId),
-          tenantsService.getAll(managerId),
-          propertiesService.getAll(managerId)
-        ]);
-        
-        console.log("Fetched maintenance requests:", fetchedRequests);
-        setMaintenanceRequests(fetchedRequests);
-        setTenants(fetchedTenants);
-        setProperties(fetchedProperties);
-        setIsLoading(false);
-      } catch (error) {
-        console.error("Error fetching maintenance data:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load maintenance data",
-          variant: "destructive"
-        });
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [toast, user, profile]);
-
-  const getTenantName = (tenantId: string) => {
-    const tenant = tenants.find(t => t.id === tenantId);
-    return tenant ? tenant.name : "Unknown";
-  };
-
-  const getPropertyName = (propertyId: string) => {
-    const property = properties.find(p => p.id === propertyId);
-    return property ? property.name : "Unknown";
-  };
-
-  const getFilteredRequests = () => {
+  // Filter and sort maintenance requests
+  const getFilteredRequests = useCallback(() => {
     return maintenanceRequests.filter(request => {
+      // Apply priority filter
       if (priorityFilter !== "all" && request.priority !== priorityFilter) {
         return false;
       }
       
-      const searchTerms = searchQuery.toLowerCase();
-      const tenantName = getTenantName(request.tenantId).toLowerCase();
-      const propertyName = getPropertyName(request.propertyId).toLowerCase();
-      
-      return (
-        request.title.toLowerCase().includes(searchTerms) ||
-        request.description.toLowerCase().includes(searchTerms) ||
-        tenantName.includes(searchTerms) ||
-        propertyName.includes(searchTerms) ||
-        request.priority.includes(searchTerms) ||
-        request.status.includes(searchTerms)
-      );
-    });
-  };
-
-  const sortedRequests = () => {
-    const filteredRequests = getFilteredRequests();
-    
-    return [...filteredRequests].sort((a, b) => {
-      if (sortField === "dateSubmitted") {
-        return sortDirection === "asc"
-          ? new Date(a.dateSubmitted).getTime() - new Date(b.dateSubmitted).getTime()
-          : new Date(b.dateSubmitted).getTime() - new Date(a.dateSubmitted).getTime();
-      } else if (sortField === "priority") {
-        const priorityOrder = { emergency: 0, high: 1, medium: 2, low: 3 };
-        return sortDirection === "asc"
-          ? priorityOrder[a.priority] - priorityOrder[b.priority]
-          : priorityOrder[b.priority] - priorityOrder[a.priority];
+      // Apply search query
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const tenantName = request.tenantId ? getTenantName(request.tenantId).toLowerCase() : "";
+        const propertyName = request.propertyId ? getPropertyName(request.propertyId).toLowerCase() : "";
+        
+        return (
+          request.title.toLowerCase().includes(query) ||
+          request.description.toLowerCase().includes(query) ||
+          tenantName.includes(query) ||
+          propertyName.includes(query) ||
+          request.status.toLowerCase().includes(query)
+        );
       }
+      
+      return true;
+    });
+  }, [maintenanceRequests, priorityFilter, searchQuery]);
+
+  // Sort filtered requests
+  const sortRequests = useCallback((requests: Maintenance[]) => {
+    return [...requests].sort((a, b) => {
+      let valueA, valueB;
+      
+      switch (sortField) {
+        case "priority":
+          const priorityOrder = { emergency: 0, high: 1, medium: 2, low: 3 };
+          valueA = priorityOrder[a.priority];
+          valueB = priorityOrder[b.priority];
+          break;
+        case "status":
+          valueA = a.status;
+          valueB = b.status;
+          break;
+        case "property":
+          valueA = getPropertyName(a.propertyId);
+          valueB = getPropertyName(b.propertyId);
+          break;
+        case "tenant":
+          valueA = getTenantName(a.tenantId);
+          valueB = getTenantName(b.tenantId);
+          break;
+        case "date":
+        default:
+          valueA = new Date(a.dateSubmitted).getTime();
+          valueB = new Date(b.dateSubmitted).getTime();
+          break;
+      }
+      
+      if (valueA < valueB) return sortDirection === "asc" ? -1 : 1;
+      if (valueA > valueB) return sortDirection === "asc" ? 1 : -1;
       return 0;
     });
-  };
+  }, [sortField, sortDirection]);
 
-  const toggleSort = (field: keyof Maintenance) => {
+  const sortedRequests = sortRequests(getFilteredRequests());
+  
+  const openRequests = sortedRequests.filter(
+    request => request.status === "pending" || request.status === "in-progress"
+  );
+  
+  const closedRequests = sortedRequests.filter(
+    request => request.status === "completed" || request.status === "cancelled"
+  );
+
+  const toggleSort = (field: string) => {
     if (sortField === field) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
-      setSortDirection("desc");
+      setSortDirection("asc");
     }
   };
 
-  const handleAddRequest = async (formData: Omit<Maintenance, "id" | "dateSubmitted" | "propertyName" | "tenantName" | "tenantEmail">) => {
+  const getTenantName = (tenantId?: string) => {
+    if (!tenantId) return "Unassigned";
+    const tenant = tenants.find(t => t.id === tenantId);
+    return tenant ? tenant.name : "Unknown";
+  };
+
+  const getPropertyName = (propertyId?: string) => {
+    if (!propertyId) return "Unassigned";
+    const property = properties.find(p => p.id === propertyId);
+    return property ? property.name : "Unknown";
+  };
+
+  const handleAddRequest = async (formData: Partial<Maintenance>) => {
     try {
-      const managerId = profile?.id || user?.id;
+      setIsLoading(true);
       
-      const requestData = {
+      await maintenanceService.create({
         ...formData,
-        managerId,
-        dateSubmitted: new Date().toISOString() // Add the missing dateSubmitted property
-      };
+        status: "pending"
+      } as Maintenance);
       
-      const result = await maintenanceService.create(requestData);
+      // Refresh the data to show the new maintenance request
+      refreshPropertyManagerData();
       
-      // Refresh maintenance data after adding new request
-      const updatedRequests = await maintenanceService.getAll(managerId);
-      setMaintenanceRequests(updatedRequests);
-      
+      setIsLoading(false);
       return true;
     } catch (error) {
       console.error("Error adding maintenance request:", error);
-      toast({
-        title: "Failed to submit maintenance request",
-        description: "Please try again later.",
-        variant: "destructive"
-      });
+      setIsLoading(false);
       return false;
     }
   };
 
-  const filtered = getFilteredRequests();
-  const sorted = sortedRequests();
-  const openRequests = sorted.filter(r => r.status === "pending" || r.status === "in-progress");
-  const closedRequests = sorted.filter(r => r.status === "completed" || r.status === "cancelled");
-
   return {
     maintenanceRequests,
-    isLoading,
+    isLoading: isLoading || isDataLoading,
     searchQuery,
     setSearchQuery,
     priorityFilter,
     setPriorityFilter,
     sortField,
     sortDirection,
-    sortedRequests: sorted,
+    toggleSort,
+    sortedRequests,
     openRequests,
     closedRequests,
-    toggleSort,
     getTenantName,
     getPropertyName,
-    handleAddRequest
+    handleAddRequest,
+    refreshData: refreshPropertyManagerData
   };
 }

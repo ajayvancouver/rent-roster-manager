@@ -26,15 +26,29 @@ const MaintenancePage = () => {
     getTenantName,
     getPropertyName,
     handleAddRequest,
-    maintenanceRequests
+    maintenanceRequests,
+    refreshData
   } = useMaintenanceData();
 
-  const handleAddRequestSuccess = () => {
-    setShowAddModal(false);
-    toast({
-      title: "Success",
-      description: "Maintenance request has been submitted successfully."
-    });
+  const handleAddRequestSuccess = async (formData: any) => {
+    const success = await handleAddRequest(formData);
+    
+    if (success) {
+      setShowAddModal(false);
+      toast({
+        title: "Success",
+        description: "Maintenance request has been submitted successfully."
+      });
+      
+      // Refresh data to show the new maintenance request
+      refreshData();
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to submit maintenance request. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -69,7 +83,7 @@ const MaintenancePage = () => {
         title="New Maintenance Request"
         open={showAddModal}
         onOpenChange={setShowAddModal}
-        onSave={handleAddRequestSuccess}
+        onSave={() => {}}
       >
         <AddMaintenanceRequestForm onSuccess={handleAddRequestSuccess} />
       </AddEntityModal>

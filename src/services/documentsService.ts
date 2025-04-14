@@ -39,7 +39,7 @@ export const documentsService = {
       }));
     } catch (error) {
       console.error("Error in documentsService.getAll:", error);
-      return [];
+      throw error; // Propagate the error so we can handle it in the component
     }
   },
 
@@ -135,6 +135,8 @@ export const documentsService = {
       file_type: document.fileType || "application/pdf",
       url: document.url
     };
+    
+    console.log("Creating document with data:", dbDocument);
     
     return await supabase
       .from('documents')

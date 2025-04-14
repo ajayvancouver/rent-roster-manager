@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { loadAllData } from "@/services/supabaseService";
 import { useToast } from "@/hooks/use-toast";
 import { Payment, Tenant, Property, Maintenance, Document } from "@/types";
@@ -17,6 +17,11 @@ export function usePropertyManager() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<any>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const refreshData = useCallback(() => {
+    setRefreshTrigger(prev => prev + 1);
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -26,6 +31,7 @@ export function usePropertyManager() {
       }
 
       try {
+        setIsLoading(true);
         const managerId = profile?.id || user.id;
         const data = await loadAllData(managerId);
         
@@ -34,6 +40,7 @@ export function usePropertyManager() {
         setPayments(data.payments);
         setMaintenance(data.maintenance);
         setDocuments(data.documents);
+        setError(null);
         setIsLoading(false);
       } catch (error) {
         console.error("Error fetching property manager data:", error);
@@ -48,7 +55,7 @@ export function usePropertyManager() {
     };
 
     fetchData();
-  }, [user, userType, profile, toast]);
+  }, [user, userType, profile, toast, refreshTrigger]);
 
   // Calculate useful statistics
   const stats = getDashboardStats(payments, tenants, properties, maintenance);
@@ -61,6 +68,7 @@ export function usePropertyManager() {
     documents,
     isLoading,
     error,
-    stats
+    stats,
+    refreshData
   };
 }
