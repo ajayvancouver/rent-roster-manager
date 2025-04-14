@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import AddEntityModal from "@/components/common/AddEntityModal";
@@ -53,8 +52,8 @@ const MaintenancePage = () => {
   };
 
   const modalSaveHandler = () => {
-    // This is a no-op function to satisfy type requirements
-    // The actual form submission is handled by onSuccess
+    // This handler is now a no-op function that satisfies the type requirements
+    // The actual form submission is handled by onSuccess prop
     return;
   };
 
@@ -99,4 +98,3 @@ const MaintenancePage = () => {
 };
 
 export default MaintenancePage;
-
