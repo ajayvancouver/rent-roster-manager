@@ -32,60 +32,87 @@ export function useTenantPortal() {
           setIsLoading(false);
           return;
         }
+
+        console.log("Starting tenant data lookup for user:", user.id, "email:", profile.email);
         
         if (profile.user_type === 'tenant') {
-          // First attempt - try to get the tenant record by user_id
-          console.log("Looking up tenant record by user_id:", user.id);
-          const { data: tenantData, error: tenantLookupError } = await supabase
-            .from('tenants')
-            .select('*, properties(*)')
-            .eq('tenant_user_id', user.id)
-            .maybeSingle();
+          // Check if profile already has property data
+          if (profile.property_id) {
+            console.log("Profile has property_id:", profile.property_id, "- fetching property details");
             
-          if (tenantLookupError) {
-            console.error("Error looking up tenant by user_id:", tenantLookupError);
-          } else if (tenantData) {
-            console.log("Found tenant data directly by user_id:", tenantData);
+            // Direct property lookup from profile
+            const { data: property, error: propertyError } = await supabase
+              .from('properties')
+              .select('*')
+              .eq('id', profile.property_id)
+              .maybeSingle();
             
-            // Set property data from tenant record
-            if (tenantData.properties) {
-              console.log("Setting property data from tenant record:", tenantData.properties);
+            if (propertyError) {
+              console.error("Error fetching property from profile.property_id:", propertyError);
+            } else if (property) {
+              console.log("Found property directly from profile.property_id:", property);
               setPropertyData({
-                ...tenantData.properties,
-                unitNumber: tenantData.unit_number || null
+                ...property,
+                unitNumber: profile.unit_number || null
               });
+            } else {
+              console.log("No property found with profile.property_id:", profile.property_id);
+            }
+          }
+          
+          // If we still don't have property data, try looking up the tenant by user_id
+          if (!propertyData) {
+            console.log("No property data yet, looking up tenant by user_id:", user.id);
+            const { data: tenantData, error: tenantLookupError } = await supabase
+              .from('tenants')
+              .select('*, properties(*)')
+              .eq('tenant_user_id', user.id)
+              .maybeSingle();
               
-              // Update profile with this property data if it's missing
-              if (!profile.property_id) {
-                const { error: updateError } = await supabase
-                  .from('profiles')
-                  .update({
-                    property_id: tenantData.property_id,
-                    unit_number: tenantData.unit_number,
-                    rent_amount: tenantData.rent_amount,
-                    deposit_amount: tenantData.deposit_amount,
-                    balance: tenantData.balance,
-                    lease_start: tenantData.lease_start,
-                    lease_end: tenantData.lease_end
-                  })
-                  .eq('id', user.id);
-                  
-                if (updateError) {
-                  console.error("Error updating profile with property data:", updateError);
-                } else {
-                  console.log("Updated profile with property data from tenant record");
+            if (tenantLookupError) {
+              console.error("Error looking up tenant by user_id:", tenantLookupError);
+            } else if (tenantData) {
+              console.log("Found tenant data by user_id:", tenantData);
+              
+              // Set property data from tenant record
+              if (tenantData.properties) {
+                console.log("Setting property data from tenant record:", tenantData.properties);
+                setPropertyData({
+                  ...tenantData.properties,
+                  unitNumber: tenantData.unit_number || null
+                });
+                
+                // Update profile with this property data if it's missing
+                if (!profile.property_id) {
+                  console.log("Updating profile with property data from tenant record");
+                  const { error: updateError } = await supabase
+                    .from('profiles')
+                    .update({
+                      property_id: tenantData.property_id,
+                      unit_number: tenantData.unit_number,
+                      rent_amount: tenantData.rent_amount,
+                      deposit_amount: tenantData.deposit_amount,
+                      balance: tenantData.balance,
+                      lease_start: tenantData.lease_start,
+                      lease_end: tenantData.lease_end
+                    })
+                    .eq('id', user.id);
+                    
+                  if (updateError) {
+                    console.error("Error updating profile with property data:", updateError);
+                  } else {
+                    console.log("Successfully updated profile with property data from tenant record");
+                  }
                 }
               }
-            }
-          } else {
-            // Second attempt - try to find the tenant by email
-            console.log("No tenant record found by user_id, trying email lookup:", profile.email);
-            
-            if (profile.email) {
+            } else if (profile.email) {
+              // If still no data, try lookup by email (case-insensitive search)
+              console.log("No tenant record found by user_id, trying email lookup for:", profile.email);
+              
               const { data: tenantByEmail, error: emailLookupError } = await supabase
                 .from('tenants')
                 .select('*, properties(*)')
-                .eq('email', profile.email)
+                .ilike('email', profile.email) // Using ilike for case-insensitive matching
                 .maybeSingle();
                 
               if (emailLookupError) {
@@ -102,18 +129,19 @@ export function useTenantPortal() {
                 if (linkError) {
                   console.error("Error linking tenant to user:", linkError);
                 } else {
-                  console.log("Linked tenant to user account");
+                  console.log("Successfully linked tenant to user account");
                 }
                 
                 // Set property data
                 if (tenantByEmail.properties) {
-                  console.log("Setting property data from tenant email lookup:", tenantByEmail.properties);
+                  console.log("Setting property data from email lookup:", tenantByEmail.properties);
                   setPropertyData({
                     ...tenantByEmail.properties,
                     unitNumber: tenantByEmail.unit_number || null
                   });
                   
                   // Update profile with this property information
+                  console.log("Updating profile with property data from email lookup");
                   const { error: updateError } = await supabase
                     .from('profiles')
                     .update({
@@ -128,35 +156,69 @@ export function useTenantPortal() {
                     .eq('id', user.id);
                     
                   if (updateError) {
-                    console.error("Error updating profile with property data:", updateError);
+                    console.error("Error updating profile with property data from email lookup:", updateError);
                   } else {
-                    console.log("Updated profile with property data from email lookup");
+                    console.log("Successfully updated profile with property data from email lookup");
                   }
                 }
               } else {
-                // Third attempt - try direct property lookup from profile
-                console.log("No tenant record found by email. Checking if profile has property_id:", profile.property_id);
+                // Try one more time with exact email match
+                console.log("No tenant found with case-insensitive email search, trying exact match for:", profile.email);
                 
-                if (profile.property_id) {
-                  const { data: property, error: propertyError } = await supabase
-                    .from('properties')
-                    .select('*')
-                    .eq('id', profile.property_id)
-                    .maybeSingle();
+                const { data: exactEmailTenant, error: exactEmailError } = await supabase
+                  .from('tenants')
+                  .select('*, properties(*)')
+                  .eq('email', profile.email)
+                  .maybeSingle();
                   
-                  if (propertyError) {
-                    console.error("Error fetching property:", propertyError);
-                  } else if (property) {
-                    console.log("Property found from profile.property_id:", property);
-                    setPropertyData({
-                      ...property,
-                      unitNumber: profile.unit_number || null
-                    });
+                if (exactEmailError) {
+                  console.error("Error in exact email tenant lookup:", exactEmailError);
+                } else if (exactEmailTenant) {
+                  console.log("Found tenant with exact email match:", exactEmailTenant);
+                  
+                  // Link this tenant to the user account
+                  const { error: linkError } = await supabase
+                    .from('tenants')
+                    .update({ tenant_user_id: user.id })
+                    .eq('id', exactEmailTenant.id);
+                    
+                  if (linkError) {
+                    console.error("Error linking tenant with exact email to user:", linkError);
                   } else {
-                    console.log("No property found with ID:", profile.property_id);
+                    console.log("Successfully linked tenant with exact email to user account");
+                  }
+                  
+                  // Set property data
+                  if (exactEmailTenant.properties) {
+                    console.log("Setting property data from exact email match:", exactEmailTenant.properties);
+                    setPropertyData({
+                      ...exactEmailTenant.properties,
+                      unitNumber: exactEmailTenant.unit_number || null
+                    });
+                    
+                    // Update profile
+                    console.log("Updating profile with property data from exact email match");
+                    const { error: updateError } = await supabase
+                      .from('profiles')
+                      .update({
+                        property_id: exactEmailTenant.property_id,
+                        unit_number: exactEmailTenant.unit_number,
+                        rent_amount: exactEmailTenant.rent_amount,
+                        deposit_amount: exactEmailTenant.deposit_amount,
+                        balance: exactEmailTenant.balance,
+                        lease_start: exactEmailTenant.lease_start,
+                        lease_end: exactEmailTenant.lease_end
+                      })
+                      .eq('id', user.id);
+                      
+                    if (updateError) {
+                      console.error("Error updating profile with exact email match data:", updateError);
+                    } else {
+                      console.log("Successfully updated profile with exact email match data");
+                    }
                   }
                 } else {
-                  console.log("No property_id in profile and no tenant record found by email or user_id");
+                  console.log("No tenant record found by any method (user_id, case-insensitive email, exact email)");
                 }
               }
             }
@@ -216,6 +278,8 @@ export function useTenantPortal() {
           }
           setDocuments(documentData || []);
         }
+        
+        console.log("Tenant data loading completed. Property data:", propertyData);
       } catch (error: any) {
         console.error("Error loading tenant data:", error);
         setLoadingError(error.message || "Failed to load tenant information");

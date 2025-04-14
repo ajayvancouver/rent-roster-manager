@@ -1,17 +1,20 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Building2, Home, Map, Calendar, CreditCard, Info } from "lucide-react";
+import { Building2, Home, Map, Calendar, CreditCard, Info, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { useTenantPortal } from "@/hooks/useTenantPortal";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
 const TenantProperty: React.FC = () => {
   const { isLoading, propertyData, leaseStart, leaseEnd, rentAmount, depositAmount } = useTenantPortal();
   const { user, profile } = useAuth();
   const { toast } = useToast();
+  const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [isChecking, setIsChecking] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !propertyData && user) {
@@ -47,6 +50,80 @@ const TenantProperty: React.FC = () => {
       case 'apartment': return <Building2 className="h-8 w-8 text-primary" />;
       case 'duplex': return <Building2 className="h-8 w-8 text-primary" />;
       default: return <Building2 className="h-8 w-8 text-primary" />;
+    }
+  };
+
+  const checkTenantRecords = async () => {
+    if (!profile?.email) return;
+    
+    setIsChecking(true);
+    try {
+      // First try exact email match
+      const { data: exactMatch, error: exactError } = await supabase
+        .from('tenants')
+        .select('*, properties(*)')
+        .eq('email', profile.email)
+        .maybeSingle();
+        
+      if (exactError) console.error("Error checking exact email match:", exactError);
+      
+      // Then try case-insensitive match
+      const { data: caseInsensitiveMatch, error: caseError } = await supabase
+        .from('tenants')
+        .select('*, properties(*)')
+        .ilike('email', profile.email)
+        .maybeSingle();
+        
+      if (caseError) console.error("Error checking case-insensitive email match:", caseError);
+      
+      setDebugInfo({
+        userEmail: profile.email,
+        profilePropertyId: profile.property_id,
+        exactEmailMatch: exactMatch,
+        caseInsensitiveMatch: caseInsensitiveMatch
+      });
+      
+      if (exactMatch && exactMatch.tenant_user_id !== user?.id) {
+        // Link user to tenant and update profile
+        const { error: linkError } = await supabase
+          .from('tenants')
+          .update({ tenant_user_id: user?.id })
+          .eq('id', exactMatch.id);
+          
+        if (linkError) {
+          console.error("Error linking tenant to user:", linkError);
+        } else {
+          console.log("Successfully linked tenant to user on demand");
+          
+          // Update profile with tenant data
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .update({
+              property_id: exactMatch.property_id,
+              unit_number: exactMatch.unit_number,
+              rent_amount: exactMatch.rent_amount,
+              deposit_amount: exactMatch.deposit_amount,
+              balance: exactMatch.balance,
+              lease_start: exactMatch.lease_start,
+              lease_end: exactMatch.lease_end
+            })
+            .eq('id', user?.id);
+            
+          if (profileError) {
+            console.error("Error updating profile with tenant data:", profileError);
+          } else {
+            toast({
+              title: "Success",
+              description: "Property assignment fixed. Please refresh the page.",
+              variant: "default",
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error checking tenant records:", error);
+    } finally {
+      setIsChecking(false);
     }
   };
 
@@ -90,7 +167,7 @@ const TenantProperty: React.FC = () => {
               <p className="text-muted-foreground mb-6">
                 You don't have a property assigned to your account yet.
               </p>
-              <div className="bg-amber-50 border border-amber-200 rounded-md p-4 flex items-start space-x-3 max-w-md mx-auto">
+              <div className="bg-amber-50 border border-amber-200 rounded-md p-4 flex items-start space-x-3 max-w-md mx-auto mb-6">
                 <Info className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
                 <div className="text-left">
                   <h3 className="font-medium text-amber-800 text-sm">Account Information</h3>
@@ -101,6 +178,32 @@ const TenantProperty: React.FC = () => {
                   </p>
                 </div>
               </div>
+              
+              <Button 
+                variant="outline" 
+                onClick={checkTenantRecords}
+                disabled={isChecking}
+                className="mb-4"
+              >
+                {isChecking ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Checking...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Check Property Assignment
+                  </>
+                )}
+              </Button>
+              
+              {debugInfo && (
+                <div className="mt-4 p-4 border rounded text-xs bg-slate-50 text-left overflow-x-auto">
+                  <p className="font-medium mb-1">Debug Info:</p>
+                  <pre>{JSON.stringify(debugInfo, null, 2)}</pre>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
