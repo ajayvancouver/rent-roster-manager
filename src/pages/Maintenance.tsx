@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import AddEntityModal from "@/components/common/AddEntityModal";
@@ -51,9 +52,10 @@ const MaintenancePage = () => {
     }
   };
 
-  const modalSaveHandler = () => {
-    // This is a no-op function to satisfy the type requirements
-    // The actual form submission is handled by onSuccess in AddMaintenanceRequestForm
+  const modalSaveHandler = (formData?: any) => {
+    // This function is now explicitly typed to match the required signature
+    // It's still a no-op function as the actual submission is handled by onSuccess
+    return Promise.resolve();
   };
 
   return (
@@ -97,3 +99,4 @@ const MaintenancePage = () => {
 };
 
 export default MaintenancePage;
+
