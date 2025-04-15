@@ -23,7 +23,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [authError, setAuthError] = useState<boolean>(false);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
         console.log("Auth state changed:", event, currentSession?.user?.email);
@@ -31,7 +30,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(currentSession?.user ?? null);
         
         if (currentSession?.user) {
-          // Use setTimeout to avoid recursion
           setTimeout(() => {
             handleProfileFetch(currentSession.user.id, currentSession.user.email || '');
           }, 0);
@@ -43,7 +41,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
       console.log("Retrieved session:", currentSession?.user?.email);
       setSession(currentSession);
@@ -70,7 +67,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       let userProfile = await fetchUserProfile(userId);
       
       if (!userProfile) {
-        // No profile found, create a default one with tenant data if possible
         console.log("No profile found, creating default profile");
         userProfile = await createDefaultProfile(userId, email);
       }
@@ -79,9 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setProfile(userProfile);
         setUserType(userProfile.user_type);
         
-        // If the profile has no property data but there's a matching tenant, update the profile
         if (userProfile.user_type === 'tenant' && !userProfile.property_id) {
-          // Check if there's tenant data for this email
           const { data: tenantData, error: tenantError } = await supabase
             .from("tenants")
             .select("*")
@@ -90,7 +84,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             
           if (!tenantError && tenantData) {
             console.log("Found tenant data for email:", email);
-            // Link tenant to user if not already linked
             if (!tenantData.tenant_user_id) {
               await supabase
                 .from("tenants")
@@ -98,7 +91,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 .eq("id", tenantData.id);
             }
             
-            // Update profile with tenant data
             const updatedProfile = {
               property_id: tenantData.property_id,
               unit_number: tenantData.unit_number,
@@ -126,13 +118,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
       } else {
-        // If we still couldn't get a profile, set default values
         console.log("Setting default userType as tenant");
         setUserType("tenant");
       }
     } catch (error) {
       console.error("Error handling profile fetch:", error);
-      // Set a default user type to prevent auth loops
       setUserType("tenant");
       setAuthError(true);
     } finally {
@@ -148,7 +138,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error("Sign in error:", error.message);
       throw error;
     } finally {
-      // We don't set isLoading to false here because the auth state change event will trigger
     }
   };
 
@@ -180,7 +169,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(true);
       await signOutUser();
       
-      // Reset all states
       setSession(null);
       setUser(null);
       setProfile(null);

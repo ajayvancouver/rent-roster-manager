@@ -37,7 +37,8 @@ export const createSampleManager = async (createSampleData: boolean = false): Pr
   const userType: UserType = "manager";
 
   try {
-    const { user } = await signUpWithEmail(email, password, userType, fullName);
+    const { user } = await signUpWithEmail(email, password, userType, fullName, createSampleData);
+    
     if (user?.id) {
       // Set the manager_id field in the profile
       await updateProfile(user.id, { manager_id: user.id });
