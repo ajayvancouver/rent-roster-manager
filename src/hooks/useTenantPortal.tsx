@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -30,7 +29,6 @@ export function useTenantPortal() {
       try {
         console.log("Loading tenant data for user:", user.id);
         
-        // First try to get tenant by user ID
         let tenant = null;
         
         try {
@@ -40,7 +38,6 @@ export function useTenantPortal() {
           console.log("Error fetching tenant by user ID, will try email lookup:", error);
         }
         
-        // If no tenant found by user ID, try by email
         if (!tenant && profile?.email) {
           console.log("Looking up tenant by email:", profile.email);
           
@@ -55,7 +52,6 @@ export function useTenantPortal() {
               console.log("Found tenant by email:", data);
               tenant = data;
               
-              // Link the tenant to the user
               const { error: linkError } = await supabase
                 .from('tenants')
                 .update({ tenant_user_id: user.id })
@@ -72,11 +68,13 @@ export function useTenantPortal() {
           }
         }
         
-        // If we found tenant data, use it
         if (tenant) {
+          console.log("Tenant data found:", tenant);
+          console.log("Rent amount from tenant data:", tenant.rent_amount);
+          console.log("Rent amount from database:", tenant.rentAmount);
+          
           setTenantData(tenant);
           
-          // Set property data
           if (tenant.properties) {
             console.log("Setting property data:", tenant.properties);
             setPropertyData({
@@ -84,7 +82,6 @@ export function useTenantPortal() {
               unitNumber: tenant.unit_number || null
             });
           } else if (tenant.propertyId) {
-            // If tenant has propertyId but properties not populated, fetch property data
             console.log("Fetching property data for ID:", tenant.propertyId);
             try {
               const { data: propertyData } = await supabase
@@ -105,10 +102,11 @@ export function useTenantPortal() {
             }
           }
           
-          // Set rental/financial info
-          if (tenant.rentAmount) setTotalDue(tenant.balance || 0);
+          if (tenant.rent_amount) {
+            console.log("Setting rent amount:", Number(tenant.rent_amount));
+            setTotalDue(Number(tenant.rent_amount));
+          }
           
-          // Fetch maintenance requests
           try {
             const { data: maintenance } = await supabase
               .from('maintenance')
@@ -121,7 +119,6 @@ export function useTenantPortal() {
             console.error("Error fetching maintenance requests:", error);
           }
           
-          // Fetch payments
           try {
             const { data: paymentData } = await supabase
               .from('payments')
@@ -131,7 +128,6 @@ export function useTenantPortal() {
               
             setPayments(paymentData || []);
             
-            // Calculate total paid
             const paid = (paymentData || []).reduce((sum: number, payment: any) => {
               if (payment.status === 'completed') {
                 return sum + Number(payment.amount);
@@ -144,7 +140,6 @@ export function useTenantPortal() {
             console.error("Error fetching payments:", error);
           }
           
-          // Fetch documents
           try {
             const { data: documentData } = await supabase
               .from('documents')
@@ -186,7 +181,7 @@ export function useTenantPortal() {
     totalDue,
     leaseStart: tenantData?.lease_start || null,
     leaseEnd: tenantData?.lease_end || null,
-    rentAmount: tenantData?.rent_amount || 0,
+    rentAmount: tenantData?.rent_amount || tenantData?.rentAmount || 0,
     depositAmount: tenantData?.deposit_amount || 0,
     balance: tenantData?.balance || 0,
     error: loadingError,
