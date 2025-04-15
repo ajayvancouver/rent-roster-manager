@@ -52,9 +52,11 @@ const MaintenancePage = () => {
     }
   };
 
-  // The modalSaveHandler must accept a parameter to match the required function signature
-  const modalSaveHandler = (_formData: any) => {
+  // Fixing the type error: This function now accepts a parameter
+  // to match the expected function signature in AddEntityModal
+  const modalSaveHandler = (formData: any) => {
     // This is a no-op function, the actual submission is handled by onSuccess prop
+    // We don't need to do anything here as the form submission is handled by onSuccess
     return;
   };
 
