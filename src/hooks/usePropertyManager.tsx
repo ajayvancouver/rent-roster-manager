@@ -1,10 +1,9 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { loadAllData } from "@/services/supabaseService";
 import { useToast } from "@/hooks/use-toast";
 import { Payment, Tenant, Property, Maintenance, Document } from "@/types";
 import { getDashboardStats } from "@/utils/dataUtils";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts";
 
 // This hook provides access to all the data across the application
 export function usePropertyManager() {

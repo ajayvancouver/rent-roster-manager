@@ -1,63 +1,78 @@
-
 import { useState } from "react";
-import { Property } from "@/types";
+import { Property, Tenant } from "@/types";
 import { propertiesService } from "@/services/propertiesService";
-import { maintenanceService } from "@/services/maintenanceService";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { generateSampleTenants } from "@/services/sampleData";
+import { useAuth } from "@/contexts"; // Updated import path
 
 export function usePropertyActions(
   properties: Property[],
-  tenants: any[],
+  tenants: Tenant[],
   setProperties: React.Dispatch<React.SetStateAction<Property[]>>,
   fetchProperties: () => Promise<void>
 ) {
   const { toast } = useToast();
   const { user, profile } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  const handleAddProperty = async (formData: Omit<Property, "id">) => {
+  const handleAddProperty = async (propertyData: Omit<Property, "id" | "managerId">) => {
     try {
-      setIsLoading(true);
+      setIsProcessing(true);
+      
+      // Ensure managerId is available
       const managerId = profile?.id || user?.id;
-      const propertyData = {
-        ...formData,
-        managerId
-      };
-      
-      const result = await propertiesService.create(propertyData);
-      
-      if (result) {
-        setProperties(prevProperties => [...prevProperties, result]);
-        
-        toast({
-          title: "Property added!",
-          description: `${formData.name} has been added successfully.`
-        });
+      if (!managerId) {
+        throw new Error("Manager ID not found");
       }
       
-      setIsLoading(false);
-      return true;
-    } catch (error) {
+      // Add managerId to the property data
+      const propertyDataWithManagerId = {
+        ...propertyData,
+        managerId: managerId
+      };
+      
+      const newProperty = await propertiesService.create(propertyDataWithManagerId);
+      
+      if (newProperty) {
+        setProperties(prevProperties => [...prevProperties, newProperty]);
+        toast({
+          title: "Success",
+          description: "Property has been added successfully."
+        });
+        return true;
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to add property. Please try again.",
+          variant: "destructive"
+        });
+        return false;
+      }
+    } catch (error: any) {
       console.error("Error adding property:", error);
       toast({
-        title: "Failed to add property",
-        description: "Please try again later.",
+        title: "Error",
+        description: "Failed to add property: " + (error.message || "Please try again later."),
         variant: "destructive"
       });
-      setIsLoading(false);
       return false;
+    } finally {
+      setIsProcessing(false);
     }
   };
 
-  const handleUpdateProperty = async (id: string, formData: Partial<Omit<Property, "id">>) => {
+  const handleUpdateProperty = async (id: string, propertyData: Partial<Property>) => {
     try {
-      const result = await propertiesService.update(id, formData);
+      setIsProcessing(true);
       
-      if (result) {
-        setProperties(prevProperties => 
-          prevProperties.map(property => 
-            property.id === id ? { ...property, ...formData } : property
+      const updatedProperty = await propertiesService.update(id, propertyData);
+      
+      if (updatedProperty) {
+        // Update the property in local state
+        setProperties(prevProperties =>
+          prevProperties.map(property =>
+            property.id === id ? { ...property, ...propertyData } : property
           )
         );
         
@@ -66,112 +81,94 @@ export function usePropertyActions(
           description: "Property has been updated successfully."
         });
         return true;
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to update property. Please try again.",
+          variant: "destructive"
+        });
+        return false;
       }
-      
-      return false;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating property:", error);
       toast({
-        title: "Failed to update property",
-        description: "Please try again later.",
+        title: "Error",
+        description: "Failed to update property: " + (error.message || "Please try again later."),
         variant: "destructive"
       });
       return false;
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   const handleDeleteProperty = async (id: string) => {
     try {
-      // Check for tenants first
-      const propertyTenants = tenants.filter(tenant => tenant.propertyId === id);
+      setIsProcessing(true);
       
-      if (propertyTenants.length > 0) {
+      const success = await propertiesService.delete(id);
+      
+      if (success) {
+        // Remove the property from local state
+        setProperties(prevProperties => prevProperties.filter(property => property.id !== id));
+        
         toast({
-          title: "Cannot delete property",
-          description: `This property has ${propertyTenants.length} tenants. Remove all tenants before deleting.`,
-          variant: "destructive"
+          title: "Success",
+          description: "Property has been deleted successfully."
         });
-        return false;
-      }
-      
-      // Check for maintenance requests with proper error handling
-      let maintenanceRequests = [];
-      try {
-        maintenanceRequests = await maintenanceService.getByPropertyId(id);
-        console.log("Maintenance requests for property:", maintenanceRequests);
-      } catch (error) {
-        console.error("Error checking maintenance requests:", error);
-        // Continue with deletion even if we can't check maintenance requests
-      }
-      
-      if (maintenanceRequests && maintenanceRequests.length > 0) {
-        toast({
-          title: "Cannot delete property",
-          description: `This property has ${maintenanceRequests.length} maintenance requests. Address all maintenance requests before deleting.`,
-          variant: "destructive"
-        });
-        return false;
-      }
-      
-      // If no blockers, proceed with deletion
-      try {
-        setIsLoading(true);
-        const success = await propertiesService.delete(id);
-        setIsLoading(false);
-        
-        if (success) {
-          setProperties(prevProperties => prevProperties.filter(property => property.id !== id));
-          
-          toast({
-            title: "Success",
-            description: "Property has been deleted successfully."
-          });
-          return true;
-        }
-      } catch (error: any) {
-        setIsLoading(false);
-        console.error("Error deleting property:", error);
-        
-        // Handle foreign key constraint violations
-        if (error.code === "23503") {
-          let message = "This property is referenced by other data in the system.";
-          
-          if (error.details?.includes("profiles_property_id_fkey")) {
-            message = "This property is associated with user profiles.";
-          }
-          
-          toast({
-            title: "Cannot delete property",
-            description: message,
-            variant: "destructive"
-          });
-          return false;
-        }
-        
-        // For all other cases, show a generic error
+        return true;
+      } else {
         toast({
           title: "Error",
-          description: "Failed to delete property. Please try again later.",
+          description: "Failed to delete property. Please try again.",
           variant: "destructive"
         });
+        return false;
       }
-      
-      return false;
-    } catch (error) {
-      console.error("Error in handleDeleteProperty:", error);
+    } catch (error: any) {
+      console.error("Error deleting property:", error);
       toast({
-        title: "Failed to delete property",
-        description: "Please try again later.",
+        title: "Error",
+        description: "Failed to delete property: " + (error.message || "Please try again later."),
         variant: "destructive"
       });
       return false;
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleGenerateSampleData = async (propertyId: string) => {
+    try {
+      setIsProcessing(true);
+      
+      // Generate sample tenants for the property
+      await generateSampleTenants(propertyId);
+      
+      // Refresh properties to reflect the changes
+      await fetchProperties();
+      
+      toast({
+        title: "Success",
+        description: "Sample data generated successfully."
+      });
+    } catch (error: any) {
+      console.error("Error generating sample data:", error);
+      toast({
+        title: "Error",
+        description: "Failed to generate sample data: " + (error.message || "Please try again later."),
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   return {
-    isLoading,
+    isProcessing,
     handleAddProperty,
     handleUpdateProperty,
-    handleDeleteProperty
+    handleDeleteProperty,
+    handleGenerateSampleData
   };
 }

@@ -1,18 +1,18 @@
-
-import { useState, useEffect, useCallback } from "react";
-import { Property } from "@/types";
+import { useState, useEffect } from "react";
+import { Property, Tenant, Payment } from "@/types";
 import { propertiesService } from "@/services/propertiesService";
 import { tenantsService } from "@/services/tenantsService";
 import { paymentsService } from "@/services/paymentsService";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
+import { useDebounce } from "@/hooks/useDebounce";
+import { useAuth } from "@/contexts";
 
 export function usePropertiesCore() {
   const { toast } = useToast();
   const { user, profile } = useAuth();
   const [properties, setProperties] = useState<Property[]>([]);
-  const [tenants, setTenants] = useState<any[]>([]);
-  const [payments, setPayments] = useState<any[]>([]);
+  const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");

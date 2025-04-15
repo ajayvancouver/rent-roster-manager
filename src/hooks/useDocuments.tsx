@@ -1,7 +1,8 @@
+
 import { useState, useEffect } from "react";
 import { Document, Tenant, Property } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts"; // Updated import path
 import { documentsService } from "@/services/documents";
 import { tenantsService, propertiesService } from "@/services/supabaseService";
 

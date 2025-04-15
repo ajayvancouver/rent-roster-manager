@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, PlusCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { createSampleProperties, connectSampleTenantsToProperties } from "@/services/sampleProperties";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts";
 
 interface GenerateSampleDataButtonProps {
   onSuccess: () => void;

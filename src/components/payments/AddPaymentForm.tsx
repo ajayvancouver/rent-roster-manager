@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Calendar, DollarSign } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -16,7 +15,7 @@ import { Payment } from "@/types";
 import { tenantsService } from "@/services/supabaseService";
 import { usePayments } from "@/hooks/usePayments";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts";
 
 interface AddPaymentFormProps {
   onSuccess: () => void;
@@ -38,7 +37,6 @@ const AddPaymentForm = ({ onSuccess }: AddPaymentFormProps) => {
     notes: ""
   });
 
-  // Fetch tenants for dropdown
   useEffect(() => {
     const fetchTenants = async () => {
       try {

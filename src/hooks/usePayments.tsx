@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { Payment } from "@/types";
 import { paymentsService, tenantsService, propertiesService } from "@/services/supabaseService";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts";
 
 export function usePayments() {
   const { toast } = useToast();

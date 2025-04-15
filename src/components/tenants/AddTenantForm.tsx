@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Tenant } from "@/types";
@@ -9,7 +8,7 @@ import { Form } from "@/components/ui/form";
 import { TenantFormFields } from "./form/TenantFormFields";
 import { LeaseInfoFields } from "./form/LeaseInfoFields";
 import { TenantStatusField } from "./form/TenantStatusField";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts";
 
 const tenantFormSchema = z.object({
   name: z.string().min(1, "Tenant name is required"),

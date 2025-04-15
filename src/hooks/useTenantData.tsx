@@ -1,10 +1,9 @@
-
 import { useState, useEffect } from "react";
 import { Tenant } from "@/types";
 import { tenantsService } from "@/services/tenantsService";
 import { propertiesService } from "@/services/supabaseService";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts";
 
 export function useTenantData() {
   const { user, userType, profile } = useAuth();

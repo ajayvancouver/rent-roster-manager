@@ -1,6 +1,6 @@
 
 import { useContext } from "react";
-import { AuthContext } from "@/contexts/AuthContext"; // Update import path
+import { AuthContext } from "@/contexts/AuthContext"; // This is the correct source
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
