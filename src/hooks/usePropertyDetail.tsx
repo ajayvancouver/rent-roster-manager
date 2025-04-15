@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Property } from "@/types";
 import { propertiesService, tenantsService } from "@/services/supabaseService";
 
-export const usePropertyDetail = (id: string | undefined, cachedProperties: Property[], cachedTenants: any[]) => {
+export const usePropertyDetail = (id: string | undefined, cachedProperties: Property[] = [], cachedTenants: any[] = []) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [property, setProperty] = useState<Property | null>(null);
@@ -28,21 +28,25 @@ export const usePropertyDetail = (id: string | undefined, cachedProperties: Prop
       try {
         setIsLoading(true);
         console.log("Looking for property with ID:", id);
-        console.log("Available properties:", cachedProperties);
         
         // First try to find the property in the already loaded properties
-        const foundProperty = cachedProperties.find(p => p.id === id);
-        
-        if (foundProperty) {
-          console.log("Found property in cache:", foundProperty);
-          setProperty(foundProperty);
+        if (cachedProperties && cachedProperties.length > 0) {
+          console.log("Available properties:", cachedProperties);
+          const foundProperty = cachedProperties.find(p => p.id === id);
           
-          // Filter tenants for this property from already loaded tenants
-          const propertyTenants = cachedTenants.filter(tenant => tenant.propertyId === id);
-          console.log("Filtered tenants:", propertyTenants);
-          setTenants(propertyTenants);
-          setIsLoading(false);
-          return;
+          if (foundProperty) {
+            console.log("Found property in cache:", foundProperty);
+            setProperty(foundProperty);
+            
+            // Filter tenants for this property from already loaded tenants
+            if (cachedTenants && cachedTenants.length > 0) {
+              const propertyTenants = cachedTenants.filter(tenant => tenant.propertyId === id);
+              console.log("Filtered tenants:", propertyTenants);
+              setTenants(propertyTenants);
+              setIsLoading(false);
+              return;
+            }
+          }
         }
         
         // If not found in the cached properties, fetch from the API

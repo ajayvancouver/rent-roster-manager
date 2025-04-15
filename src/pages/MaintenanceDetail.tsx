@@ -1,6 +1,5 @@
-
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Calendar, Wrench, User, Building, Clock, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,36 +8,60 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { maintenanceService } from "@/services/maintenanceService";
 import { Maintenance } from "@/types";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 const MaintenanceDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [request, setRequest] = useState<Maintenance | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [showAssignDialog, setShowAssignDialog] = useState(false);
+  const [technician, setTechnician] = useState("");
   const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const fetchMaintenanceRequest = async () => {
+    if (!id) return;
+    
+    try {
+      setIsLoading(true);
+      const { data, error } = await maintenanceService.getById(id);
+      
+      if (error) throw error;
+      
+      setRequest(data);
+      if (data?.assignedTo) {
+        setTechnician(data.assignedTo);
+      }
+    } catch (error) {
+      console.error("Error fetching maintenance request:", error);
+      toast({
+        title: "Error",
+        description: "Could not load maintenance request details. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchMaintenanceRequest = async () => {
-      if (!id) return;
-      
-      try {
-        setIsLoading(true);
-        const { data, error } = await maintenanceService.getById(id);
-        
-        if (error) throw error;
-        
-        setRequest(data);
-      } catch (error) {
-        console.error("Error fetching maintenance request:", error);
-        toast({
-          title: "Error",
-          description: "Could not load maintenance request details. Please try again.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchMaintenanceRequest();
   }, [id, toast]);
 
@@ -72,11 +95,107 @@ const MaintenanceDetail = () => {
       case "in-progress":
         return "bg-blue-100 text-blue-800 border-blue-300";
       case "completed":
-        return "bg-green-100 text-green-800 border-green-300";
+        return "bg-green-100 text-green-800 border-green-200";
       case "cancelled":
         return "bg-red-100 text-red-800 border-red-300";
       default:
         return "bg-gray-100 text-gray-800 border-gray-300";
+    }
+  };
+
+  const handleMarkAsCompleted = async () => {
+    if (!id || !request) return;
+    
+    try {
+      setIsUpdating(true);
+      
+      const { error } = await maintenanceService.update(id, {
+        ...request,
+        status: "completed",
+        dateCompleted: new Date().toISOString()
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Maintenance request marked as completed.",
+      });
+      
+      fetchMaintenanceRequest();
+    } catch (error) {
+      console.error("Error updating maintenance request:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update maintenance request.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleCancelRequest = async () => {
+    if (!id || !request) return;
+    
+    try {
+      setIsUpdating(true);
+      
+      const { error } = await maintenanceService.update(id, {
+        ...request,
+        status: "cancelled"
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Maintenance request has been cancelled.",
+      });
+      
+      fetchMaintenanceRequest();
+    } catch (error) {
+      console.error("Error cancelling maintenance request:", error);
+      toast({
+        title: "Error",
+        description: "Failed to cancel maintenance request.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleAssignTechnician = async () => {
+    if (!id || !request || !technician.trim()) return;
+    
+    try {
+      setIsUpdating(true);
+      
+      const { error } = await maintenanceService.update(id, {
+        ...request,
+        assignedTo: technician,
+        status: "in-progress"
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: `Maintenance request assigned to ${technician}.`,
+      });
+      
+      setShowAssignDialog(false);
+      fetchMaintenanceRequest();
+    } catch (error) {
+      console.error("Error assigning technician:", error);
+      toast({
+        title: "Error",
+        description: "Failed to assign technician.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -198,17 +317,32 @@ const MaintenanceDetail = () => {
             <CardContent className="space-y-4">
               {request.status !== 'completed' && request.status !== 'cancelled' && (
                 <>
-                  <Button className="w-full" variant="default">
+                  <Button 
+                    className="w-full" 
+                    variant="default"
+                    onClick={handleMarkAsCompleted}
+                    disabled={isUpdating}
+                  >
                     <Wrench className="mr-2 h-4 w-4" />
                     Mark as Completed
                   </Button>
-                  <Button className="w-full" variant="outline">
+                  <Button 
+                    className="w-full" 
+                    variant="outline"
+                    onClick={() => setShowAssignDialog(true)}
+                    disabled={isUpdating}
+                  >
                     <User className="mr-2 h-4 w-4" />
                     Assign Technician
                   </Button>
                 </>
               )}
-              <Button className="w-full" variant={request.status === 'cancelled' ? 'outline' : 'destructive'} disabled={request.status === 'cancelled'}>
+              <Button 
+                className="w-full" 
+                variant={request.status === 'cancelled' ? 'outline' : 'destructive'} 
+                disabled={request.status === 'cancelled' || isUpdating}
+                onClick={handleCancelRequest}
+              >
                 <AlertTriangle className="mr-2 h-4 w-4" />
                 {request.status === 'cancelled' ? 'Request Cancelled' : 'Cancel Request'}
               </Button>
@@ -241,6 +375,43 @@ const MaintenanceDetail = () => {
           </CardContent>
         </Card>
       )}
+
+      <Dialog open={showAssignDialog} onOpenChange={setShowAssignDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign Technician</DialogTitle>
+            <DialogDescription>
+              Enter the name of the technician or contractor who will handle this maintenance request.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="technician">Technician Name</Label>
+              <Input
+                id="technician"
+                placeholder="Enter name"
+                value={technician}
+                onChange={(e) => setTechnician(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowAssignDialog(false)}
+              disabled={isUpdating}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleAssignTechnician}
+              disabled={!technician.trim() || isUpdating}
+            >
+              {isUpdating ? 'Assigning...' : 'Assign'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

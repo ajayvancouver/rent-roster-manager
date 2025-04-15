@@ -13,8 +13,8 @@ export async function getAllDocuments(managerId?: string): Promise<Document[]> {
     
     // Filter by manager ID if provided
     if (managerId) {
-      // Find properties managed by this manager
-      query = query.or(`properties.manager_id.eq.${managerId}`);
+      // Filter documents where the property is managed by this manager
+      query = query.eq('properties.manager_id', managerId);
     }
     
     const { data, error } = await query;
