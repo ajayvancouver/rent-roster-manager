@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Maintenance } from "@/types";
 
@@ -28,8 +27,8 @@ export const maintenanceService = {
       tenantName: item.tenants ? item.tenants.name : null,
       dateSubmitted: item.date_submitted,
       dateCompleted: item.date_completed,
-      status: item.status,
-      priority: item.priority,
+      status: item.status as 'pending' | 'in-progress' | 'completed' | 'cancelled',
+      priority: item.priority as 'low' | 'medium' | 'high' | 'emergency',
       assignedTo: item.assigned_to,
       cost: item.cost,
       managerId: item.properties?.manager_id

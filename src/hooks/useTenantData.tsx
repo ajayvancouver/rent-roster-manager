@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { Tenant } from "@/types";
 import { tenantsService } from "@/services/tenantsService";
-import { propertiesService } from "@/services/supabaseService";
+import { propertiesService } from "@/services/propertiesService";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts";
+import { useAuth } from "@/hooks/useAuth";
 
 export function useTenantData() {
   const { user, userType, profile } = useAuth();
@@ -21,11 +22,15 @@ export function useTenantData() {
       
       try {
         const managerId = profile?.id || user.id;
+        console.log("Fetching tenant data with managerId:", managerId);
         
         const [fetchedTenants, fetchedProperties] = await Promise.all([
           tenantsService.getAll(managerId),
           propertiesService.getAll(managerId)
         ]);
+        
+        console.log("Fetched tenants:", fetchedTenants.length);
+        console.log("Fetched properties:", fetchedProperties.length);
         
         setTenants(fetchedTenants);
         setProperties(fetchedProperties);

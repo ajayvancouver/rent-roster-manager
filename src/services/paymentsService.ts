@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Payment } from "@/types";
 
@@ -44,8 +45,8 @@ export const paymentsService = {
       unitNumber: item.tenants?.unit_number || '',
       amount: item.amount,
       date: item.date,
-      method: item.method,
-      status: item.status,
+      method: item.method as 'cash' | 'check' | 'bank transfer' | 'credit card',
+      status: item.status as 'pending' | 'completed' | 'failed',
       notes: item.notes,
       managerId: item.tenants?.properties?.manager_id
     }));
@@ -93,8 +94,8 @@ export const paymentsService = {
       unitNumber: data.tenants?.unit_number || '',
       amount: data.amount,
       date: data.date,
-      method: data.method,
-      status: data.status,
+      method: data.method as 'cash' | 'check' | 'bank transfer' | 'credit card',
+      status: data.status as 'pending' | 'completed' | 'failed',
       notes: data.notes,
       managerId: data.tenants?.properties?.manager_id
     };
@@ -137,25 +138,45 @@ export const paymentsService = {
       unitNumber: item.tenants?.unit_number || '',
       amount: item.amount,
       date: item.date,
-      method: item.method,
-      status: item.status,
+      method: item.method as 'cash' | 'check' | 'bank transfer' | 'credit card',
+      status: item.status as 'pending' | 'completed' | 'failed',
       notes: item.notes,
       managerId: item.tenants?.properties?.manager_id
     }));
   },
 
   async create(payment: Omit<Payment, "id" | "tenantName" | "propertyName" | "unitNumber" | "managerId">): Promise<any> {
+    // Convert our frontend payment model to database schema
+    const dbPayment = {
+      tenant_id: payment.tenantId,
+      amount: payment.amount,
+      date: payment.date,
+      method: payment.method,
+      status: payment.status,
+      notes: payment.notes
+    };
+    
     return await supabase
       .from('payments')
-      .insert(payment)
+      .insert(dbPayment)
       .select()
       .single();
   },
 
   async update(id: string, payment: Partial<Omit<Payment, "id" | "tenantName" | "propertyName" | "unitNumber" | "managerId">>): Promise<any> {
+    // Convert our frontend payment model to database schema
+    const dbPayment: any = {};
+    
+    if (payment.tenantId !== undefined) dbPayment.tenant_id = payment.tenantId;
+    if (payment.amount !== undefined) dbPayment.amount = payment.amount;
+    if (payment.date !== undefined) dbPayment.date = payment.date;
+    if (payment.method !== undefined) dbPayment.method = payment.method;
+    if (payment.status !== undefined) dbPayment.status = payment.status;
+    if (payment.notes !== undefined) dbPayment.notes = payment.notes;
+    
     return await supabase
       .from('payments')
-      .update(payment)
+      .update(dbPayment)
       .eq('id', id)
       .select()
       .single();
