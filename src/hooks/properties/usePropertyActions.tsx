@@ -102,7 +102,6 @@ export function usePropertyActions(
       } catch (error) {
         console.error("Error checking maintenance requests:", error);
         // Continue with deletion even if we can't check maintenance requests
-        // This prevents a situation where the maintenance service is down but deletion is still needed
       }
       
       if (maintenanceRequests && maintenanceRequests.length > 0) {
@@ -115,26 +114,42 @@ export function usePropertyActions(
       }
       
       // If no blockers, proceed with deletion
-      const success = await propertiesService.delete(id);
-      
-      if (success) {
-        setProperties(prevProperties => prevProperties.filter(property => property.id !== id));
+      try {
+        const success = await propertiesService.delete(id);
         
+        if (success) {
+          setProperties(prevProperties => prevProperties.filter(property => property.id !== id));
+          
+          toast({
+            title: "Success",
+            description: "Property has been deleted successfully."
+          });
+          return true;
+        }
+      } catch (error: any) {
+        console.error("Error deleting property:", error);
+        
+        // Check for foreign key constraint violations specifically for profiles
+        if (error.code === "23503" && error.details?.includes("profiles_property_id_fkey")) {
+          toast({
+            title: "Cannot delete property",
+            description: "This property is associated with user profiles. Please update or remove those profiles first.",
+            variant: "destructive"
+          });
+          return false;
+        }
+        
+        // For all other cases, show a generic error
         toast({
-          title: "Success",
-          description: "Property has been deleted successfully."
+          title: "Error",
+          description: "Failed to delete property. Please try again later.",
+          variant: "destructive"
         });
-        return true;
       }
       
-      toast({
-        title: "Error",
-        description: "Failed to delete property. Please try again later.",
-        variant: "destructive"
-      });
       return false;
     } catch (error) {
-      console.error("Error deleting property:", error);
+      console.error("Error in handleDeleteProperty:", error);
       toast({
         title: "Failed to delete property",
         description: "Please try again later.",

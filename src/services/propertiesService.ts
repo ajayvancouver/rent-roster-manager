@@ -169,16 +169,34 @@ export const propertiesService = {
   },
   
   async delete(id: string): Promise<boolean> {
-    const { error } = await supabase
-      .from('properties')
-      .delete()
-      .eq('id', id);
-    
-    if (error) {
-      console.error("Error deleting property:", error);
+    try {
+      // First, try to update any profiles that reference this property
+      // Set their property_id to null
+      const { error: profileUpdateError } = await supabase
+        .from('profiles')
+        .update({ property_id: null })
+        .eq('property_id', id);
+      
+      if (profileUpdateError) {
+        console.error("Error updating profiles before deleting property:", profileUpdateError);
+        throw profileUpdateError;
+      }
+      
+      // Now delete the property
+      const { error } = await supabase
+        .from('properties')
+        .delete()
+        .eq('id', id);
+      
+      if (error) {
+        console.error("Error deleting property:", error);
+        throw error;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error("Error in propertiesService.delete:", error);
       throw error;
     }
-    
-    return true;
   }
 };
