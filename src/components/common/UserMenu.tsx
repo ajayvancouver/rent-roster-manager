@@ -1,7 +1,7 @@
 
 import { FC } from "react";
 import { User, LogOut, ChevronDown } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/useAuth"; // Update import path
 import {
   DropdownMenu,
   DropdownMenuContent,

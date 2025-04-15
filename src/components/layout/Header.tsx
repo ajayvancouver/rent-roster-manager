@@ -1,7 +1,6 @@
-
 import { FC } from "react";
 import UserMenu from "@/components/common/UserMenu";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/useAuth"; // Update import path
 
 interface HeaderProps {
   title?: string;

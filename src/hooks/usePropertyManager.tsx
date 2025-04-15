@@ -3,7 +3,7 @@ import { loadAllData } from "@/services/supabaseService";
 import { useToast } from "@/hooks/use-toast";
 import { Payment, Tenant, Property, Maintenance, Document } from "@/types";
 import { getDashboardStats } from "@/utils/dataUtils";
-import { useAuth } from "@/contexts";
+import { useAuth } from "@/hooks/useAuth"; // Update import path
 
 // This hook provides access to all the data across the application
 export function usePropertyManager() {

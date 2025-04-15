@@ -1,6 +1,7 @@
+
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
-import { AuthProvider } from "@/contexts/AuthProvider";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 import SidebarLayout from "@/components/layout/SidebarLayout";
 import TenantSidebarLayout from "@/components/layout/TenantSidebarLayout";
