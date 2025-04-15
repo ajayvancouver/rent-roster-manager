@@ -5,7 +5,7 @@ import { Document } from "@/types";
 /**
  * Get all documents, optionally filtered by manager ID
  */
-export async function getAllDocuments(managerId?: string): Promise<Document[]> {
+const getAllDocuments = async (managerId?: string): Promise<Document[]> => {
   try {
     let query = supabase
       .from('documents')
@@ -43,12 +43,12 @@ export async function getAllDocuments(managerId?: string): Promise<Document[]> {
     console.error("Error in getAllDocuments:", error);
     throw error;
   }
-}
+};
 
 /**
  * Get document by ID
  */
-export async function getDocumentById(id: string) {
+const getDocumentById = async (id: string) => {
   const { data, error } = await supabase
     .from('documents')
     .select('*, tenants(name, email), properties(name)')
@@ -80,12 +80,12 @@ export async function getDocumentById(id: string) {
   };
   
   return { data: document, error: null };
-}
+};
 
 /**
  * Get documents by tenant ID
  */
-export async function getDocumentsByTenantId(tenantId: string): Promise<Document[]> {
+const getDocumentsByTenantId = async (tenantId: string): Promise<Document[]> => {
   const { data, error } = await supabase
     .from('documents')
     .select('*, properties(name)')
@@ -106,12 +106,12 @@ export async function getDocumentsByTenantId(tenantId: string): Promise<Document
     fileType: item.file_type,
     url: item.url
   }));
-}
+};
 
 /**
  * Get documents by property ID
  */
-export async function getDocumentsByPropertyId(propertyId: string): Promise<Document[]> {
+const getDocumentsByPropertyId = async (propertyId: string): Promise<Document[]> => {
   const { data, error } = await supabase
     .from('documents')
     .select('*, tenants(name)')
@@ -132,4 +132,12 @@ export async function getDocumentsByPropertyId(propertyId: string): Promise<Docu
     fileType: item.file_type,
     url: item.url
   }));
-}
+};
+
+// Export the document queries as a combined object
+export const documentQueries = {
+  getAll: getAllDocuments,
+  getById: getDocumentById,
+  getByTenantId: getDocumentsByTenantId,
+  getByPropertyId: getDocumentsByPropertyId
+};
