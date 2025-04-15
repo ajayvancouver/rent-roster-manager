@@ -23,6 +23,7 @@ const TenantProperty: React.FC = () => {
     try {
       return format(new Date(dateString), 'MMM d, yyyy');
     } catch (error) {
+      console.error("Error formatting date:", dateString, error);
       return 'Invalid date';
     }
   };
