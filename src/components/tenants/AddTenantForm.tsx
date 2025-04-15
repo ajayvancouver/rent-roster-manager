@@ -10,6 +10,8 @@ import TenantFormFields from "./form/TenantFormFields";
 import { LeaseInfoFields } from "./form/LeaseInfoFields";
 import { TenantStatusField } from "./form/TenantStatusField";
 import { useAuth } from "@/contexts";
+import { useState, useEffect } from "react";
+import { propertiesService } from "@/services/propertiesService";
 
 const tenantFormSchema = z.object({
   name: z.string().min(1, "Tenant name is required"),
@@ -34,6 +36,8 @@ interface AddTenantFormProps {
 const AddTenantForm = ({ onSuccess }: AddTenantFormProps) => {
   const { user, profile } = useAuth();
   const [isProcessing, setIsProcessing] = React.useState(false);
+  const [properties, setProperties] = useState<any[]>([]);
+  const [isLoadingProperties, setIsLoadingProperties] = useState(true);
   
   const form = useForm<TenantFormValues>({
     resolver: zodResolver(tenantFormSchema),
@@ -51,6 +55,22 @@ const AddTenantForm = ({ onSuccess }: AddTenantFormProps) => {
       status: "active"
     }
   });
+
+  useEffect(() => {
+    const fetchProperties = async () => {
+      try {
+        const managerId = profile?.id || user?.id;
+        const data = await propertiesService.getAll(managerId);
+        setProperties(data);
+      } catch (error) {
+        console.error("Error fetching properties:", error);
+      } finally {
+        setIsLoadingProperties(false);
+      }
+    };
+    
+    fetchProperties();
+  }, [user, profile]);
 
   const onSubmit = async (data: TenantFormValues) => {
     setIsProcessing(true);
@@ -71,7 +91,12 @@ const AddTenantForm = ({ onSuccess }: AddTenantFormProps) => {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <TenantFormFields form={form} />
+        <TenantFormFields 
+          form={form} 
+          properties={properties} 
+          isEditMode={false} 
+          isLoading={isLoadingProperties} 
+        />
         
         <LeaseInfoFields form={form} />
         

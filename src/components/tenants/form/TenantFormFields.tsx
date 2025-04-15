@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,9 +13,10 @@ import {
 import { Calendar } from "lucide-react";
 import { useAuth } from "@/contexts";
 import { cn } from "@/lib/utils";
+import { UseFormReturn } from "react-hook-form";
 
 interface TenantFormFieldsProps {
-  form: any;
+  form: UseFormReturn<any>;
   properties: any[];
   isEditMode: boolean;
   isLoading: boolean;
@@ -180,25 +182,6 @@ const TenantFormFields: React.FC<TenantFormFieldsProps> = ({ form, properties, i
           {...form.register("balance", { valueAsNumber: true })}
           disabled={isLoading}
         />
-      </div>
-
-      {/* Status */}
-      <div className="mt-4 space-y-2">
-        <Label htmlFor="status">Status</Label>
-        <Select
-          onValueChange={(value: string) => form.setValue("status", value)}
-          defaultValue={form.getValues("status")}
-          disabled={isLoading}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select a status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="inactive">Inactive</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
       {/* Notes */}

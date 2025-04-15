@@ -15,7 +15,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { TenantFormFields } from "./form/TenantFormFields";
+import TenantFormFields from "./form/TenantFormFields";
 import { LeaseInfoFields } from "./form/LeaseInfoFields";
 import { TenantStatusField } from "./form/TenantStatusField";
 
@@ -86,7 +86,8 @@ const EditTenantForm = ({ tenant, onSubmit, onCancel, isProcessing = false }: Ed
           <TenantFormFields 
             form={form} 
             properties={properties} 
-            isLoadingProperties={isLoadingProperties} 
+            isEditMode={true} 
+            isLoading={isLoadingProperties} 
           />
           
           <LeaseInfoFields form={form} />
