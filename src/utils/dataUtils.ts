@@ -46,13 +46,22 @@ export function getDashboardStats(
     ? Math.round((activeTenants / totalUnits) * 100) 
     : 0;
   
+  // Calculate collection rate with a cap for display purposes
+  const rawCollectionRate = totalRent > 0 ? (collectedRent / totalRent) * 100 : 0;
+  const collectionRate = Math.round(rawCollectionRate);
+  
+  // Calculate the outstanding balance (negative means overpayment)
+  const outstandingBalance = totalRent - collectedRent;
+  
   return {
     activeTenants,
     vacantUnits,
     totalRent,
     collectedRent,
     pendingMaintenance,
-    occupancyRate
+    occupancyRate,
+    collectionRate,
+    outstandingBalance
   };
 }
 

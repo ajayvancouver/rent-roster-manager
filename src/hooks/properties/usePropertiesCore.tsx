@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Property } from "@/types";
 import { propertiesService } from "@/services/propertiesService";
 import { tenantsService } from "@/services/tenantsService";
+import { paymentsService } from "@/services/paymentsService";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -11,6 +12,7 @@ export function usePropertiesCore() {
   const { user, profile } = useAuth();
   const [properties, setProperties] = useState<Property[]>([]);
   const [tenants, setTenants] = useState<any[]>([]);
+  const [payments, setPayments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -34,13 +36,15 @@ export function usePropertiesCore() {
         console.log("All properties (no filter):", allProperties);
       }
       
-      const [fetchedProperties, fetchedTenants] = await Promise.all([
+      const [fetchedProperties, fetchedTenants, fetchedPayments] = await Promise.all([
         managerId ? propertiesService.getAll(managerId) : allProperties,
-        tenantsService.getAll(managerId)
+        tenantsService.getAll(managerId),
+        paymentsService.getAll(managerId)
       ]);
       
       console.log("Fetched properties:", fetchedProperties);
       console.log("Fetched tenants:", fetchedTenants);
+      console.log("Fetched payments:", fetchedPayments);
       
       if (fetchedProperties.length === 0) {
         console.warn("No properties found for this manager ID");
@@ -48,6 +52,7 @@ export function usePropertiesCore() {
       
       setProperties(fetchedProperties);
       setTenants(fetchedTenants);
+      setPayments(fetchedPayments);
       setIsLoading(false);
     } catch (error) {
       console.error("Error fetching properties data:", error);
@@ -78,6 +83,7 @@ export function usePropertiesCore() {
     properties,
     setProperties,
     tenants,
+    payments,
     isLoading,
     error,
     searchQuery,

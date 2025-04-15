@@ -15,7 +15,8 @@ export function useProperties() {
     viewType,
     setViewType,
     filteredProperties,
-    fetchProperties
+    fetchProperties,
+    payments
   } = usePropertiesCore();
 
   const {
@@ -23,7 +24,8 @@ export function useProperties() {
     getVacancyCount,
     getPropertyTypeIcon,
     getOccupancyRate,
-    getOverallOccupancyRate
+    getOverallOccupancyRate,
+    getTotalRentCollectionStats
   } = usePropertyStatistics(properties, tenants);
 
   const {
@@ -32,10 +34,14 @@ export function useProperties() {
     handleDeleteProperty
   } = usePropertyActions(properties, tenants, setProperties, fetchProperties);
 
+  // Calculate rent collection stats
+  const rentCollectionStats = getTotalRentCollectionStats(payments);
+
   return {
     // Core state
     properties,
     tenants,
+    payments,
     isLoading,
     error,
     searchQuery,
@@ -50,6 +56,7 @@ export function useProperties() {
     getPropertyTypeIcon,
     getOccupancyRate,
     getOverallOccupancyRate,
+    rentCollectionStats,
     
     // Actions
     handleAddProperty,

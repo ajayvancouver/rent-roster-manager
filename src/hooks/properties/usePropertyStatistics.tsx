@@ -26,11 +26,34 @@ export function usePropertyStatistics(properties: Property[], tenants: any[]) {
     return totalUnits > 0 ? Math.round((totalTenants / totalUnits) * 100) : 0;
   };
 
+  // Calculate total rent and collected rent
+  const getTotalRentCollectionStats = (payments: any[]) => {
+    const totalExpectedRent = tenants
+      .filter(tenant => tenant.status === 'active')
+      .reduce((sum, tenant) => sum + (tenant.rentAmount || 0), 0);
+    
+    const totalCollectedRent = payments
+      .filter(payment => payment.status === 'completed')
+      .reduce((sum, payment) => sum + (payment.amount || 0), 0);
+    
+    const collectionRate = totalExpectedRent > 0 
+      ? Math.round((totalCollectedRent / totalExpectedRent) * 100)
+      : 0;
+    
+    return {
+      totalExpectedRent,
+      totalCollectedRent,
+      collectionRate,
+      outstandingBalance: totalExpectedRent - totalCollectedRent
+    };
+  };
+
   return {
     getTenantCount,
     getVacancyCount,
     getPropertyTypeIcon,
     getOccupancyRate,
-    getOverallOccupancyRate
+    getOverallOccupancyRate,
+    getTotalRentCollectionStats
   };
 }
