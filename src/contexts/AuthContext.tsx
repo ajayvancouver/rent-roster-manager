@@ -1,4 +1,3 @@
-
 import React, { createContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,7 +10,7 @@ import {
   signOutUser, 
   fetchUserProfile, 
   createDefaultProfile 
-} from "@/services/authService";
+} from "@/services/auth";
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
