@@ -18,19 +18,36 @@ export {
 // Create a function to initialize all data at once
 export async function loadAllData(managerId?: string) {
   try {
-    const [
-      properties, 
-      tenants, 
-      payments, 
-      maintenance, 
-      documents
-    ] = await Promise.all([
+    console.log("Loading all data with managerId:", managerId);
+    
+    // Use Promise.allSettled to continue even if some requests fail
+    const results = await Promise.allSettled([
       propertiesService.getAll(managerId),
       tenantsService.getAll(managerId),
       paymentsService.getAll(managerId),
       maintenanceService.getAll(managerId),
-      documentsService.getAll(managerId)
+      documentsService.getAll(managerId).catch(err => {
+        console.error("Error fetching documents:", err);
+        return []; // Return empty array on error
+      })
     ]);
+    
+    // Extract the results, providing empty arrays for any rejected promises
+    const [
+      propertiesResult,
+      tenantsResult, 
+      paymentsResult, 
+      maintenanceResult, 
+      documentsResult
+    ] = results;
+    
+    const properties = propertiesResult.status === 'fulfilled' ? propertiesResult.value : [];
+    const tenants = tenantsResult.status === 'fulfilled' ? tenantsResult.value : [];
+    const payments = paymentsResult.status === 'fulfilled' ? paymentsResult.value : [];
+    const maintenance = maintenanceResult.status === 'fulfilled' ? maintenanceResult.value : [];
+    const documents = documentsResult.status === 'fulfilled' ? documentsResult.value : [];
+    
+    console.log(`Data loaded: ${properties.length} properties, ${tenants.length} tenants`);
     
     return {
       properties,

@@ -8,6 +8,7 @@ import RecentPaymentsList from "@/components/dashboard/RecentPaymentsList";
 import RecentMaintenanceList from "@/components/dashboard/RecentMaintenanceList";
 import { usePropertyManager } from "@/hooks/usePropertyManager";
 import { formatCurrency } from "@/utils/dataUtils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Dashboard = () => {
   const { 
@@ -20,6 +21,52 @@ const Dashboard = () => {
     error, 
     stats
   } = usePropertyManager();
+
+  // Display loading state while data is being fetched
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <p className="text-muted-foreground mt-2">Loading your property management data...</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-32 w-full" />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[...Array(2)].map((_, i) => (
+            <Skeleton key={i} className="h-64 w-full" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Display error state if data fetching failed
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <p className="text-muted-foreground mt-2">There was an error loading your data</p>
+        </div>
+        <div className="bg-red-50 text-red-800 p-4 rounded-md">
+          <h3 className="font-medium">Error Loading Data</h3>
+          <p>Unable to load your property management data. Please try refreshing the page.</p>
+          <p className="text-sm mt-2">{error.message || JSON.stringify(error)}</p>
+        </div>
+      </div>
+    );
+  }
+
+  console.log('Dashboard data:', { 
+    propertiesCount: properties.length,
+    tenantsCount: tenants.length,
+    paymentsCount: payments.length,
+    maintenanceCount: maintenance.length
+  });
 
   return (
     <div className="space-y-6">

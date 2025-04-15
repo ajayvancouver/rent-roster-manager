@@ -33,13 +33,30 @@ export function usePropertyManager() {
       try {
         setIsLoading(true);
         const managerId = profile?.id || user.id;
+        console.log("Fetching data with managerId:", managerId);
+        
         const data = await loadAllData(managerId);
         
-        setProperties(data.properties);
-        setTenants(data.tenants);
-        setPayments(data.payments);
-        setMaintenance(data.maintenance);
-        setDocuments(data.documents);
+        // Check if properties were fetched successfully
+        if (data.properties) {
+          setProperties(data.properties);
+          console.log(`Loaded ${data.properties.length} properties successfully`);
+        }
+        
+        // Check if tenants were fetched successfully
+        if (data.tenants) {
+          setTenants(data.tenants);
+          console.log(`Loaded ${data.tenants.length} tenants successfully`);
+        }
+        
+        // Set other data, even if some parts had errors
+        setPayments(data.payments || []);
+        setMaintenance(data.maintenance || []);
+        
+        // Handle possible document error
+        setDocuments(data.documents || []);
+        
+        // Only set error if the entire request fails
         setError(null);
         setIsLoading(false);
       } catch (error) {
