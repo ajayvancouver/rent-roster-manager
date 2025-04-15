@@ -14,6 +14,9 @@ const MaintenanceSummaryCards = ({ maintenanceRequests }: MaintenanceSummaryCard
     r => r.priority === "emergency" && (r.status === "pending" || r.status === "in-progress")
   ).length;
 
+  // Properly calculate open requests count
+  const openRequestsCount = pendingCount + inProgressCount;
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <Card className="card-hover">

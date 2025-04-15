@@ -56,25 +56,31 @@ const RecentMaintenanceList = ({ maintenanceRequests }: RecentMaintenanceListPro
         <CardTitle>Recent Maintenance Requests</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {recentRequests.map(request => (
-            <div key={request.id} className="flex flex-col space-y-2 p-3 bg-secondary/30 rounded-md">
-              <div className="flex justify-between items-start">
-                <h4 className="font-medium text-sm">{request.title}</h4>
-                <Badge className={cn("ml-2", getPriorityColor(request.priority))}>
-                  {request.priority}
-                </Badge>
+        {recentRequests.length === 0 ? (
+          <div className="text-center py-4 text-muted-foreground">
+            No maintenance requests found
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {recentRequests.map(request => (
+              <div key={request.id} className="flex flex-col space-y-2 p-3 bg-secondary/30 rounded-md">
+                <div className="flex justify-between items-start">
+                  <h4 className="font-medium text-sm">{request.title}</h4>
+                  <Badge className={cn("ml-2", getPriorityColor(request.priority))}>
+                    {request.priority}
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground line-clamp-2">{request.description}</p>
+                <div className="flex justify-between items-center text-xs">
+                  <span>Submitted: {formatDate(request.dateSubmitted)}</span>
+                  <Badge variant="outline" className={getStatusColor(request.status)}>
+                    {request.status.replace('-', ' ')}
+                  </Badge>
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground line-clamp-2">{request.description}</p>
-              <div className="flex justify-between items-center text-xs">
-                <span>Submitted: {formatDate(request.dateSubmitted)}</span>
-                <Badge variant="outline" className={getStatusColor(request.status)}>
-                  {request.status.replace('-', ' ')}
-                </Badge>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

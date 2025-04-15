@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Maintenance } from "@/types";
 import { usePropertyManager } from "@/hooks/usePropertyManager";
-import { maintenanceService } from "@/services/supabaseService";
+import { maintenanceService } from "@/services/maintenanceService";
 
 export function useMaintenanceData() {
   const {
@@ -30,8 +30,8 @@ export function useMaintenanceData() {
       // Apply search query
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
-        const tenantName = request.tenantId ? getTenantName(request.tenantId).toLowerCase() : "";
-        const propertyName = request.propertyId ? getPropertyName(request.propertyId).toLowerCase() : "";
+        const tenantName = getTenantName(request.tenantId).toLowerCase();
+        const propertyName = getPropertyName(request.propertyId).toLowerCase();
         
         return (
           request.title.toLowerCase().includes(query) ||
