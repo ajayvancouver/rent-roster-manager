@@ -13,9 +13,10 @@ import { format } from "date-fns";
 import { useTenantPortal } from "@/hooks/useTenantPortal";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { documentsService } from "@/services/documents";
 
 const TenantDocuments: React.FC = () => {
-  const { isLoading, documents, propertyData, profile } = useTenantPortal();
+  const { isLoading, documents, propertyData, tenantData, profile } = useTenantPortal();
   const { toast } = useToast();
   const [isUploading, setIsUploading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
@@ -66,10 +67,10 @@ const TenantDocuments: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!profile?.id || !propertyData?.id) {
+    if (!tenantData?.id) {
       toast({
         title: "Error",
-        description: "Missing property or tenant information",
+        description: "Missing tenant information. Please try again later.",
         variant: "destructive",
       });
       return;
@@ -87,34 +88,46 @@ const TenantDocuments: React.FC = () => {
     setIsUploading(true);
     
     try {
+      // Create document object
+      const documentData = {
+        name: docName,
+        type: docType,
+        tenantId: tenantData.id,
+        propertyId: tenantData.propertyId || "",
+        fileSize: `${(file.size / 1024).toFixed(0)} KB`,
+        fileType: file.type,
+        url: "" // Will be updated after file upload
+      };
+      
       // Upload file to storage
       const fileExt = file.name.split('.').pop();
-      const fileName = `${profile.id}_${Date.now()}.${fileExt}`;
+      const fileName = `${tenantData.id}_${Date.now()}.${fileExt}`;
       const filePath = `tenant_documents/${fileName}`;
       
-      const { error: uploadError, data } = await supabase.storage
+      // Check if storage bucket exists, if not it will use the default public bucket
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('documents')
         .upload(filePath, file);
       
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error("Error uploading file:", uploadError);
+        throw new Error("Failed to upload file. Please try again.");
+      }
       
       // Get public URL for the file
       const { data: { publicUrl } } = supabase.storage
         .from('documents')
         .getPublicUrl(filePath);
       
-      // Create document record in database
-      const { error } = await supabase.from('documents').insert({
-        tenant_user_id: profile.id,
-        property_id: propertyData.id,
-        name: docName,
-        type: docType,
-        file_size: `${(file.size / 1024).toFixed(0)} KB`,
-        file_type: file.type,
-        url: publicUrl
-      });
+      // Update the document data with the file URL
+      documentData.url = publicUrl;
       
-      if (error) throw error;
+      // Create document record using the service
+      const result = await documentsService.create(documentData);
+      
+      if (result.error) {
+        throw result.error;
+      }
       
       toast({
         title: "Success",
@@ -126,16 +139,16 @@ const TenantDocuments: React.FC = () => {
       setDocType('other');
       setDialogOpen(false);
       
-      // Need to refresh data - typically would use react-query here
+      // Refresh the page to show the new document
       setTimeout(() => {
         window.location.reload();
       }, 1000);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error uploading document:", error);
       toast({
         title: "Error",
-        description: "Failed to upload document. Please try again.",
+        description: error.message || "Failed to upload document. Please try again.",
         variant: "destructive",
       });
     } finally {

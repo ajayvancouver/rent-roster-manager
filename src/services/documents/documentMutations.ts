@@ -2,8 +2,10 @@
 import { supabase } from "@/integrations/supabase/client";
 import { DocumentCreateData } from "./types";
 
-export async function createDocument(document: DocumentCreateData) {
+const createDocument = async (document: DocumentCreateData) => {
   try {
+    console.log("Creating document with data:", document);
+    
     // Format data for supabase insert
     const documentData = {
       name: document.name,
@@ -45,9 +47,9 @@ export async function createDocument(document: DocumentCreateData) {
     console.error("Error in createDocument:", error);
     return { data: null, error };
   }
-}
+};
 
-export async function updateDocument(id: string, updates: Partial<DocumentCreateData>) {
+const updateDocument = async (id: string, updates: Partial<DocumentCreateData>) => {
   try {
     // Format data for supabase update
     const documentData: Record<string, any> = {};
@@ -90,9 +92,9 @@ export async function updateDocument(id: string, updates: Partial<DocumentCreate
     console.error("Error in updateDocument:", error);
     return { data: null, error };
   }
-}
+};
 
-export async function deleteDocument(id: string) {
+const deleteDocument = async (id: string) => {
   try {
     const { error } = await supabase
       .from('documents')
@@ -109,4 +111,10 @@ export async function deleteDocument(id: string) {
     console.error("Error in deleteDocument:", error);
     return { success: false, error };
   }
-}
+};
+
+export const documentMutations = {
+  create: createDocument,
+  update: updateDocument,
+  delete: deleteDocument
+};
