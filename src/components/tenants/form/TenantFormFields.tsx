@@ -38,7 +38,7 @@ const TenantFormFields: React.FC<TenantFormFieldsProps> = ({ form, properties, i
             disabled={isLoading}
           />
           {form.formState.errors.name && (
-            <p className="text-sm text-red-500">{form.formState.errors.name.message}</p>
+            <p className="text-sm text-red-500">{String(form.formState.errors.name.message)}</p>
           )}
         </div>
 
@@ -59,7 +59,7 @@ const TenantFormFields: React.FC<TenantFormFieldsProps> = ({ form, properties, i
             disabled={isLoading}
           />
           {form.formState.errors.email && (
-            <p className="text-sm text-red-500">{form.formState.errors.email.message}</p>
+            <p className="text-sm text-red-500">{String(form.formState.errors.email.message)}</p>
           )}
         </div>
       </div>
@@ -96,7 +96,7 @@ const TenantFormFields: React.FC<TenantFormFieldsProps> = ({ form, properties, i
             </SelectContent>
           </Select>
           {form.formState.errors.propertyId && (
-            <p className="text-sm text-red-500">{form.formState.errors.propertyId.message}</p>
+            <p className="text-sm text-red-500">{String(form.formState.errors.propertyId.message)}</p>
           )}
         </div>
       </div>
