@@ -26,25 +26,25 @@ export function getDashboardStats(
   maintenance: Maintenance[]
 ) {
   const activeTenants = tenants.filter(t => t.status === 'active').length;
-  const vacantUnits = properties.reduce((total, p) => {
-    const propertyTenants = tenants.filter(t => t.propertyId === p.id && t.status === 'active').length;
-    return total + (p.units - propertyTenants);
-  }, 0);
+  const totalUnits = properties.reduce((total, p) => total + p.units, 0);
+  const vacantUnits = totalUnits - activeTenants;
   
   const totalRent = tenants
     .filter(t => t.status === 'active')
-    .reduce((sum, t) => sum + t.rentAmount, 0);
+    .reduce((sum, t) => sum + (t.rentAmount || 0), 0);
   
-  const collectedRent = payments
-    .filter(p => p.status === 'completed' && new Date(p.date).getMonth() === new Date().getMonth())
-    .reduce((sum, p) => sum + p.amount, 0);
+  const collectedRent = payments && payments.length > 0 
+    ? payments
+        .filter(p => p.status === 'completed' && new Date(p.date).getMonth() === new Date().getMonth())
+        .reduce((sum, p) => sum + (p.amount || 0), 0)
+    : 0;
   
-  const pendingMaintenance = maintenance.filter(m => 
-    m.status === 'pending' || m.status === 'in-progress'
-  ).length;
+  const pendingMaintenance = maintenance 
+    ? maintenance.filter(m => m.status === 'pending' || m.status === 'in-progress').length
+    : 0;
   
-  const occupancyRate = properties.length 
-    ? Math.round((activeTenants / properties.reduce((sum, p) => sum + p.units, 0)) * 100) 
+  const occupancyRate = totalUnits > 0 
+    ? Math.round((activeTenants / totalUnits) * 100) 
     : 0;
   
   return {
@@ -91,6 +91,9 @@ export function getStatusColorClass(
 
 // Function to format currency
 export function formatCurrency(amount: number): string {
+  if (isNaN(amount) || amount === null || amount === undefined) {
+    return '$0';
+  }
   return amount.toLocaleString('en-US', {
     style: 'currency',
     currency: 'USD',
@@ -101,9 +104,13 @@ export function formatCurrency(amount: number): string {
 
 // Function to format date consistently across the app
 export function formatDate(dateString: string, includeYear = true): string {
-  return new Date(dateString).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: includeYear ? 'numeric' : undefined
-  });
+  try {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: includeYear ? 'numeric' : undefined
+    });
+  } catch (error) {
+    return 'Invalid date';
+  }
 }

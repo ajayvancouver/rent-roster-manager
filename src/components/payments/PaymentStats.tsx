@@ -9,6 +9,11 @@ interface PaymentStatsProps {
 }
 
 const PaymentStats = ({ totalAmount, completedAmount, pendingAmount }: PaymentStatsProps) => {
+  // Format with commas but avoid displaying NaN or undefined
+  const formatAmount = (amount: number) => {
+    return isNaN(amount) ? "$0" : `$${amount.toLocaleString()}`;
+  };
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <Card className="card-hover">
@@ -19,7 +24,7 @@ const PaymentStats = ({ totalAmount, completedAmount, pendingAmount }: PaymentSt
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Total Payments</p>
-              <h3 className="text-2xl font-bold">${totalAmount.toLocaleString()}</h3>
+              <h3 className="text-2xl font-bold">{formatAmount(totalAmount)}</h3>
             </div>
           </div>
         </CardContent>
@@ -33,7 +38,7 @@ const PaymentStats = ({ totalAmount, completedAmount, pendingAmount }: PaymentSt
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Completed</p>
-              <h3 className="text-2xl font-bold">${completedAmount.toLocaleString()}</h3>
+              <h3 className="text-2xl font-bold">{formatAmount(completedAmount)}</h3>
             </div>
           </div>
         </CardContent>
@@ -47,7 +52,7 @@ const PaymentStats = ({ totalAmount, completedAmount, pendingAmount }: PaymentSt
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Pending</p>
-              <h3 className="text-2xl font-bold">${pendingAmount.toLocaleString()}</h3>
+              <h3 className="text-2xl font-bold">{formatAmount(pendingAmount)}</h3>
             </div>
           </div>
         </CardContent>
