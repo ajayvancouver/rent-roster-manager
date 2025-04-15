@@ -1,10 +1,10 @@
+
 import { useState } from "react";
 import { Property, Tenant } from "@/types";
 import { propertiesService } from "@/services/propertiesService";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { generateSampleTenants } from "@/services/sampleData";
-import { useAuth } from "@/contexts"; // Updated import path
+import { useAuth } from "@/contexts";
 
 export function usePropertyActions(
   properties: Property[],

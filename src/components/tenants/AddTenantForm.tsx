@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Tenant } from "@/types";
@@ -5,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form } from "@/components/ui/form";
-import { TenantFormFields } from "./form/TenantFormFields";
+import TenantFormFields from "./form/TenantFormFields";
 import { LeaseInfoFields } from "./form/LeaseInfoFields";
 import { TenantStatusField } from "./form/TenantStatusField";
 import { useAuth } from "@/contexts";

@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+
+import { useState, useEffect, useCallback } from "react";
 import { Property, Tenant, Payment } from "@/types";
 import { propertiesService } from "@/services/propertiesService";
 import { tenantsService } from "@/services/tenantsService";
