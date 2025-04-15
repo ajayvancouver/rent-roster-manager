@@ -1,4 +1,5 @@
-import { Building2, Users, Wallet, ClipboardCheck, AlertTriangle } from "lucide-react";
+
+import { Building2, Users, Wallet, ClipboardCheck, AlertTriangle, LayoutPanelTop } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
 import PaymentStatusChart from "@/components/dashboard/PaymentStatusChart";
 import PropertyOccupancyCard from "@/components/dashboard/PropertyOccupancyCard";
@@ -8,6 +9,10 @@ import RecentMaintenanceList from "@/components/dashboard/RecentMaintenanceList"
 import { usePropertyManager } from "@/hooks/usePropertyManager";
 import { formatCurrency } from "@/utils/dataUtils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { ChartBuilder } from "@/components/dashboard/chart-builder/ChartBuilder";
+import { useCustomCharts } from "@/hooks/useCustomCharts";
+import { Separator } from "@/components/ui/separator";
 
 const Dashboard = () => {
   const { 
@@ -20,6 +25,13 @@ const Dashboard = () => {
     error, 
     stats
   } = usePropertyManager();
+
+  const {
+    customCharts,
+    isBuilderVisible,
+    toggleBuilder,
+    saveCharts
+  } = useCustomCharts();
 
   // Display loading state while data is being fetched
   if (isLoading) {
@@ -69,10 +81,61 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground mt-2">Overview of your property management portfolio</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <p className="text-muted-foreground mt-2">Overview of your property management portfolio</p>
+        </div>
+        <Button 
+          variant="outline" 
+          onClick={toggleBuilder}
+          className="flex items-center gap-2"
+        >
+          <LayoutPanelTop className="h-4 w-4" />
+          {isBuilderVisible ? 'Hide Chart Builder' : 'Customize Dashboard'}
+        </Button>
       </div>
+
+      {/* Chart Builder */}
+      {isBuilderVisible && (
+        <>
+          <ChartBuilder 
+            savedCharts={customCharts} 
+            onSaveCharts={saveCharts}
+            properties={properties}
+            tenants={tenants}
+            payments={payments}
+          />
+          <Separator className="my-6" />
+        </>
+      )}
+
+      {/* Custom Charts Area */}
+      {customCharts.length > 0 && !isBuilderVisible && (
+        <div 
+          className="w-full min-h-[300px] border border-border rounded-lg p-4 relative my-6 bg-background/50"
+          style={{ height: '400px' }}
+        >
+          {customCharts.map(chart => (
+            <div
+              key={chart.id}
+              style={{
+                position: 'absolute',
+                left: `${chart.position.x}px`,
+                top: `${chart.position.y}px`,
+                width: `${chart.size.width}px`,
+                height: `${chart.size.height}px`,
+              }}
+            >
+              <iframe
+                src={`/charts/${chart.id}`}
+                style={{ width: '100%', height: '100%', border: 'none' }}
+                title={chart.title}
+              />
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Stats Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
