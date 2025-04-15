@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -16,6 +17,7 @@ export function useTenantPortal() {
   const [totalDue, setTotalDue] = useState(0);
   const [loadingError, setLoadingError] = useState<string | null>(null);
   const [tenantData, setTenantData] = useState<any>(null);
+  const [propertyManager, setPropertyManager] = useState<any>(null);
 
   useEffect(() => {
     const loadTenantData = async () => {
@@ -87,6 +89,24 @@ export function useTenantPortal() {
               ...tenant.properties,
               unitNumber: tenant.unit_number || null
             });
+            
+            // Fetch property manager details if property has a manager_id
+            if (tenant.properties.manager_id) {
+              try {
+                const { data: managerData } = await supabase
+                  .from('profiles')
+                  .select('*')
+                  .eq('id', tenant.properties.manager_id)
+                  .single();
+                  
+                if (managerData) {
+                  console.log("Found property manager:", managerData);
+                  setPropertyManager(managerData);
+                }
+              } catch (error) {
+                console.error("Error fetching property manager:", error);
+              }
+            }
           } else if (tenant.propertyId) {
             console.log("Fetching property data for ID:", tenant.propertyId);
             try {
@@ -102,6 +122,24 @@ export function useTenantPortal() {
                   ...propertyData,
                   unitNumber: tenant.unitNumber || null
                 });
+                
+                // Fetch property manager details if property has a manager_id
+                if (propertyData.manager_id) {
+                  try {
+                    const { data: managerData } = await supabase
+                      .from('profiles')
+                      .select('*')
+                      .eq('id', propertyData.manager_id)
+                      .single();
+                      
+                    if (managerData) {
+                      console.log("Found property manager:", managerData);
+                      setPropertyManager(managerData);
+                    }
+                  } catch (error) {
+                    console.error("Error fetching property manager:", error);
+                  }
+                }
               }
             } catch (error) {
               console.error("Error fetching property data:", error);
@@ -191,6 +229,7 @@ export function useTenantPortal() {
     depositAmount: tenantData?.deposit_amount || tenantData?.depositAmount || 0,
     balance: tenantData?.balance || 0,
     error: loadingError,
-    tenantData
+    tenantData,
+    propertyManager
   };
 }

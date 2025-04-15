@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 const TenantAccount: React.FC = () => {
-  const { isLoading, profile, leaseStart, leaseEnd, rentAmount, depositAmount } = useTenantPortal();
+  const { isLoading, profile, leaseStart, leaseEnd, rentAmount, depositAmount, propertyManager } = useTenantPortal();
   const { signOut } = useAuth();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
@@ -297,6 +297,50 @@ const TenantAccount: React.FC = () => {
                   </span>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+          
+          {/* Property Manager Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Property Manager</CardTitle>
+              <CardDescription>
+                Your property manager contact information
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {propertyManager ? (
+                <div className="space-y-4">
+                  <div className="flex items-center">
+                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mr-4">
+                      <UserRound className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium">{propertyManager.full_name || 'Property Manager'}</h3>
+                      <Badge variant="outline">Manager</Badge>
+                    </div>
+                  </div>
+                  
+                  <Separator />
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-center">
+                      <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <span>{propertyManager.email || 'Email not available'}</span>
+                    </div>
+                    {propertyManager.phone && (
+                      <div className="flex items-center">
+                        <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
+                        <span>{propertyManager.phone}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-6 text-muted-foreground">
+                  No property manager assigned yet.
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
