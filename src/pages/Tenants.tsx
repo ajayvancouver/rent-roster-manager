@@ -5,6 +5,8 @@ import TenantSummaryCards from "@/components/tenants/TenantSummaryCards";
 import TenantSearchBar from "@/components/tenants/TenantSearchBar";
 import TenantTabs from "@/components/tenants/TenantTabs";
 import AddTenantModal from "@/components/tenants/AddTenantModal";
+import UpdateTenantRent from "@/components/tenants/UpdateTenantRent";
+import { Button } from "@/components/ui/button";
 
 const Tenants = () => {
   const {
@@ -20,7 +22,8 @@ const Tenants = () => {
     sortedTenants,
     activeTenants,
     inactiveTenants,
-    formatDate
+    formatDate,
+    fetchTenants
   } = useTenants();
   
   const [showAddModal, setShowAddModal] = useState(false);
@@ -29,11 +32,21 @@ const Tenants = () => {
     return <div>Loading...</div>;
   }
 
+  // Check if Ajay Tenant 2 has incorrect rent
+  const ajayTenant2 = tenants.find(t => 
+    t.email === "tenant2@test.com" && t.rentAmount === 2000
+  );
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Tenants</h1>
-        <p className="text-muted-foreground mt-2">Manage your tenants and leases</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Tenants</h1>
+          <p className="text-muted-foreground mt-2">Manage your tenants and leases</p>
+        </div>
+        {ajayTenant2 && (
+          <UpdateTenantRent onSuccess={fetchTenants} />
+        )}
       </div>
 
       <TenantSummaryCards tenants={tenants} />

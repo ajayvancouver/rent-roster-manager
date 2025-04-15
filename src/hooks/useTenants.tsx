@@ -10,7 +10,8 @@ export function useTenants() {
     setTenants, 
     properties, 
     isLoading, 
-    getPropertyName 
+    getPropertyName,
+    fetchTenants 
   } = useTenantData();
   
   const { 
@@ -56,6 +57,7 @@ export function useTenants() {
     sortedTenants,
     activeTenants: filteredTenants.filter(t => t.status === "active"),
     inactiveTenants: filteredTenants.filter(t => t.status !== "active"),
-    formatDate
+    formatDate,
+    fetchTenants
   };
 }
