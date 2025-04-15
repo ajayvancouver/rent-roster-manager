@@ -1,9 +1,10 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { loadAllData } from "@/services/supabaseService";
 import { useToast } from "@/hooks/use-toast";
 import { Payment, Tenant, Property, Maintenance, Document } from "@/types";
 import { getDashboardStats } from "@/utils/dataUtils";
-import { useAuth } from "@/hooks/useAuth"; // Update import path
+import { useAuth } from "@/hooks/useAuth";
 
 // This hook provides access to all the data across the application
 export function usePropertyManager() {
@@ -51,8 +52,6 @@ export function usePropertyManager() {
         // Set other data, even if some parts had errors
         setPayments(data.payments || []);
         setMaintenance(data.maintenance || []);
-        
-        // Handle possible document error
         setDocuments(data.documents || []);
         
         // Only set error if the entire request fails

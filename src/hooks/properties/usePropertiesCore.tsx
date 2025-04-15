@@ -6,7 +6,7 @@ import { tenantsService } from "@/services/tenantsService";
 import { paymentsService } from "@/services/paymentsService";
 import { useToast } from "@/hooks/use-toast";
 import { useDebounce } from "@/hooks/useDebounce";
-import { useAuth } from "@/contexts";
+import { useAuth } from "@/hooks/useAuth";
 
 export function usePropertiesCore() {
   const { toast } = useToast();
@@ -27,29 +27,17 @@ export function usePropertiesCore() {
       const managerId = profile?.id || user?.id;
       
       console.log("Fetching properties with managerId:", managerId);
-      console.log("Current user info:", { userId: user?.id, profileId: profile?.id });
       
-      let allProperties: Property[] = [];
-      
-      if (!managerId) {
-        console.warn("No manager ID available, attempting to fetch all properties");
-        allProperties = await propertiesService.getAll();
-        console.log("All properties (no filter):", allProperties);
-      }
-      
+      // We don't need a fallback for no managerId anymore since RLS will handle filtering
       const [fetchedProperties, fetchedTenants, fetchedPayments] = await Promise.all([
-        managerId ? propertiesService.getAll(managerId) : allProperties,
+        propertiesService.getAll(managerId),
         tenantsService.getAll(managerId),
         paymentsService.getAll(managerId)
       ]);
       
-      console.log("Fetched properties:", fetchedProperties);
-      console.log("Fetched tenants:", fetchedTenants);
-      console.log("Fetched payments:", fetchedPayments);
-      
-      if (fetchedProperties.length === 0) {
-        console.warn("No properties found for this manager ID");
-      }
+      console.log("Fetched properties:", fetchedProperties.length);
+      console.log("Fetched tenants:", fetchedTenants.length);
+      console.log("Fetched payments:", fetchedPayments.length);
       
       setProperties(fetchedProperties);
       setTenants(fetchedTenants);
@@ -68,8 +56,10 @@ export function usePropertiesCore() {
   }, [toast, user, profile]);
 
   useEffect(() => {
-    fetchProperties();
-  }, [fetchProperties]);
+    if (user) {
+      fetchProperties();
+    }
+  }, [fetchProperties, user]);
 
   const getFilteredProperties = () => {
     const searchTerms = searchQuery.toLowerCase();
