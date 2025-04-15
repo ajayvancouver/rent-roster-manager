@@ -6,10 +6,20 @@ import PropertyOccupancyCard from "@/components/dashboard/PropertyOccupancyCard"
 import RentCollectionOverview from "@/components/dashboard/RentCollectionOverview";
 import RecentPaymentsList from "@/components/dashboard/RecentPaymentsList";
 import RecentMaintenanceList from "@/components/dashboard/RecentMaintenanceList";
-import { properties, tenants, payments, maintenanceRequests, getStats } from "@/data/mockData";
+import { usePropertyManager } from "@/hooks/usePropertyManager";
+import { formatCurrency } from "@/utils/dataUtils";
 
 const Dashboard = () => {
-  const stats = getStats();
+  const { 
+    properties, 
+    tenants, 
+    payments, 
+    maintenance, 
+    documents,
+    isLoading, 
+    error, 
+    stats
+  } = usePropertyManager();
 
   return (
     <div className="space-y-6">
@@ -22,25 +32,25 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Properties"
-          value={stats.totalProperties}
+          value={properties.length}
           icon={<Building2 className="h-5 w-5" />}
-          description={`${stats.totalUnits} Total Units`}
+          description={`${properties.reduce((sum, p) => sum + p.units, 0)} Total Units`}
         />
         <StatCard
           title="Tenants"
-          value={stats.totalTenants}
+          value={tenants.filter(t => t.status === 'active').length}
           icon={<Users className="h-5 w-5" />}
           description={`${stats.occupancyRate}% Occupancy Rate`}
         />
         <StatCard
           title="Rent Collection"
-          value={`$${stats.totalRent.toLocaleString()}`}
+          value={formatCurrency(stats.totalRent)}
           icon={<Wallet className="h-5 w-5" />}
-          description={`${stats.collectionRate}% Collected`}
+          description={`${stats.collectedRent > 0 ? Math.round((stats.collectedRent / stats.totalRent) * 100) : 0}% Collected`}
         />
         <StatCard
           title="Maintenance"
-          value={stats.pendingMaintenance}
+          value={maintenance.filter(m => m.status !== 'completed').length}
           icon={<ClipboardCheck className="h-5 w-5" />}
           description="Open Requests"
         />
@@ -56,13 +66,13 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <RentCollectionOverview tenants={tenants} />
         <div className="space-y-4">
-          {stats.outstandingBalance > 0 && (
+          {stats.totalRent - stats.collectedRent > 0 && (
             <div className="flex p-4 text-amber-800 bg-amber-50 rounded-md">
               <AlertTriangle className="h-6 w-6 mr-2" />
               <div>
                 <h3 className="font-medium">Outstanding Balance</h3>
                 <p className="text-sm">
-                  There is ${stats.outstandingBalance.toLocaleString()} in unpaid rent. Follow up with tenants.
+                  There is {formatCurrency(stats.totalRent - stats.collectedRent)} in unpaid rent. Follow up with tenants.
                 </p>
               </div>
             </div>
@@ -73,7 +83,7 @@ const Dashboard = () => {
       {/* Recent Activity Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <RecentPaymentsList payments={payments} tenants={tenants} />
-        <RecentMaintenanceList maintenanceRequests={maintenanceRequests} />
+        <RecentMaintenanceList maintenanceRequests={maintenance} />
       </div>
     </div>
   );
