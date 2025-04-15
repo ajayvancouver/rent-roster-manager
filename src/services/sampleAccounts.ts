@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { signUpWithEmail } from "./authService";
+import { signUpWithEmail } from "./auth"; // Updated import path to use our new structure
 import { UserType } from "@/types/auth";
 import { updateProfile } from "./supabaseService";
 import { createSampleProperties, connectSampleTenantsToProperties } from "./sampleProperties";
