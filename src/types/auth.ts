@@ -1,7 +1,7 @@
 
-import { Session, User } from '@supabase/supabase-js';
+import { User, Session } from "@supabase/supabase-js";
 
-export type UserType = 'tenant' | 'manager';
+export type UserType = "manager" | "tenant";
 
 export interface UserProfile {
   id: string;
@@ -18,6 +18,7 @@ export interface UserProfile {
   lease_start?: string;
   lease_end?: string;
   status?: string;
+  manager_id?: string;
 }
 
 export interface AuthContextType {
@@ -28,6 +29,6 @@ export interface AuthContextType {
   isLoading: boolean;
   authError: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, userType: UserType, fullName?: string) => Promise<void>;
+  signUp: (email: string, password: string, userType: UserType, fullName?: string, createSampleData?: boolean) => Promise<void>;
   signOut: () => Promise<void>;
 }

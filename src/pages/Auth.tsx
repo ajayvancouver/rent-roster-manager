@@ -18,6 +18,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/layout/Header";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const Auth = () => {
   const { user, signIn, signUp, isLoading } = useAuth();
@@ -27,6 +28,7 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [userType, setUserType] = useState<"manager" | "tenant">("tenant");
+  const [createSampleData, setCreateSampleData] = useState(false);
   const [activeTab, setActiveTab] = useState("login");
   const [error, setError] = useState<string | null>(null);
 
@@ -79,7 +81,7 @@ const Auth = () => {
     }
     
     try {
-      await signUp(email, password, userType, fullName);
+      await signUp(email, password, userType, fullName, userType === "manager" ? createSampleData : false);
       toast({
         title: "Account created",
         description: "Please check your email to confirm your account.",
@@ -210,6 +212,19 @@ const Auth = () => {
                         </SelectContent>
                       </Select>
                     </div>
+                    
+                    {userType === "manager" && (
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="sampleData" 
+                          checked={createSampleData}
+                          onCheckedChange={(checked) => setCreateSampleData(checked as boolean)}
+                        />
+                        <Label htmlFor="sampleData" className="text-sm text-muted-foreground cursor-pointer">
+                          Create sample properties and tenants for testing
+                        </Label>
+                      </div>
+                    )}
                     
                     <Button type="submit" className="w-full" disabled={isLoading}>
                       {isLoading ? "Creating Account..." : "Create Account"}
