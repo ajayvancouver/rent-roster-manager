@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Building2, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -11,6 +10,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { Property } from "@/types";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -199,6 +199,15 @@ const AddPropertyForm = ({ onSuccess }: AddPropertyFormProps) => {
           disabled={isLoading}
         />
       </div>
+
+      <Button 
+        type="button" 
+        className="w-full mt-4" 
+        onClick={handleSubmit}
+        disabled={isLoading}
+      >
+        {isLoading ? "Adding Property..." : "Add Property"}
+      </Button>
     </div>
   );
 };

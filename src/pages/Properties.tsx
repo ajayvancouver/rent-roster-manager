@@ -18,6 +18,7 @@ export default function Properties() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [newPropertyData, setNewPropertyData] = useState<Omit<Property, "id"> | null>(null);
 
   const {
     properties,
@@ -48,6 +49,9 @@ export default function Properties() {
   // Handle adding a new property
   const handleAddPropertySubmit = async (formData: Omit<Property, "id">) => {
     try {
+      // Store the form data for use in modalSaveHandler
+      setNewPropertyData(formData);
+      
       await handleAddProperty(formData);
       setShowAddModal(false);
       toast({
@@ -65,6 +69,13 @@ export default function Properties() {
         variant: "destructive"
       });
     }
+  };
+  
+  // This function doesn't take any parameters to match AddEntityModal's onSave type
+  const modalSaveHandler = () => {
+    console.log("Modal save handler called - form handled independently");
+    // The actual form submission is handled by AddPropertyForm's onSuccess
+    return Promise.resolve();
   };
 
   return (
@@ -193,11 +204,7 @@ export default function Properties() {
         title="Add New Property"
         open={showAddModal}
         onOpenChange={setShowAddModal}
-        onSave={(formData) => {
-          if (formData) {
-            handleAddPropertySubmit(formData as Omit<Property, "id">);
-          }
-        }}
+        onSave={modalSaveHandler}
       >
         <AddPropertyForm onSuccess={handleAddPropertySubmit} />
       </AddEntityModal>
