@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -22,11 +21,9 @@ const PaymentDetail = () => {
       
       try {
         setIsLoading(true);
-        const { data, error } = await paymentsService.getById(id);
+        const paymentData = await paymentsService.getById(id);
         
-        if (error) throw error;
-        
-        setPayment(data);
+        setPayment(paymentData);
       } catch (error) {
         console.error("Error fetching payment:", error);
         toast({
