@@ -1,36 +1,49 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Payment } from "@/types";
 
 export const paymentsService = {
   async getAll(managerId?: string): Promise<Payment[]> {
-    let query = supabase
-      .from('payments')
-      .select('*, tenants(name, email, property_id, unit_number, properties(name, manager_id))');
-    
-    // If managerId is provided, filter by matching manager_id
-    if (managerId) {
-      query = query.eq('tenants.properties.manager_id', managerId);
+    try {
+      console.log("Fetching payments with managerId:", managerId);
+
+      // First approach: Join payments with tenants and filter by manager_id
+      let query = supabase
+        .from('payments')
+        .select('*, tenants(name, email, property_id, unit_number, properties(name, manager_id))');
+      
+      if (managerId) {
+        query = query.eq('tenants.properties.manager_id', managerId);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) {
+        console.error("Error fetching payments:", error);
+        throw error;
+      }
+      
+      console.log("Raw payments data from Supabase:", data);
+      
+      // Map database columns to our TypeScript interfaces
+      return (data || []).map(item => ({
+        id: item.id,
+        tenantId: item.tenant_id,
+        tenantName: item.tenants ? item.tenants.name : 'Unknown',
+        propertyId: item.tenants ? item.tenants.property_id : null,
+        propertyName: item.tenants && item.tenants.properties ? item.tenants.properties.name : null,
+        unitNumber: item.tenants ? item.tenants.unit_number : null,
+        amount: item.amount,
+        date: item.date,
+        method: item.method as 'cash' | 'check' | 'bank transfer' | 'credit card',
+        status: item.status as 'pending' | 'completed' | 'failed',
+        notes: item.notes || undefined,
+        managerId: item.tenants?.properties?.manager_id
+      }));
+    } catch (error) {
+      console.error("Error in paymentsService.getAll:", error);
+      throw error;
     }
-    
-    const { data, error } = await query;
-    
-    if (error) throw error;
-    
-    // Map database columns to our TypeScript interfaces
-    return (data || []).map(item => ({
-      id: item.id,
-      tenantId: item.tenant_id,
-      tenantName: item.tenants ? item.tenants.name : 'Unknown',
-      propertyId: item.tenants ? item.tenants.property_id : null,
-      propertyName: item.tenants && item.tenants.properties ? item.tenants.properties.name : null,
-      unitNumber: item.tenants ? item.tenants.unit_number : null,
-      amount: item.amount,
-      date: item.date,
-      method: item.method as 'cash' | 'check' | 'bank transfer' | 'credit card',
-      status: item.status as 'pending' | 'completed' | 'failed',
-      notes: item.notes || undefined,
-      managerId: item.tenants?.properties?.manager_id
-    }));
   },
 
   async getById(id: string) {
@@ -91,6 +104,8 @@ export const paymentsService = {
   },
 
   async create(payment: Omit<Payment, 'id' | 'tenantName' | 'propertyId' | 'propertyName' | 'unitNumber'>) {
+    console.log("Creating payment with data:", payment);
+    
     // Map our TypeScript interface to database columns
     const dbPayment = {
       tenant_id: payment.tenantId,
@@ -101,14 +116,20 @@ export const paymentsService = {
       notes: payment.notes || null
     };
     
+    console.log("Mapped DB payment data:", dbPayment);
+    
     const { data, error } = await supabase
       .from('payments')
       .insert(dbPayment)
       .select()
       .single();
       
-    if (error) throw error;
+    if (error) {
+      console.error("Error creating payment:", error);
+      throw error;
+    }
     
+    console.log("Payment created successfully:", data);
     return data;
   }
 };

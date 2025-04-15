@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Payment } from "@/types";
 import { paymentsService, tenantsService, propertiesService } from "@/services/supabaseService";
@@ -25,6 +26,8 @@ export function usePayments() {
       try {
         const managerId = profile?.id || user?.id;
         
+        console.log("Fetching payments data with managerId:", managerId);
+        
         const [fetchedPayments, fetchedTenants, fetchedProperties] = await Promise.all([
           paymentsService.getAll(managerId),
           tenantsService.getAll(managerId),
@@ -32,6 +35,8 @@ export function usePayments() {
         ]);
         
         console.log("Fetched payments:", fetchedPayments);
+        console.log("Fetched tenants:", fetchedTenants);
+        
         setPayments(fetchedPayments);
         setTenants(fetchedTenants);
         setProperties(fetchedProperties);
@@ -59,12 +64,12 @@ export function usePayments() {
   // Get property info for a tenant
   const getPropertyInfo = (tenantId: string) => {
     const tenant = tenants.find(t => t.id === tenantId);
-    if (!tenant) return { name: "Unknown", unit: "" };
+    if (!tenant) return { name: null, unit: null };
     
     const property = properties.find(p => p.id === tenant.propertyId);
     return {
-      name: property ? property.name : "Unknown",
-      unit: tenant.unitNumber ? `Unit ${tenant.unitNumber}` : "",
+      name: property ? property.name : null,
+      unit: tenant.unitNumber || null,
     };
   };
 
@@ -98,7 +103,7 @@ export function usePayments() {
       
       return (
         tenantName.includes(searchTerms) ||
-        propertyInfo.name.toLowerCase().includes(searchTerms) ||
+        (propertyInfo.name && propertyInfo.name.toLowerCase().includes(searchTerms)) ||
         payment.method.toLowerCase().includes(searchTerms) ||
         payment.status.toLowerCase().includes(searchTerms) ||
         (payment.notes && payment.notes.toLowerCase().includes(searchTerms))
@@ -123,11 +128,11 @@ export function usePayments() {
   };
 
   // Toggle sort
-  const toggleSort = (field: keyof Payment) => {
+  const toggleSort = (field: string) => {
     if (sortField === field) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
-      setSortField(field);
+      setSortField(field as keyof Payment);
       setSortDirection("desc"); // Default to newest/highest first
     }
   };
@@ -162,10 +167,14 @@ export function usePayments() {
         managerId
       };
       
+      console.log("Adding payment with data:", paymentData);
+      
       const result = await paymentsService.create(paymentData);
+      console.log("Payment created:", result);
       
       // Refresh payments data after adding new payment
       const updatedPayments = await paymentsService.getAll(managerId);
+      console.log("Updated payments after adding:", updatedPayments);
       setPayments(updatedPayments);
       
       return true;

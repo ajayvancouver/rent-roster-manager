@@ -15,6 +15,8 @@ import {
 import { Payment } from "@/types";
 import { tenantsService } from "@/services/supabaseService";
 import { usePayments } from "@/hooks/usePayments";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AddPaymentFormProps {
   onSuccess: () => void;
@@ -23,6 +25,7 @@ interface AddPaymentFormProps {
 const AddPaymentForm = ({ onSuccess }: AddPaymentFormProps) => {
   const { toast } = useToast();
   const { handleAddPayment } = usePayments();
+  const { user, profile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [tenants, setTenants] = useState<any[]>([]);
   
@@ -39,7 +42,10 @@ const AddPaymentForm = ({ onSuccess }: AddPaymentFormProps) => {
   useEffect(() => {
     const fetchTenants = async () => {
       try {
-        const data = await tenantsService.getAll();
+        const managerId = profile?.id || user?.id;
+        console.log("Fetching tenants for manager:", managerId);
+        const data = await tenantsService.getAll(managerId);
+        console.log("Tenants fetched for dropdown:", data);
         setTenants(data);
       } catch (error) {
         console.error("Error fetching tenants:", error);
@@ -52,7 +58,7 @@ const AddPaymentForm = ({ onSuccess }: AddPaymentFormProps) => {
     };
     
     fetchTenants();
-  }, [toast]);
+  }, [toast, user, profile]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -93,11 +99,23 @@ const AddPaymentForm = ({ onSuccess }: AddPaymentFormProps) => {
     setIsLoading(true);
     
     try {
+      console.log("Submitting payment form with data:", formData);
       const success = await handleAddPayment(formData);
       
       if (success) {
+        toast({
+          title: "Success",
+          description: "Payment recorded successfully",
+        });
         onSuccess();
       }
+    } catch (error) {
+      console.error("Error in handleSubmit:", error);
+      toast({
+        title: "Error",
+        description: "Failed to record payment",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
@@ -211,6 +229,15 @@ const AddPaymentForm = ({ onSuccess }: AddPaymentFormProps) => {
           disabled={isLoading}
         />
       </div>
+
+      <Button 
+        type="button" 
+        className="w-full" 
+        onClick={handleSubmit}
+        disabled={isLoading}
+      >
+        {isLoading ? "Recording Payment..." : "Record Payment"}
+      </Button>
     </div>
   );
 };

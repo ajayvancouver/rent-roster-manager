@@ -33,6 +33,8 @@ const PaymentsTable = ({
   formatDate,
   getStatusColor,
 }: PaymentsTableProps) => {
+  console.log("Payments in table:", payments);
+
   return (
     <div className="border rounded-md">
       <Table>
@@ -79,12 +81,14 @@ const PaymentsTable = ({
           ) : (
             payments.map((payment) => {
               const property = getPropertyInfo(payment.tenantId);
+              const tenantName = payment.tenantName || getTenantName(payment.tenantId);
+              
               return (
                 <TableRow key={payment.id}>
                   <TableCell className="font-medium">
                     {formatDate(payment.date)}
                   </TableCell>
-                  <TableCell>{payment.tenantName}</TableCell>
+                  <TableCell>{tenantName}</TableCell>
                   <TableCell>
                     {property.name} {property.unit ? `Unit ${property.unit}` : ""}
                   </TableCell>
