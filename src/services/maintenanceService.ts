@@ -7,7 +7,6 @@ export const maintenanceService = {
       .from('maintenance')
       .select('*, properties(name, manager_id), tenants(name, email, unit_number)');
     
-    // If managerId is provided, filter by matching manager_id
     if (managerId) {
       query = query.eq('properties.manager_id', managerId);
     }
@@ -16,12 +15,11 @@ export const maintenanceService = {
     
     if (error) throw error;
     
-    // Map database columns to our TypeScript interfaces
     return (data || []).map(item => ({
       id: item.id,
-      propertyId: item.property_id, // Map property_id to propertyId
+      propertyId: item.property_id,
       propertyName: item.properties ? item.properties.name : 'Unknown',
-      tenantId: item.tenant_id, // Map tenant_id to tenantId
+      tenantId: item.tenant_id,
       tenantName: item.tenants ? item.tenants.name : 'Unknown Tenant',
       tenantEmail: item.tenants ? item.tenants.email : null,
       unitNumber: item.tenants ? item.tenants.unit_number : null,
@@ -29,8 +27,8 @@ export const maintenanceService = {
       description: item.description,
       priority: item.priority as 'low' | 'medium' | 'high' | 'emergency',
       status: item.status as 'pending' | 'in-progress' | 'completed' | 'cancelled',
-      dateSubmitted: item.date_submitted, // Map date_submitted to dateSubmitted
-      dateCompleted: item.date_completed || undefined, // Map date_completed to dateCompleted
+      dateSubmitted: item.date_submitted,
+      dateCompleted: item.date_completed || undefined,
       assignedTo: item.assigned_to || undefined,
       cost: item.cost || undefined,
       managerId: item.properties?.manager_id
@@ -53,7 +51,6 @@ export const maintenanceService = {
       return { data: null, error: null };
     }
     
-    // Map database columns to our TypeScript interface
     const maintenance: Maintenance = {
       id: data.id,
       propertyId: data.property_id,
@@ -83,18 +80,17 @@ export const maintenanceService = {
     
     if (error) throw error;
     
-    // Map database columns to our TypeScript interfaces
     return (data || []).map(item => ({
       id: item.id,
-      propertyId: item.property_id, // Map property_id to propertyId
+      propertyId: item.property_id,
       propertyName: item.properties ? item.properties.name : 'Unknown',
-      tenantId: item.tenant_id, // Map tenant_id to tenantId
+      tenantId: item.tenant_id,
       title: item.title,
       description: item.description,
       priority: item.priority as 'low' | 'medium' | 'high' | 'emergency',
       status: item.status as 'pending' | 'in-progress' | 'completed' | 'cancelled',
-      dateSubmitted: item.date_submitted, // Map date_submitted to dateSubmitted
-      dateCompleted: item.date_completed || undefined, // Map date_completed to dateCompleted
+      dateSubmitted: item.date_submitted,
+      dateCompleted: item.date_completed || undefined,
       assignedTo: item.assigned_to || undefined,
       cost: item.cost || undefined
     }));
@@ -108,11 +104,10 @@ export const maintenanceService = {
     
     if (error) throw error;
     
-    // Map database columns to our TypeScript interfaces
     return (data || []).map(item => ({
       id: item.id,
-      propertyId: item.property_id, // Map property_id to propertyId
-      tenantId: item.tenant_id, // Map tenant_id to tenantId
+      propertyId: item.property_id,
+      tenantId: item.tenant_id,
       tenantName: item.tenants ? item.tenants.name : 'Unknown Tenant',
       tenantEmail: item.tenants ? item.tenants.email : null,
       unitNumber: item.tenants ? item.tenants.unit_number : null,
@@ -120,15 +115,14 @@ export const maintenanceService = {
       description: item.description,
       priority: item.priority as 'low' | 'medium' | 'high' | 'emergency',
       status: item.status as 'pending' | 'in-progress' | 'completed' | 'cancelled',
-      dateSubmitted: item.date_submitted, // Map date_submitted to dateSubmitted
-      dateCompleted: item.date_completed || undefined, // Map date_completed to dateCompleted
+      dateSubmitted: item.date_submitted,
+      dateCompleted: item.date_completed || undefined,
       assignedTo: item.assigned_to || undefined,
       cost: item.cost || undefined
     }));
   },
 
   async create(maintenance: Omit<Maintenance, 'id' | 'propertyName' | 'tenantName' | 'tenantEmail' | 'unitNumber' | 'dateCompleted'>) {
-    // Map our TypeScript interface to database columns
     const dbMaintenance = {
       property_id: maintenance.propertyId,
       tenant_id: maintenance.tenantId || null,
@@ -146,5 +140,26 @@ export const maintenanceService = {
       .insert(dbMaintenance)
       .select()
       .single();
+  },
+
+  async update(id: string, updates: Partial<Maintenance>) {
+    const dbMaintenance: Record<string, any> = {};
+    
+    if (updates.propertyId !== undefined) dbMaintenance.property_id = updates.propertyId;
+    if (updates.tenantId !== undefined) dbMaintenance.tenant_id = updates.tenantId;
+    if (updates.title !== undefined) dbMaintenance.title = updates.title;
+    if (updates.description !== undefined) dbMaintenance.description = updates.description;
+    if (updates.priority !== undefined) dbMaintenance.priority = updates.priority;
+    if (updates.status !== undefined) dbMaintenance.status = updates.status;
+    if (updates.dateSubmitted !== undefined) dbMaintenance.date_submitted = updates.dateSubmitted;
+    if (updates.dateCompleted !== undefined) dbMaintenance.date_completed = updates.dateCompleted;
+    if (updates.assignedTo !== undefined) dbMaintenance.assigned_to = updates.assignedTo;
+    if (updates.cost !== undefined) dbMaintenance.cost = updates.cost;
+    
+    return await supabase
+      .from('maintenance')
+      .update(dbMaintenance)
+      .eq('id', id)
+      .select();
   }
 };
