@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Wrench, AlertTriangle } from "lucide-react";
+import { Wrench } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,12 +14,13 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { Maintenance, Property, Tenant } from "@/types";
 import { propertiesService } from "@/services/propertiesService";
 import { tenantsService } from "@/services/tenantsService";
 
 interface AddMaintenanceRequestFormProps {
-  onSuccess: () => void;
+  onSuccess: (formData: any) => void;
 }
 
 const AddMaintenanceRequestForm = ({ onSuccess }: AddMaintenanceRequestFormProps) => {
@@ -94,6 +95,16 @@ const AddMaintenanceRequestForm = ({ onSuccess }: AddMaintenanceRequestFormProps
     : [];
 
   const handleSubmit = async () => {
+    // Add validation to ensure required fields are filled
+    if (!formData.propertyId || !formData.title || !formData.description) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in all required fields.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
@@ -108,30 +119,9 @@ const AddMaintenanceRequestForm = ({ onSuccess }: AddMaintenanceRequestFormProps
         return;
       }
       
-      // Create maintenance request in Supabase
-      const { data, error } = await supabase
-        .from('maintenance')
-        .insert([
-          {
-            title: formData.title,
-            description: formData.description,
-            priority: formData.priority,
-            status: formData.status,
-            property_id: formData.propertyId,
-            tenant_id: formData.tenantId || null,
-            date_submitted: formData.dateSubmitted
-          }
-        ])
-        .select();
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Maintenance request submitted!",
-        description: "The request has been added successfully."
-      });
-      
-      onSuccess();
+      // Call the onSuccess function with the form data
+      // This will trigger the parent component's handleAddRequestSuccess function
+      onSuccess(formData);
     } catch (error) {
       console.error("Error adding maintenance request:", error);
       toast({
@@ -245,6 +235,15 @@ const AddMaintenanceRequestForm = ({ onSuccess }: AddMaintenanceRequestFormProps
           </SelectContent>
         </Select>
       </div>
+
+      <Button 
+        type="button" 
+        className="w-full mt-4" 
+        onClick={handleSubmit}
+        disabled={isLoading}
+      >
+        {isLoading ? "Submitting..." : "Submit Request"}
+      </Button>
     </div>
   );
 };

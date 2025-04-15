@@ -15,7 +15,7 @@ import {
 interface AddEntityModalProps extends DialogProps {
   title: string;
   children: React.ReactNode;
-  onSave: (formData?: any) => void;
+  onSave: () => void | Promise<void>; // Updated to accept a function with no parameters
   isLoading?: boolean;
 }
 
@@ -28,9 +28,8 @@ const AddEntityModal = ({
 }: AddEntityModalProps) => {
   // This is just a placeholder. The actual form data is managed in the child component.
   const handleSave = () => {
-    // The child component (AddTenantForm) will handle the actual saving process
-    // through its onSuccess prop
-    onSave(undefined);
+    // The child component will handle the actual saving process
+    onSave();
   };
 
   return (
