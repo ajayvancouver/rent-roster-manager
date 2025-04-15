@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import AddEntityModal from "@/components/common/AddEntityModal";
@@ -52,11 +51,8 @@ const MaintenancePage = () => {
     }
   };
 
-  // Fix the type error by ensuring modalSaveHandler accepts a parameter
-  const modalSaveHandler = (formData: any) => {
-    // This is a no-op function as the actual submission is handled by onSuccess prop
+  const modalSaveHandler = async (formData: any) => {
     console.log("Form data received in modalSaveHandler:", formData);
-    // We don't need to do anything here as the form submission is handled by onSuccess
   };
 
   return (

@@ -24,18 +24,32 @@ const PropertyDetailView = () => {
 
   useEffect(() => {
     const fetchPropertyDetails = async () => {
-      if (!id) return;
+      if (!id) {
+        setIsLoading(false);
+        toast({
+          title: "Error",
+          description: "Property ID is missing",
+          variant: "destructive"
+        });
+        navigate('/properties');
+        return;
+      }
       
       try {
         setIsLoading(true);
+        console.log("Looking for property with ID:", id);
+        console.log("Available properties:", properties);
         
         // First try to find the property in the already loaded properties
         const foundProperty = properties.find(p => p.id === id);
         
         if (foundProperty) {
+          console.log("Found property in cache:", foundProperty);
           setProperty(foundProperty);
+          
           // Filter tenants for this property from already loaded tenants
           const propertyTenants = allTenants.filter(tenant => tenant.propertyId === id);
+          console.log("Filtered tenants:", propertyTenants);
           setTenants(propertyTenants);
           setIsLoading(false);
           return;
@@ -44,8 +58,10 @@ const PropertyDetailView = () => {
         // If not found in the cached properties, fetch from the API
         console.log("Fetching property from API with ID:", id);
         const fetchedProperty = await propertiesService.getById(id);
+        console.log("API response for property:", fetchedProperty);
         
         if (!fetchedProperty) {
+          console.error("No property found with ID:", id);
           toast({
             title: "Property not found",
             description: "The property you are looking for does not exist",
@@ -58,15 +74,11 @@ const PropertyDetailView = () => {
         setProperty(fetchedProperty);
         
         // Fetch tenants for this property
-        const propertyTenants = allTenants.filter(tenant => tenant.propertyId === id);
-        if (propertyTenants.length === 0) {
-          // If no tenants found in cache, try to fetch from API
-          const allTenantsData = await tenantsService.getAll();
-          const filteredTenants = allTenantsData.filter(tenant => tenant.propertyId === id);
-          setTenants(filteredTenants);
-        } else {
-          setTenants(propertyTenants);
-        }
+        console.log("Fetching tenants for property:", id);
+        const allTenantsData = await tenantsService.getAll();
+        const filteredTenants = allTenantsData.filter(tenant => tenant.propertyId === id);
+        console.log("Filtered tenants from API:", filteredTenants);
+        setTenants(filteredTenants);
         
         setIsLoading(false);
       } catch (error) {

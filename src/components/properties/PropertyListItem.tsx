@@ -1,3 +1,4 @@
+
 import { Building, Building2, Home, Warehouse } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,9 +8,9 @@ import { Property } from "@/types";
 
 interface PropertyListItemProps {
   property: Property;
-  getTenantCount: () => number;
-  getVacancyCount: () => number;
-  getOccupancyRate: () => number;
+  getTenantCount: (propertyId: string) => number;
+  getVacancyCount: (property: Property) => number;
+  getOccupancyRate: (property: Property) => number;
   onClick?: () => void; // Make onClick optional
 }
 
@@ -22,9 +23,9 @@ const PropertyListItem = ({
 }: PropertyListItemProps) => {
   const navigate = useNavigate();
   
-  const tenantCount = getTenantCount();
-  const vacancyCount = getVacancyCount();
-  const occupancyRate = getOccupancyRate();
+  const tenantCount = getTenantCount(property.id);
+  const vacancyCount = getVacancyCount(property);
+  const occupancyRate = getOccupancyRate(property);
 
   const PropertyTypeIcon = () => {
     switch (property.type) {
