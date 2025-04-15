@@ -6,19 +6,62 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DateRange } from "react-day-picker";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
-import { format, isWithinInterval, parseISO, startOfMonth, endOfMonth, subMonths } from "date-fns";
+import { format, isWithinInterval, parseISO, startOfMonth, endOfMonth, subMonths, addMonths, isFuture, isPast } from "date-fns";
 import { useTenantPortal } from "@/hooks/useTenantPortal";
 import MakePaymentButton from "@/components/payments/MakePaymentButton";
 import { useToast } from "@/hooks/use-toast";
 
 const TenantPayments: React.FC = () => {
-  const { isLoading, payments, rentAmount, balance, profile } = useTenantPortal();
+  const { isLoading, payments, rentAmount, balance, profile, leaseStart, leaseEnd } = useTenantPortal();
   const { toast } = useToast();
   const [dateRange, setDateRange] = useState<DateRange>({
     from: startOfMonth(subMonths(new Date(), 3)),
     to: endOfMonth(new Date())
   });
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [upcomingPayments, setUpcomingPayments] = useState<Array<{date: Date, amount: number, status: string}>>([]);
+
+  useEffect(() => {
+    // Calculate upcoming payment dates based on lease duration
+    if (leaseStart && leaseEnd && rentAmount) {
+      const startDate = new Date(leaseStart);
+      const endDate = new Date(leaseEnd);
+      const today = new Date();
+      
+      // Generate upcoming payments for the next 3 months or until lease end
+      const upcoming: Array<{date: Date, amount: number, status: string}> = [];
+      let currentDate = today;
+      
+      // Find the next payment date (1st of next month or current month if before the 5th)
+      let nextPaymentDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+      if (currentDate.getDate() > 5) {
+        nextPaymentDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
+      }
+      
+      // Generate up to 3 future payments
+      for (let i = 0; i < 3; i++) {
+        const paymentDate = i === 0 ? nextPaymentDate : addMonths(nextPaymentDate, i);
+        
+        // Check if payment date is within lease period
+        if (paymentDate <= endDate) {
+          const hasPayment = payments.some(payment => {
+            const pDate = new Date(payment.date);
+            return pDate.getMonth() === paymentDate.getMonth() && 
+                   pDate.getFullYear() === paymentDate.getFullYear() &&
+                   payment.status === 'completed';
+          });
+          
+          upcoming.push({
+            date: paymentDate,
+            amount: rentAmount,
+            status: hasPayment ? 'paid' : 'upcoming'
+          });
+        }
+      }
+      
+      setUpcomingPayments(upcoming);
+    }
+  }, [leaseStart, leaseEnd, rentAmount, payments, refreshTrigger]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -38,8 +81,10 @@ const TenantPayments: React.FC = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
+      case 'paid':
         return 'bg-green-100 text-green-800';
       case 'pending':
+      case 'upcoming':
         return 'bg-amber-100 text-amber-800';
       case 'failed':
         return 'bg-red-100 text-red-800';
@@ -217,6 +262,31 @@ const TenantPayments: React.FC = () => {
               <p className="text-muted-foreground mb-4">
                 Your rent of {formatCurrency(rentAmount)} is due on the 1st of each month.
               </p>
+              
+              {upcomingPayments.length > 0 && (
+                <div className="space-y-3 mb-6">
+                  <h3 className="font-medium">Upcoming Payments</h3>
+                  {upcomingPayments.map((payment, index) => (
+                    <Card key={index} className="overflow-hidden">
+                      <CardContent className="p-0">
+                        <div className="p-4 flex justify-between items-center">
+                          <div>
+                            <p className="font-medium">{format(payment.date, 'MMM d, yyyy')}</p>
+                            <p className="text-sm text-muted-foreground">Monthly rent payment</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-bold">{formatCurrency(payment.amount)}</p>
+                            <Badge className={getStatusColor(payment.status)}>
+                              {payment.status}
+                            </Badge>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+              
               <div className="space-y-4">
                 <div className="border rounded-md p-4">
                   <h4 className="font-medium mb-1">Payment Options</h4>

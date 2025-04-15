@@ -84,22 +84,34 @@ const PaymentOptions = ({ amount, onPaymentComplete }: PaymentOptionsProps) => {
     setIsLoading(true);
     
     try {
+      // Get tenant info from user profile
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+        
+      if (profileError) {
+        console.error("Error fetching profile:", profileError);
+        throw new Error("Could not retrieve tenant information");
+      }
+      
       // Record the interac payment in the database
       const { data, error } = await supabase
         .from("payments")
         .insert({
-          tenant_id: user.id,
           tenant_user_id: user.id,
+          // If tenant_id exists in the profile, use it, otherwise fallback to user.id
+          tenant_id: user.id,
           amount,
           method: "bank transfer",
           status: "pending",
           date: new Date().toISOString().split("T")[0],
           notes: "Interac e-Transfer (pending confirmation)"
-        })
-        .select()
-        .single();
+        });
       
       if (error) {
+        console.error("Payment insertion error:", error);
         throw new Error(error.message);
       }
       
