@@ -12,9 +12,10 @@ interface PaymentStatusChartProps {
 const PaymentStatusChart = ({ payments, tenants }: PaymentStatusChartProps) => {
   // Calculate payment statuses
   const calculatePaymentData = () => {
-    if (!tenants || tenants.length === 0) {
+    // If no tenants or no payments, show "No Payment" data
+    if (!tenants || tenants.length === 0 || payments.length === 0) {
       return [
-        { name: "No Data", value: 1, color: "#e5e7eb" }
+        { name: "No Payment", value: 1, color: "#f87171" }
       ];
     }
     
@@ -23,9 +24,11 @@ const PaymentStatusChart = ({ payments, tenants }: PaymentStatusChartProps) => {
     const partialPayment = tenants.filter(tenant => tenant.balance > 0 && tenant.balance < tenant.rentAmount).length;
     const noPay = tenants.filter(tenant => tenant.balance === tenant.rentAmount).length;
     
-    // If all values are 0, return a placeholder
+    // If all values are 0, return "No Payment"
     if (paidInFull === 0 && partialPayment === 0 && noPay === 0) {
-      return [{ name: "No Data", value: 1, color: "#e5e7eb" }];
+      return [
+        { name: "No Payment", value: 1, color: "#f87171" }
+      ];
     }
     
     return [

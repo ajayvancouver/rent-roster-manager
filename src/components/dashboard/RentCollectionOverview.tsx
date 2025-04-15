@@ -19,7 +19,9 @@ const RentCollectionOverview = ({ tenants }: RentCollectionOverviewProps) => {
     0
   );
   
-  const collectionRate = Math.round((totalCollectedRent / totalExpectedRent) * 100);
+  const collectionRate = totalExpectedRent > 0 
+    ? Math.round((totalCollectedRent / totalExpectedRent) * 100)
+    : 0;
   
   return (
     <Card className="card-hover">
