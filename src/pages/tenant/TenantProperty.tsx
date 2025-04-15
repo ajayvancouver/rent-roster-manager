@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,7 +19,7 @@ const TenantProperty: React.FC = () => {
   };
 
   const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return 'Not set';
     try {
       return format(new Date(dateString), 'MMM d, yyyy');
     } catch (error) {
@@ -136,14 +137,14 @@ const TenantProperty: React.FC = () => {
                   <CreditCard className="h-5 w-5 text-muted-foreground mr-2" />
                   <div>
                     <p className="text-sm text-muted-foreground">Monthly Rent</p>
-                    <p className="font-medium">{formatCurrency(rentAmount)}</p>
+                    <p className="font-medium">{formatCurrency(rentAmount || 0)}</p>
                   </div>
                 </div>
                 <div className="flex items-center">
                   <CreditCard className="h-5 w-5 text-muted-foreground mr-2" />
                   <div>
                     <p className="text-sm text-muted-foreground">Security Deposit</p>
-                    <p className="font-medium">{formatCurrency(depositAmount)}</p>
+                    <p className="font-medium">{formatCurrency(depositAmount || 0)}</p>
                   </div>
                 </div>
               </div>
