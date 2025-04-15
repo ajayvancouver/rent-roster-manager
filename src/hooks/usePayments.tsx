@@ -1,7 +1,9 @@
 
 import { useState, useEffect } from "react";
 import { Payment } from "@/types";
-import { paymentsService, tenantsService, propertiesService } from "@/services/supabaseService";
+import { paymentsService } from "@/services/paymentsService";
+import { tenantsService } from "@/services/tenantsService";
+import { propertiesService } from "@/services/propertiesService";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -27,6 +29,12 @@ export function usePayments() {
         // Get the current user's ID to filter data by manager
         const managerId = profile?.id || user?.id;
         
+        if (!managerId) {
+          console.error("No manager ID available for filtering");
+          setIsLoading(false);
+          return;
+        }
+        
         console.log("Fetching payments data with managerId:", managerId);
         
         const [fetchedPayments, fetchedTenants, fetchedProperties] = await Promise.all([
@@ -37,6 +45,7 @@ export function usePayments() {
         
         console.log("Fetched payments:", fetchedPayments.length);
         console.log("Fetched tenants:", fetchedTenants.length);
+        console.log("Fetched properties:", fetchedProperties.length);
         
         setPayments(fetchedPayments);
         setTenants(fetchedTenants);
@@ -56,6 +65,8 @@ export function usePayments() {
     // Only fetch data if the user is logged in
     if (user) {
       fetchData();
+    } else {
+      setIsLoading(false);
     }
   }, [toast, user, profile]);
 

@@ -7,6 +7,7 @@ export const paymentsService = {
     console.log("Getting payments with managerId:", managerId);
     
     // Use a join query to get payments with tenant and property information
+    // The query will be filtered by RLS policies based on the authenticated user
     const { data, error } = await supabase
       .from('payments')
       .select(`
@@ -26,7 +27,8 @@ export const paymentsService = {
           property_id, 
           unit_number
         )
-      `);
+      `)
+      .eq('tenants.properties.manager_id', managerId);
     
     if (error) {
       console.error("Error fetching payments:", error);
@@ -34,6 +36,7 @@ export const paymentsService = {
     }
     
     console.log(`Raw payments data from Supabase:`, data);
+    console.log(`Number of payments fetched for manager ${managerId}:`, data?.length || 0);
     
     // Transform data to match our frontend model
     return (data || []).map(item => ({

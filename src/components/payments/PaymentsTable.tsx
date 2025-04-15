@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Payment } from "@/types";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
 
 interface PaymentsTableProps {
   payments: Payment[];
@@ -33,7 +34,22 @@ const PaymentsTable = ({
   formatDate,
   getStatusColor,
 }: PaymentsTableProps) => {
+  const { user, profile } = useAuth();
+  const currentManagerId = profile?.id || user?.id;
+  
+  console.log("Current manager ID:", currentManagerId);
   console.log("Payments in table:", payments);
+  
+  // Filter out payments that don't belong to this manager
+  const filteredPayments = payments.filter(payment => {
+    const belongsToManager = payment.managerId === currentManagerId;
+    if (!belongsToManager) {
+      console.warn(`Payment ${payment.id} has managerId ${payment.managerId} which doesn't match current user ${currentManagerId}`);
+    }
+    return belongsToManager;
+  });
+  
+  console.log("Filtered payments count:", filteredPayments.length);
 
   return (
     <div className="border rounded-md">
@@ -72,14 +88,14 @@ const PaymentsTable = ({
                 Loading payments...
               </TableCell>
             </TableRow>
-          ) : payments.length === 0 ? (
+          ) : filteredPayments.length === 0 ? (
             <TableRow>
               <TableCell colSpan={7} className="h-24 text-center">
                 No payments found.
               </TableCell>
             </TableRow>
           ) : (
-            payments.map((payment) => {
+            filteredPayments.map((payment) => {
               const property = getPropertyInfo(payment.tenantId);
               const tenantName = payment.tenantName || getTenantName(payment.tenantId);
               
