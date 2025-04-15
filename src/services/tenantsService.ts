@@ -1,19 +1,26 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Tenant } from "@/types";
 
 export const tenantsService = {
   async getAll(managerId?: string): Promise<Tenant[]> {
+    console.log("Getting tenants with managerId:", managerId);
+    
     let query = supabase
       .from('tenants')
       .select('*, properties(name, address, city, state, zip_code, manager_id)');
     
-    if (managerId) {
-      query = query.eq('properties.manager_id', managerId);
-    }
+    // Note: We rely on RLS policies to filter data by manager_id
+    // The managerId parameter is kept for logging and debugging purposes
     
     const { data, error } = await query;
     
-    if (error) throw error;
+    if (error) {
+      console.error("Error fetching tenants:", error);
+      throw error;
+    }
+    
+    console.log(`Retrieved ${data?.length || 0} tenants from database`);
     
     return (data || []).map(item => ({
       id: item.id,

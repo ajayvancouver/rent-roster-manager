@@ -1,36 +1,37 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Maintenance } from "@/types";
 
 export const maintenanceService = {
   async getAll(managerId?: string): Promise<Maintenance[]> {
-    let query = supabase
-      .from('maintenance')
-      .select('*, properties(name, manager_id), tenants(name, email, unit_number)');
+    console.log("Getting maintenance requests with managerId:", managerId);
     
-    if (managerId) {
-      query = query.eq('properties.manager_id', managerId);
+    // Get all maintenance requests, RLS will filter based on the authenticated user
+    const { data, error } = await supabase
+      .from('maintenance')
+      .select('*, properties(name, address, city, state, zip_code, manager_id), tenants(name)');
+    
+    if (error) {
+      console.error("Error fetching maintenance requests:", error);
+      throw error;
     }
     
-    const { data, error } = await query;
-    
-    if (error) throw error;
+    console.log(`Retrieved ${data?.length || 0} maintenance requests from database`);
     
     return (data || []).map(item => ({
       id: item.id,
-      propertyId: item.property_id,
-      propertyName: item.properties ? item.properties.name : 'Unknown',
-      tenantId: item.tenant_id,
-      tenantName: item.tenants ? item.tenants.name : 'Unknown Tenant',
-      tenantEmail: item.tenants ? item.tenants.email : null,
-      unitNumber: item.tenants ? item.tenants.unit_number : null,
       title: item.title,
       description: item.description,
-      priority: item.priority as 'low' | 'medium' | 'high' | 'emergency',
-      status: item.status as 'pending' | 'in-progress' | 'completed' | 'cancelled',
+      propertyId: item.property_id,
+      propertyName: item.properties ? item.properties.name : null,
+      tenantId: item.tenant_id,
+      tenantName: item.tenants ? item.tenants.name : null,
       dateSubmitted: item.date_submitted,
-      dateCompleted: item.date_completed || undefined,
-      assignedTo: item.assigned_to || undefined,
-      cost: item.cost || undefined,
+      dateCompleted: item.date_completed,
+      status: item.status,
+      priority: item.priority,
+      assignedTo: item.assigned_to,
+      cost: item.cost,
       managerId: item.properties?.manager_id
     }));
   },

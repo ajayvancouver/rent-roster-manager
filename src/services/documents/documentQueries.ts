@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Document } from "@/types";
 
@@ -7,22 +6,19 @@ import { Document } from "@/types";
  */
 const getAllDocuments = async (managerId?: string): Promise<Document[]> => {
   try {
-    let query = supabase
+    console.log("Getting documents with managerId:", managerId);
+    
+    // Get all documents, RLS will filter based on the authenticated user
+    const { data, error } = await supabase
       .from('documents')
       .select('*, properties(id, name, manager_id), tenants(id, name)');
-    
-    // Filter by manager ID if provided
-    if (managerId) {
-      // Filter documents where the property is managed by this manager
-      query = query.eq('properties.manager_id', managerId);
-    }
-    
-    const { data, error } = await query;
     
     if (error) {
       console.error("Error fetching documents:", error);
       throw error;
     }
+    
+    console.log(`Retrieved ${data?.length || 0} documents from database`);
     
     // Map database columns to our TypeScript interfaces
     return (data || []).map(item => ({
