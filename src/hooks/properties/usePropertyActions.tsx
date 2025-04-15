@@ -82,6 +82,7 @@ export function usePropertyActions(
 
   const handleDeleteProperty = async (id: string) => {
     try {
+      // Check for tenants first
       const propertyTenants = tenants.filter(tenant => tenant.propertyId === id);
       
       if (propertyTenants.length > 0) {
@@ -93,20 +94,27 @@ export function usePropertyActions(
         return false;
       }
       
+      // Check for maintenance requests with proper error handling
+      let maintenanceRequests = [];
       try {
-        const maintenanceRequests = await maintenanceService.getByPropertyId(id);
-        if (maintenanceRequests.length > 0) {
-          toast({
-            title: "Cannot delete property",
-            description: `This property has ${maintenanceRequests.length} maintenance requests. Address all maintenance requests before deleting.`,
-            variant: "destructive"
-          });
-          return false;
-        }
+        maintenanceRequests = await maintenanceService.getByPropertyId(id);
+        console.log("Maintenance requests for property:", maintenanceRequests);
       } catch (error) {
         console.error("Error checking maintenance requests:", error);
+        // Continue with deletion even if we can't check maintenance requests
+        // This prevents a situation where the maintenance service is down but deletion is still needed
       }
       
+      if (maintenanceRequests && maintenanceRequests.length > 0) {
+        toast({
+          title: "Cannot delete property",
+          description: `This property has ${maintenanceRequests.length} maintenance requests. Address all maintenance requests before deleting.`,
+          variant: "destructive"
+        });
+        return false;
+      }
+      
+      // If no blockers, proceed with deletion
       const success = await propertiesService.delete(id);
       
       if (success) {
