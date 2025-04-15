@@ -115,7 +115,9 @@ export function usePropertyActions(
       
       // If no blockers, proceed with deletion
       try {
+        setIsLoading(true);
         const success = await propertiesService.delete(id);
+        setIsLoading(false);
         
         if (success) {
           setProperties(prevProperties => prevProperties.filter(property => property.id !== id));
@@ -127,13 +129,20 @@ export function usePropertyActions(
           return true;
         }
       } catch (error: any) {
+        setIsLoading(false);
         console.error("Error deleting property:", error);
         
-        // Check for foreign key constraint violations specifically for profiles
-        if (error.code === "23503" && error.details?.includes("profiles_property_id_fkey")) {
+        // Handle foreign key constraint violations
+        if (error.code === "23503") {
+          let message = "This property is referenced by other data in the system.";
+          
+          if (error.details?.includes("profiles_property_id_fkey")) {
+            message = "This property is associated with user profiles.";
+          }
+          
           toast({
             title: "Cannot delete property",
-            description: "This property is associated with user profiles. Please update or remove those profiles first.",
+            description: message,
             variant: "destructive"
           });
           return false;

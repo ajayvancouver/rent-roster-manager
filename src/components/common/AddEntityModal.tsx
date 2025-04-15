@@ -15,7 +15,7 @@ import {
 interface AddEntityModalProps extends DialogProps {
   title: string;
   children: React.ReactNode;
-  onSave: () => void | Promise<void>; // Updated to accept a function with no parameters
+  onSave: () => void | Promise<void>;
   isLoading?: boolean;
 }
 
@@ -26,9 +26,7 @@ const AddEntityModal = ({
   isLoading = false,
   ...props
 }: AddEntityModalProps) => {
-  // This is just a placeholder. The actual form data is managed in the child component.
   const handleSave = () => {
-    // The child component will handle the actual saving process
     onSave();
   };
 
@@ -37,8 +35,8 @@ const AddEntityModal = ({
       <DialogContent className="sm:max-w-[550px]">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
-            <X className="h-4 w-4" />
+          <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
+            <X className="h-5 w-5" aria-hidden="true" />
             <span className="sr-only">Close</span>
           </DialogClose>
         </DialogHeader>
