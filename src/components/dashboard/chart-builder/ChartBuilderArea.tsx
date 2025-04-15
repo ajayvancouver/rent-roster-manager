@@ -1,7 +1,6 @@
 
 import { useState, useRef } from "react";
-import { PanelSection } from "@/components/ui/chart";
-import { CustomChart, CustomChartData, DataPoint } from "./CustomChart";
+import { CustomChart, CustomChartData } from "./CustomChart";
 import { nanoid } from "@/lib/utils";
 import { ChartType } from "./ChartTypes";
 import { Payment, Tenant, Property } from "@/types";
