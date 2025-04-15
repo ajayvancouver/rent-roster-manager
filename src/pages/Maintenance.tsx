@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import AddEntityModal from "@/components/common/AddEntityModal";
@@ -51,8 +52,10 @@ const MaintenancePage = () => {
     }
   };
 
-  const modalSaveHandler = async (formData: any) => {
+  // Fixed the typings to accept a parameter
+  const modalSaveHandler = (formData: any) => {
     console.log("Form data received in modalSaveHandler:", formData);
+    return Promise.resolve();
   };
 
   return (
