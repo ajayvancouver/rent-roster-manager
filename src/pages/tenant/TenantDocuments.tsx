@@ -88,14 +88,15 @@ const TenantDocuments: React.FC = () => {
     setIsUploading(true);
     
     try {
-      // Create document object
+      // Create document object with uploadDate property
       const documentData = {
         name: docName,
-        type: docType,
+        type: docType as 'lease' | 'payment' | 'maintenance' | 'other',
         tenantId: tenantData.id,
         propertyId: tenantData.propertyId || "",
         fileSize: `${(file.size / 1024).toFixed(0)} KB`,
         fileType: file.type,
+        uploadDate: new Date().toISOString(), // Add the required uploadDate property
         url: "" // Will be updated after file upload
       };
       
