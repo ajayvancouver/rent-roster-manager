@@ -2,14 +2,16 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Property } from "@/types";
-import { propertiesService, tenantsService } from "@/services/supabaseService";
+import { propertiesService } from "@/services/supabaseService";
+import { tenantsService } from "@/services/supabaseService";
 import { useToast } from "@/hooks/use-toast";
-import { Building2, Home, MapPin, Users, Warehouse, Phone, User, Mail, Calendar } from "lucide-react";
+import { Building2, Home, MapPin, Users, Warehouse, Phone, User, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
+import { usePropertyManager } from "@/hooks/usePropertyManager";
 
 const PropertyDetailView = () => {
   const { id } = useParams<{ id: string }>();
@@ -18,6 +20,7 @@ const PropertyDetailView = () => {
   const [property, setProperty] = useState<Property | null>(null);
   const [tenants, setTenants] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { properties, tenants: allTenants } = usePropertyManager();
 
   useEffect(() => {
     const fetchPropertyDetails = async () => {
@@ -25,13 +28,45 @@ const PropertyDetailView = () => {
       
       try {
         setIsLoading(true);
+        
+        // First try to find the property in the already loaded properties
+        const foundProperty = properties.find(p => p.id === id);
+        
+        if (foundProperty) {
+          setProperty(foundProperty);
+          // Filter tenants for this property from already loaded tenants
+          const propertyTenants = allTenants.filter(tenant => tenant.propertyId === id);
+          setTenants(propertyTenants);
+          setIsLoading(false);
+          return;
+        }
+        
+        // If not found in the cached properties, fetch from the API
+        console.log("Fetching property from API with ID:", id);
         const fetchedProperty = await propertiesService.getById(id);
+        
+        if (!fetchedProperty) {
+          toast({
+            title: "Property not found",
+            description: "The property you are looking for does not exist",
+            variant: "destructive"
+          });
+          navigate('/properties');
+          return;
+        }
+        
         setProperty(fetchedProperty);
         
         // Fetch tenants for this property
-        const allTenants = await tenantsService.getAll();
         const propertyTenants = allTenants.filter(tenant => tenant.propertyId === id);
-        setTenants(propertyTenants);
+        if (propertyTenants.length === 0) {
+          // If no tenants found in cache, try to fetch from API
+          const allTenantsData = await tenantsService.getAll();
+          const filteredTenants = allTenantsData.filter(tenant => tenant.propertyId === id);
+          setTenants(filteredTenants);
+        } else {
+          setTenants(propertyTenants);
+        }
         
         setIsLoading(false);
       } catch (error) {
@@ -42,11 +77,12 @@ const PropertyDetailView = () => {
           variant: "destructive"
         });
         setIsLoading(false);
+        navigate('/properties');
       }
     };
     
     fetchPropertyDetails();
-  }, [id, toast]);
+  }, [id, toast, navigate, properties, allTenants]);
 
   if (isLoading) {
     return <div className="flex justify-center items-center h-64">Loading property details...</div>;
