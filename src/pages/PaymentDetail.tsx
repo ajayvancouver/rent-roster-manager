@@ -1,5 +1,6 @@
+
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Calendar, CreditCard, User, Building, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,12 +9,18 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { paymentsService } from "@/services/paymentsService";
 import { Payment } from "@/types";
+import PaymentActionButtons from "@/components/payments/PaymentActionButtons";
+import { useAuth } from "@/hooks/useAuth";
 
 const PaymentDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [payment, setPayment] = useState<Payment | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { user, profile } = useAuth();
+  
+  const currentManagerId = profile?.id || user?.id;
 
   useEffect(() => {
     const fetchPayment = async () => {
@@ -23,7 +30,13 @@ const PaymentDetail = () => {
         setIsLoading(true);
         const paymentData = await paymentsService.getById(id);
         
-        setPayment(paymentData);
+        // Check if payment belongs to the current manager
+        if (paymentData && paymentData.managerId !== currentManagerId) {
+          console.warn(`Payment ${id} belongs to manager ${paymentData.managerId}, not current user ${currentManagerId}`);
+          setPayment(null);
+        } else {
+          setPayment(paymentData);
+        }
       } catch (error) {
         console.error("Error fetching payment:", error);
         toast({
@@ -37,7 +50,22 @@ const PaymentDetail = () => {
     };
 
     fetchPayment();
-  }, [id, toast]);
+  }, [id, toast, currentManagerId]);
+
+  const handlePaymentUpdated = async () => {
+    if (!id) return;
+    
+    try {
+      const updatedPayment = await paymentsService.getById(id);
+      setPayment(updatedPayment);
+      toast({
+        title: "Success",
+        description: "Payment details have been updated."
+      });
+    } catch (error) {
+      console.error("Error refreshing payment data:", error);
+    }
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -160,19 +188,11 @@ const PaymentDetail = () => {
             <CardHeader>
               <CardTitle>Actions</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <Button className="w-full" variant="outline">
-                <FileText className="mr-2 h-4 w-4" />
-                Generate Receipt
-              </Button>
-              <Button className="w-full" variant="outline">
-                <CreditCard className="mr-2 h-4 w-4" />
-                Record Related Payment
-              </Button>
-              <Button className="w-full" variant="outline">
-                <User className="mr-2 h-4 w-4" />
-                View Tenant
-              </Button>
+            <CardContent>
+              <PaymentActionButtons 
+                payment={payment}
+                onPaymentUpdated={handlePaymentUpdated}
+              />
             </CardContent>
           </Card>
         </div>
