@@ -10,32 +10,55 @@ interface PaymentStatusChartProps {
 }
 
 const PaymentStatusChart = ({ payments, tenants }: PaymentStatusChartProps) => {
-  // Calculate payment statuses
+  // Calculate payment statuses based on actual payments
   const calculatePaymentData = () => {
     // If no tenants or no payments, show "No Payment" data
-    if (!tenants || tenants.length === 0 || payments.length === 0) {
+    if (!tenants || tenants.length === 0) {
       return [
         { name: "No Payment", value: 1, color: "#f87171" }
       ];
     }
+    
+    // Get active tenants
+    const activeTenants = tenants.filter(tenant => tenant.status === 'active');
+    
+    if (activeTenants.length === 0) {
+      return [
+        { name: "No Tenants", value: 1, color: "#9ca3af" }
+      ];
+    }
+    
+    // If no payments, all active tenants have "No Payment"
+    if (!payments || payments.length === 0) {
+      return [
+        { name: "No Payment", value: activeTenants.length, color: "#f87171" }
+      ];
+    }
+    
+    // Count payments by tenant
+    const completedPaymentsByTenant = new Set();
+    payments.forEach(payment => {
+      if (payment.status === 'completed') {
+        completedPaymentsByTenant.add(payment.tenantId);
+      }
+    });
     
     // Count tenants with different payment statuses
-    const paidInFull = tenants.filter(tenant => tenant.balance === 0).length;
-    const partialPayment = tenants.filter(tenant => tenant.balance > 0 && tenant.balance < tenant.rentAmount).length;
-    const noPay = tenants.filter(tenant => tenant.balance === tenant.rentAmount).length;
+    const paidInFull = completedPaymentsByTenant.size;
+    const noPay = activeTenants.length - paidInFull;
     
-    // If all values are 0, return "No Payment"
-    if (paidInFull === 0 && partialPayment === 0 && noPay === 0) {
-      return [
-        { name: "No Payment", value: 1, color: "#f87171" }
-      ];
+    // Return data for chart
+    const chartData = [];
+    
+    if (paidInFull > 0) {
+      chartData.push({ name: "Paid", value: paidInFull, color: "#4ade80" });
     }
     
-    return [
-      { name: "Paid in Full", value: paidInFull, color: "#4ade80" },
-      { name: "Partial Payment", value: partialPayment, color: "#facc15" },
-      { name: "No Payment", value: noPay, color: "#f87171" },
-    ].filter(item => item.value > 0); // Only include non-zero values
+    if (noPay > 0) {
+      chartData.push({ name: "No Payment", value: noPay, color: "#f87171" });
+    }
+    
+    return chartData.length > 0 ? chartData : [{ name: "No Payment", value: 1, color: "#f87171" }];
   };
 
   const [data, setData] = useState(calculatePaymentData());

@@ -1,4 +1,3 @@
-
 import { Building2, Users, Wallet, ClipboardCheck, AlertTriangle } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
 import PaymentStatusChart from "@/components/dashboard/PaymentStatusChart";
@@ -111,7 +110,7 @@ const Dashboard = () => {
 
       {/* Data Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <RentCollectionOverview tenants={tenants} />
+        <RentCollectionOverview tenants={tenants} payments={payments} />
         <div className="space-y-4">
           {stats.totalRent - stats.collectedRent > 0 && (
             <div className="flex p-4 text-amber-800 bg-amber-50 rounded-md">

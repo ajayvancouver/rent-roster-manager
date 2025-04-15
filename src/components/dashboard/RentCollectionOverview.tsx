@@ -1,23 +1,23 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Tenant } from "@/types";
+import { Payment, Tenant } from "@/types";
 
 interface RentCollectionOverviewProps {
   tenants: Tenant[];
+  payments?: Payment[];
 }
 
-const RentCollectionOverview = ({ tenants }: RentCollectionOverviewProps) => {
-  // Calculate total rent data
-  const totalExpectedRent = tenants.reduce(
-    (sum, tenant) => sum + tenant.rentAmount, 
-    0
-  );
+const RentCollectionOverview = ({ tenants, payments = [] }: RentCollectionOverviewProps) => {
+  // Calculate total expected rent from all active tenants
+  const totalExpectedRent = tenants
+    .filter(tenant => tenant.status === 'active')
+    .reduce((sum, tenant) => sum + (tenant.rentAmount || 0), 0);
   
-  const totalCollectedRent = tenants.reduce(
-    (sum, tenant) => sum + (tenant.rentAmount - tenant.balance), 
-    0
-  );
+  // Calculate total collected rent from payments
+  const totalCollectedRent = payments
+    .filter(payment => payment.status === 'completed')
+    .reduce((sum, payment) => sum + (payment.amount || 0), 0);
   
   const collectionRate = totalExpectedRent > 0 
     ? Math.round((totalCollectedRent / totalExpectedRent) * 100)

@@ -1,4 +1,3 @@
-
 import { Payment, Tenant, Property, Maintenance, Document } from "@/types";
 
 // Function to create relationship maps for quick lookups
@@ -35,7 +34,7 @@ export function getDashboardStats(
   
   const collectedRent = payments && payments.length > 0 
     ? payments
-        .filter(p => p.status === 'completed' && new Date(p.date).getMonth() === new Date().getMonth())
+        .filter(p => p.status === 'completed')
         .reduce((sum, p) => sum + (p.amount || 0), 0)
     : 0;
   
