@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -72,6 +73,8 @@ export function useTenantPortal() {
           console.log("Tenant data found:", tenant);
           console.log("Rent amount from tenant data:", tenant.rent_amount);
           console.log("Rent amount from database:", tenant.rentAmount);
+          console.log("Deposit amount from tenant data:", tenant.deposit_amount);
+          console.log("Deposit amount from database:", tenant.depositAmount);
           
           setTenantData(tenant);
           
@@ -182,7 +185,7 @@ export function useTenantPortal() {
     leaseStart: tenantData?.lease_start || null,
     leaseEnd: tenantData?.lease_end || null,
     rentAmount: tenantData?.rent_amount || tenantData?.rentAmount || 0,
-    depositAmount: tenantData?.deposit_amount || 0,
+    depositAmount: tenantData?.deposit_amount || tenantData?.depositAmount || 0,
     balance: tenantData?.balance || 0,
     error: loadingError,
     tenantData
