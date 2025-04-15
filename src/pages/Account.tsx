@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Loader2, User, Mail, Phone, Lock, Upload, MapPin } from "lucide-react";
+import { Loader2, User, Mail, Phone, Lock, Upload, MapPin, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,7 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
@@ -95,7 +95,6 @@ const Account = () => {
         description: "Your profile has been updated successfully.",
       });
       
-      // Refresh the page to update the profile data
       setTimeout(() => window.location.reload(), 1000);
     } catch (error: any) {
       console.error("Error updating profile:", error.message);
@@ -145,7 +144,6 @@ const Account = () => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
     
-    // Check file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       toast({
         title: "File too large",
@@ -155,7 +153,6 @@ const Account = () => {
       return;
     }
     
-    // Check file type
     if (!file.type.startsWith("image/")) {
       toast({
         title: "Invalid file type",
@@ -168,24 +165,20 @@ const Account = () => {
     setUploadingAvatar(true);
     
     try {
-      // Create a unique file name
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
       const filePath = `avatars/${fileName}`;
       
-      // Upload the file to Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, file);
       
       if (uploadError) throw uploadError;
       
-      // Get the public URL
       const { data: publicUrl } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
       
-      // Update user profile with new avatar URL
       const { error: updateError } = await supabase
         .from('profiles')
         .update({
@@ -200,7 +193,6 @@ const Account = () => {
         description: "Your profile picture has been updated successfully.",
       });
       
-      // Refresh the page to show the new avatar
       setTimeout(() => window.location.reload(), 1000);
     } catch (error: any) {
       console.error("Error uploading avatar:", error.message);
@@ -214,6 +206,20 @@ const Account = () => {
     }
   };
 
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut();
+      navigate("/");
+    } catch (error: any) {
+      console.error("Error signing out:", error.message);
+      toast({
+        title: "Error",
+        description: "Failed to sign out. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (!user || !profile) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -222,7 +228,6 @@ const Account = () => {
     );
   }
 
-  // Extract initials for avatar fallback
   const initials = profile.full_name
     ? profile.full_name
         .split(" ")
@@ -234,16 +239,26 @@ const Account = () => {
 
   return (
     <div className="container max-w-4xl py-10">
-      <div className="mb-10">
-        <h1 className="text-3xl font-bold">Account Settings</h1>
-        <div className="flex items-center mt-2">
-          <p className="text-muted-foreground">
-            Manage your account settings and profile information
-          </p>
-          <Badge className="ml-2 capitalize" variant={profile.user_type === "manager" ? "default" : "outline"}>
-            {profile.user_type} Account
-          </Badge>
+      <div className="mb-10 flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Account Settings</h1>
+          <div className="flex items-center mt-2">
+            <p className="text-muted-foreground">
+              Manage your account settings and profile information
+            </p>
+            <Badge className="ml-2 capitalize" variant={profile.user_type === "manager" ? "default" : "outline"}>
+              {profile.user_type} Account
+            </Badge>
+          </div>
         </div>
+        <Button 
+          variant="destructive" 
+          onClick={handleSignOut} 
+          className="gap-2"
+        >
+          <LogOut className="h-4 w-4" />
+          Sign Out
+        </Button>
       </div>
 
       <Tabs defaultValue="profile" className="space-y-8">
