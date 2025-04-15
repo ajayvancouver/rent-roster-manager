@@ -52,9 +52,13 @@ const MaintenancePage = () => {
     }
   };
 
-  // Fixed the typings to accept a parameter
+  // Fixed the typings to properly accept an argument and return a Promise
+  // This ensures compatibility with the AddEntityModal component's onSave prop
   const modalSaveHandler = (formData: any) => {
     console.log("Form data received in modalSaveHandler:", formData);
+    // We return a Promise to match the expected signature
+    // but don't actually do anything with the promise since
+    // AddMaintenanceRequestForm handles its own submission
     return Promise.resolve();
   };
 
