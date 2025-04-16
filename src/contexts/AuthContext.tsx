@@ -1,3 +1,4 @@
+
 import React, { createContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -70,6 +71,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!userProfile) {
         console.log("No profile found, creating default profile");
         userProfile = await createDefaultProfile(userId, email);
+        
+        // Check if sample data should be created
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.user_metadata?.create_sample_data === true && 
+            user?.user_metadata?.user_type === 'manager') {
+          try {
+            console.log("Creating sample data for new manager");
+            // Import here to avoid circular dependencies
+            const { createSampleProperties } = await import('../services/sampleProperties');
+            if (userProfile) {
+              await createSampleProperties(userProfile.id);
+            }
+          } catch (sampleError) {
+            console.error("Error creating sample data:", sampleError);
+          }
+        }
       }
       
       if (userProfile) {

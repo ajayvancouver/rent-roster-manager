@@ -30,16 +30,8 @@ export const signUpWithEmail = async (
   console.log("Sign up successful, confirmation status:", data.user?.email);
   
   // If this is a manager account and createSampleData is true, create sample data
-  if (userType === 'manager' && createSampleData && data.user) {
-    try {
-      // Import here to avoid circular dependencies
-      const { createSampleManager } = await import('../sampleAccounts');
-      await createSampleManager(true);
-    } catch (sampleError) {
-      console.error("Error creating sample data:", sampleError);
-      // Continue with sign up even if sample data creation fails
-    }
-  }
+  // We don't call createSampleManager directly to avoid circular dependencies
+  // Instead, we'll rely on the AuthContext to handle this based on user metadata
   
   return data;
 };
