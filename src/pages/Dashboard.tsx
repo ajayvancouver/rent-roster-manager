@@ -33,6 +33,11 @@ const Dashboard = () => {
     saveCharts
   } = useCustomCharts();
 
+  // Calculate open maintenance requests (pending or in-progress only)
+  const openMaintenanceRequests = maintenance.filter(
+    m => m.status === "pending" || m.status === "in-progress"
+  ).length;
+
   // Display loading state while data is being fetched
   if (isLoading) {
     return (
@@ -76,7 +81,8 @@ const Dashboard = () => {
     propertiesCount: properties.length,
     tenantsCount: tenants.length,
     paymentsCount: payments.length,
-    maintenanceCount: maintenance.length
+    maintenanceCount: maintenance.length,
+    openMaintenanceCount: openMaintenanceRequests
   });
 
   return (
@@ -159,7 +165,7 @@ const Dashboard = () => {
         />
         <StatCard
           title="Maintenance"
-          value={maintenance.filter(m => m.status !== 'completed').length}
+          value={openMaintenanceRequests}
           icon={<ClipboardCheck className="h-5 w-5" />}
           description="Open Requests"
         />
