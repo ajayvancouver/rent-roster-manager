@@ -1,126 +1,272 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Property } from "@/types";
-import { propertiesService } from "./supabaseService";
 
 /**
- * Creates sample properties for a manager
- * @param managerId - The ID of the property manager
- * @returns Array of created property IDs
+ * Creates sample properties for a new manager account
+ * @param managerId The ID of the manager to create sample properties for
+ * @returns An array of created property IDs
  */
 export const createSampleProperties = async (managerId: string): Promise<string[]> => {
-  const sampleProperties: Omit<Property, "id">[] = [
+  console.log("Creating sample properties for manager:", managerId);
+  
+  const sampleProperties = [
     {
-      name: "Oceanview Apartments",
-      address: "123 Coastal Drive",
-      city: "San Francisco",
+      name: "Sunset Apartments",
+      address: "123 Sunset Blvd",
+      city: "Los Angeles",
       state: "CA",
-      zipCode: "94110",
-      units: 16,
+      zip_code: "90210",
       type: "apartment",
-      image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=500&auto=format&fit=crop",
-      managerId
+      units: 12,
+      manager_id: managerId,
+      image: "https://images.unsplash.com/photo-1460317442991-0ec209397118?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80"
     },
     {
-      name: "Hillside Townhomes",
-      address: "456 Mountain View Road",
-      city: "Denver",
-      state: "CO",
-      zipCode: "80202",
-      units: 8,
-      type: "duplex",
-      image: "https://images.unsplash.com/photo-1568605114967-8130f3a36994?q=80&w=500&auto=format&fit=crop",
-      managerId
-    },
-    {
-      name: "Downtown Lofts",
-      address: "789 Urban Street",
+      name: "Lakeside Villas",
+      address: "456 Lake View Dr",
       city: "Chicago",
       state: "IL",
-      zipCode: "60601",
-      units: 12,
-      type: "apartment",
-      image: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?q=80&w=500&auto=format&fit=crop",
-      managerId
+      zip_code: "60601",
+      type: "condo",
+      units: 8,
+      manager_id: managerId,
+      image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80"
     },
     {
-      name: "Suburban Single Family",
-      address: "101 Maple Avenue",
-      city: "Austin",
-      state: "TX",
-      zipCode: "78701",
-      units: 1,
+      name: "Mountain Retreat",
+      address: "789 Alpine Way",
+      city: "Denver",
+      state: "CO",
+      zip_code: "80202",
       type: "house",
-      image: "https://images.unsplash.com/photo-1598228723793-52759bba239c?q=80&w=500&auto=format&fit=crop",
-      managerId
+      units: 1,
+      manager_id: managerId,
+      image: "https://images.unsplash.com/photo-1480074568708-e7b720bb3f09?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80"
     }
   ];
 
   try {
-    const createdPropertyIds: string[] = [];
+    const { data, error } = await supabase
+      .from('properties')
+      .insert(sampleProperties)
+      .select('id');
     
-    // Create each property sequentially
-    for (const property of sampleProperties) {
-      const createdProperty = await propertiesService.create(property);
-      createdPropertyIds.push(createdProperty.id);
-      console.log("Created sample property:", createdProperty.name);
+    if (error) {
+      console.error("Error creating sample properties:", error.message);
+      throw error;
     }
     
-    return createdPropertyIds;
+    console.log("Created sample properties:", data);
+    return data.map(prop => prop.id);
   } catch (error) {
-    console.error("Error creating sample properties:", error);
+    console.error("Error in createSampleProperties:", error);
     throw error;
   }
 };
 
 /**
- * Connect sample tenants to properties
- * @param managerId - The ID of the property manager
- * @param propertyIds - Array of property IDs to assign tenants to
- * @returns Success status
+ * Creates sample tenants for the newly created properties
+ * @param managerId The ID of the manager
+ * @param propertyIds Array of property IDs to create tenants for
  */
-export const connectSampleTenantsToProperties = async (managerId: string, propertyIds: string[]): Promise<boolean> => {
-  if (propertyIds.length === 0) {
-    console.error("No property IDs provided to connect tenants");
-    return false;
+export const createSampleTenants = async (managerId: string, propertyIds: string[]): Promise<void> => {
+  console.log("Creating sample tenants for properties:", propertyIds);
+
+  if (!propertyIds.length) {
+    console.warn("No property IDs provided for creating sample tenants");
+    return;
+  }
+
+  const sampleTenants = [
+    {
+      name: "John Smith",
+      email: "john.smith@example.com",
+      phone: "555-123-4567",
+      property_id: propertyIds[0],
+      unit_number: "101",
+      rent_amount: 1200,
+      deposit_amount: 1200,
+      lease_start: new Date(new Date().setMonth(new Date().getMonth() - 6)).toISOString().split('T')[0],
+      lease_end: new Date(new Date().setMonth(new Date().getMonth() + 6)).toISOString().split('T')[0],
+      status: "active"
+    },
+    {
+      name: "Emma Johnson",
+      email: "emma.johnson@example.com",
+      phone: "555-987-6543",
+      property_id: propertyIds[0],
+      unit_number: "202",
+      rent_amount: 1300,
+      deposit_amount: 1300,
+      lease_start: new Date(new Date().setMonth(new Date().getMonth() - 3)).toISOString().split('T')[0],
+      lease_end: new Date(new Date().setMonth(new Date().getMonth() + 9)).toISOString().split('T')[0],
+      status: "active"
+    }
+  ];
+
+  if (propertyIds.length > 1) {
+    sampleTenants.push({
+      name: "Michael Brown",
+      email: "michael.brown@example.com",
+      phone: "555-456-7890",
+      property_id: propertyIds[1],
+      unit_number: "101",
+      rent_amount: 1500,
+      deposit_amount: 1500,
+      lease_start: new Date(new Date().setMonth(new Date().getMonth() - 2)).toISOString().split('T')[0],
+      lease_end: new Date(new Date().setMonth(new Date().getMonth() + 10)).toISOString().split('T')[0],
+      status: "active"
+    });
   }
 
   try {
-    // Fetch existing tenants that aren't assigned to properties yet
-    const { data: tenants, error } = await supabase
+    const { data, error } = await supabase
       .from('tenants')
-      .select('id, name, email')
-      .is('property_id', null)
-      .eq('status', 'active');
+      .insert(sampleTenants)
+      .select('id');
     
-    if (error) throw error;
-    
-    if (!tenants || tenants.length === 0) {
-      console.log("No unassigned tenants found to connect to properties");
-      return false;
+    if (error) {
+      console.error("Error creating sample tenants:", error.message);
+      throw error;
     }
     
-    // Assign tenants to properties
-    const updates = tenants.map((tenant, index) => {
-      // Distribute tenants across properties (cycling through propertyIds if needed)
-      const propertyId = propertyIds[index % propertyIds.length];
-      const unitNumber = `${Math.floor(Math.random() * 12) + 1}${String.fromCharCode(65 + Math.floor(Math.random() * 4))}`;
-      
-      return supabase
-        .from('tenants')
-        .update({ 
-          property_id: propertyId,
-          unit_number: unitNumber
-        })
-        .eq('id', tenant.id);
-    });
+    console.log("Created sample tenants:", data);
     
-    await Promise.all(updates);
+    // Create some sample payments for these tenants
+    await createSamplePayments(data.map(tenant => tenant.id));
     
-    console.log(`Connected ${tenants.length} tenants to properties`);
-    return true;
+    // Create some sample maintenance requests
+    await createSampleMaintenance(propertyIds[0], data[0].id);
   } catch (error) {
-    console.error("Error connecting tenants to properties:", error);
-    return false;
+    console.error("Error in createSampleTenants:", error);
+    throw error;
+  }
+};
+
+/**
+ * Creates sample payments for the provided tenants
+ * @param tenantIds Array of tenant IDs to create payments for
+ */
+const createSamplePayments = async (tenantIds: string[]): Promise<void> => {
+  console.log("Creating sample payments for tenants:", tenantIds);
+  
+  if (!tenantIds.length) {
+    return;
+  }
+  
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+  
+  const samplePayments = [];
+  
+  // Create 3 months of payment history for each tenant
+  for (const tenantId of tenantIds) {
+    for (let i = 2; i >= 0; i--) {
+      const paymentMonth = new Date(currentYear, currentMonth - i, 1);
+      
+      samplePayments.push({
+        tenant_id: tenantId,
+        amount: 1200 + Math.floor(Math.random() * 300),
+        date: paymentMonth.toISOString().split('T')[0],
+        method: i === 0 ? "credit_card" : ["check", "bank_transfer", "cash"][Math.floor(Math.random() * 3)],
+        status: "completed",
+        notes: `Rent payment for ${paymentMonth.toLocaleString('default', { month: 'long' })} ${paymentMonth.getFullYear()}`
+      });
+    }
+  }
+  
+  try {
+    const { data, error } = await supabase
+      .from('payments')
+      .insert(samplePayments);
+    
+    if (error) {
+      console.error("Error creating sample payments:", error.message);
+      throw error;
+    }
+    
+    console.log("Created sample payments successfully");
+  } catch (error) {
+    console.error("Error in createSamplePayments:", error);
+    throw error;
+  }
+};
+
+/**
+ * Creates sample maintenance requests for a property
+ * @param propertyId Property ID to create maintenance requests for
+ * @param tenantId Tenant ID to associate with the requests
+ */
+const createSampleMaintenance = async (propertyId: string, tenantId: string): Promise<void> => {
+  console.log("Creating sample maintenance requests for property:", propertyId);
+  
+  const sampleRequests = [
+    {
+      title: "Leaking Faucet",
+      description: "The kitchen faucet is leaking and needs to be repaired.",
+      priority: "medium",
+      status: "completed",
+      property_id: propertyId,
+      tenant_id: tenantId,
+      date_submitted: new Date(new Date().setDate(new Date().getDate() - 30)).toISOString(),
+      date_completed: new Date(new Date().setDate(new Date().getDate() - 25)).toISOString(),
+      cost: 75
+    },
+    {
+      title: "Broken AC",
+      description: "The air conditioning unit is not cooling properly.",
+      priority: "high",
+      status: "in-progress",
+      property_id: propertyId,
+      tenant_id: tenantId,
+      date_submitted: new Date(new Date().setDate(new Date().getDate() - 5)).toISOString(),
+      assigned_to: "HVAC Specialist"
+    },
+    {
+      title: "Light Bulb Replacement",
+      description: "The hallway light bulb needs to be replaced.",
+      priority: "low",
+      status: "pending",
+      property_id: propertyId,
+      tenant_id: tenantId,
+      date_submitted: new Date().toISOString()
+    }
+  ];
+  
+  try {
+    const { data, error } = await supabase
+      .from('maintenance')
+      .insert(sampleRequests);
+    
+    if (error) {
+      console.error("Error creating sample maintenance requests:", error.message);
+      throw error;
+    }
+    
+    console.log("Created sample maintenance requests successfully");
+  } catch (error) {
+    console.error("Error in createSampleMaintenance:", error);
+    throw error;
+  }
+};
+
+/**
+ * Main function to create all sample data for a new manager
+ * @param managerId The ID of the manager to create sample data for
+ */
+export const createSamplePropertyManager = async (managerId: string): Promise<void> => {
+  try {
+    console.log("Creating sample data for manager:", managerId);
+    
+    // Step 1: Create sample properties for this manager
+    const propertyIds = await createSampleProperties(managerId);
+    
+    // Step 2: Create sample tenants for these properties
+    await createSampleTenants(managerId, propertyIds);
+    
+    console.log("Sample data creation completed for manager:", managerId);
+  } catch (error) {
+    console.error("Error creating sample property manager data:", error);
+    throw error;
   }
 };

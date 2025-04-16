@@ -49,6 +49,7 @@ export const createDefaultProfile = async (userId: string, email: string): Promi
       return null;
     }
     
+    console.log("Profile created successfully:", data);
     return data as UserProfile;
   } catch (error) {
     console.error("Error in createDefaultProfile:", error);

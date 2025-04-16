@@ -29,9 +29,8 @@ export const signUpWithEmail = async (
   
   console.log("Sign up successful, confirmation status:", data.user?.email);
   
-  // If this is a manager account and createSampleData is true, create sample data
-  // We don't call createSampleManager directly to avoid circular dependencies
-  // Instead, we'll rely on the AuthContext to handle this based on user metadata
+  // Note: The sample data creation is handled in the AuthContext
+  // after profile creation to ensure proper manager_id assignment
   
   return data;
 };
