@@ -65,6 +65,81 @@ export const createSampleProperties = async (managerId: string): Promise<string[
 };
 
 /**
+ * Connect sample tenants to the newly created properties
+ * @param managerId The ID of the manager
+ * @param propertyIds Array of property IDs to connect tenants to
+ */
+export const connectSampleTenantsToProperties = async (managerId: string, propertyIds: string[]): Promise<void> => {
+  console.log("Connecting sample tenants to properties for manager:", managerId);
+  
+  if (!propertyIds.length) {
+    console.warn("No property IDs provided for connecting sample tenants");
+    return;
+  }
+  
+  // Find available tenants that don't have a property assigned yet
+  const { data: availableTenants, error: tenantError } = await supabase
+    .from('tenants')
+    .select('id, email, name')
+    .is('property_id', null)
+    .limit(propertyIds.length * 2); // Get twice as many tenants as properties
+  
+  if (tenantError) {
+    console.error("Error fetching available tenants:", tenantError);
+    throw tenantError;
+  }
+  
+  if (!availableTenants || availableTenants.length === 0) {
+    console.log("No available tenants found to connect to properties");
+    return;
+  }
+  
+  console.log(`Found ${availableTenants.length} available tenants to connect to properties`);
+  
+  // Create a queue of tenants to assign to properties
+  const tenantQueue = [...availableTenants];
+  const updates = [];
+  
+  // For each property, assign up to 2 tenants
+  for (const propertyId of propertyIds) {
+    for (let i = 0; i < 2; i++) {
+      if (tenantQueue.length === 0) break;
+      
+      const tenant = tenantQueue.shift();
+      const unitNumber = `${10 + i}${String.fromCharCode(65 + Math.floor(Math.random() * 3))}`; // e.g., 10A, 10B, 11A, etc.
+      
+      updates.push({
+        id: tenant.id,
+        property_id: propertyId,
+        unit_number: unitNumber,
+        rent_amount: 1000 + Math.floor(Math.random() * 500), // Random rent between 1000-1500
+        deposit_amount: 1000, // Fixed deposit
+        lease_start: new Date(new Date().setMonth(new Date().getMonth() - 3)).toISOString().split('T')[0],
+        lease_end: new Date(new Date().setMonth(new Date().getMonth() + 9)).toISOString().split('T')[0],
+      });
+    }
+  }
+  
+  if (updates.length === 0) {
+    console.log("No tenant updates to make");
+    return;
+  }
+  
+  // Update the tenants with property assignments
+  const { data: updatedTenants, error: updateError } = await supabase
+    .from('tenants')
+    .upsert(updates)
+    .select('id, name, property_id, unit_number');
+  
+  if (updateError) {
+    console.error("Error connecting tenants to properties:", updateError);
+    throw updateError;
+  }
+  
+  console.log(`Successfully connected ${updatedTenants.length} tenants to properties`);
+};
+
+/**
  * Creates sample tenants for the newly created properties
  * @param managerId The ID of the manager
  * @param propertyIds Array of property IDs to create tenants for
