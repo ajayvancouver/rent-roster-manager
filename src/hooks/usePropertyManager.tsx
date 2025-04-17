@@ -39,14 +39,15 @@ export function usePropertyManager() {
         console.log("User type:", userType);
         console.log("Profile:", profile);
         
-        // Using simpler query structure to avoid potential RLS recursion issues
+        // We'll use a very minimal select statement to avoid complex joins that could trigger recursion
         const { data: propertiesData, error: propertiesError } = await supabase
           .from('properties')
-          .select('id, name, address, city, state, zip_code, units, type, image, manager_id');
+          .select('id, name, address, city, state, zip_code, units, type, image, manager_id')
+          .order('name');
         
         if (propertiesError) {
           console.error("Error fetching properties:", propertiesError);
-          throw propertiesError;
+          throw new Error(`Properties error: ${propertiesError.message}`);
         }
         
         console.log("Properties fetched:", propertiesData?.length || 0);
@@ -67,19 +68,20 @@ export function usePropertyManager() {
         
         setProperties(transformedProperties);
         
-        // Fetch tenants with a simple select statement for better RLS compatibility
+        // Fetch tenants with explicit column selection
         const { data: tenantsData, error: tenantsError } = await supabase
           .from('tenants')
-          .select('id, name, email, phone, property_id, unit_number, lease_start, lease_end, rent_amount, deposit_amount, balance, status, tenant_user_id');
+          .select('id, name, email, phone, property_id, unit_number, lease_start, lease_end, rent_amount, deposit_amount, balance, status, tenant_user_id')
+          .order('name');
         
         if (tenantsError) {
           console.error("Error fetching tenants:", tenantsError);
-          throw tenantsError;
+          throw new Error(`Tenants error: ${tenantsError.message}`);
         }
         
         console.log("Tenants fetched:", tenantsData?.length || 0);
         
-        // Transform tenant data to match our application model
+        // Transform tenant data with property lookups
         const transformedTenants = (tenantsData || []).map(tenant => {
           const propertyInfo = transformedProperties.find(p => p.id === tenant.property_id);
           
@@ -105,19 +107,20 @@ export function usePropertyManager() {
         
         setTenants(transformedTenants);
         
-        // Fetch payments with a simple select statement
+        // Fetch payments with explicit column selection
         const { data: paymentsData, error: paymentsError } = await supabase
           .from('payments')
-          .select('id, tenant_id, amount, date, method, status, notes');
+          .select('id, tenant_id, amount, date, method, status, notes')
+          .order('date', { ascending: false });
         
         if (paymentsError) {
           console.error("Error fetching payments:", paymentsError);
-          throw paymentsError;
+          throw new Error(`Payments error: ${paymentsError.message}`);
         }
         
         console.log("Payments fetched:", paymentsData?.length || 0);
         
-        // Transform payments data to match our application model
+        // Transform payments data with tenant lookups
         const transformedPayments = (paymentsData || []).map(payment => {
           const tenant = transformedTenants.find(t => t.id === payment.tenant_id);
           
@@ -139,19 +142,20 @@ export function usePropertyManager() {
         
         setPayments(transformedPayments);
         
-        // Fetch maintenance requests with a simple select statement
+        // Fetch maintenance requests with explicit column selection
         const { data: maintenanceData, error: maintenanceError } = await supabase
           .from('maintenance')
-          .select('id, property_id, tenant_id, title, description, priority, status, date_submitted, date_completed, assigned_to, cost');
+          .select('id, property_id, tenant_id, title, description, priority, status, date_submitted, date_completed, assigned_to, cost')
+          .order('date_submitted', { ascending: false });
         
         if (maintenanceError) {
           console.error("Error fetching maintenance requests:", maintenanceError);
-          throw maintenanceError;
+          throw new Error(`Maintenance error: ${maintenanceError.message}`);
         }
         
         console.log("Maintenance requests fetched:", maintenanceData?.length || 0);
         
-        // Transform maintenance data to match our application model
+        // Transform maintenance data with property and tenant lookups
         const transformedMaintenance = (maintenanceData || []).map(request => {
           const property = transformedProperties.find(p => p.id === request.property_id);
           const tenant = transformedTenants.find(t => t.id === request.tenant_id);
@@ -178,19 +182,20 @@ export function usePropertyManager() {
         
         setMaintenance(transformedMaintenance);
         
-        // Fetch documents with a simple select statement
+        // Fetch documents with explicit column selection
         const { data: documentsData, error: documentsError } = await supabase
           .from('documents')
-          .select('id, name, type, tenant_id, property_id, upload_date, file_size, file_type, url');
+          .select('id, name, type, tenant_id, property_id, upload_date, file_size, file_type, url')
+          .order('upload_date', { ascending: false });
         
         if (documentsError) {
           console.error("Error fetching documents:", documentsError);
-          throw documentsError;
+          throw new Error(`Documents error: ${documentsError.message}`);
         }
         
         console.log("Documents fetched:", documentsData?.length || 0);
         
-        // Transform documents data to match our application model
+        // Transform documents data with property and tenant lookups
         const transformedDocuments = (documentsData || []).map(document => {
           const property = transformedProperties.find(p => p.id === document.property_id);
           const tenant = transformedTenants.find(t => t.id === document.tenant_id);
