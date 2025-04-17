@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from "react";
-import { loadAllData } from "@/services/supabaseService";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Payment, Tenant, Property, Maintenance, Document } from "@/types";
 import { getDashboardStats } from "@/utils/dataUtils";
@@ -25,37 +25,108 @@ export function usePropertyManager() {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!user || userType !== "manager") {
+      if (!user) {
         setIsLoading(false);
+        setError("You must be logged in to view this data");
         return;
       }
 
       try {
         setIsLoading(true);
-        const managerId = profile?.id || user.id;
-        console.log("Fetching data with managerId:", managerId);
-        
-        const data = await loadAllData(managerId);
-        
-        // Check if properties were fetched successfully
-        if (data.properties) {
-          setProperties(data.properties);
-          console.log(`Loaded ${data.properties.length} properties successfully`);
-        }
-        
-        // Check if tenants were fetched successfully
-        if (data.tenants) {
-          setTenants(data.tenants);
-          console.log(`Loaded ${data.tenants.length} tenants successfully`);
-        }
-        
-        // Set other data, even if some parts had errors
-        setPayments(data.payments || []);
-        setMaintenance(data.maintenance || []);
-        setDocuments(data.documents || []);
-        
-        // Only set error if the entire request fails
         setError(null);
+        
+        console.log("Authenticated user ID:", user.id);
+        console.log("User type:", userType);
+        console.log("Profile:", profile);
+        
+        // Fetch properties (RLS will filter to only show properties managed by the current user)
+        const { data: propertiesData, error: propertiesError } = await supabase
+          .from('properties')
+          .select('*');
+        
+        if (propertiesError) {
+          console.error("Error fetching properties:", propertiesError);
+          throw propertiesError;
+        }
+        
+        console.log("Properties fetched:", propertiesData?.length || 0);
+        setProperties(propertiesData || []);
+        
+        // Fetch tenants (RLS will filter based on property management)
+        const { data: tenantsData, error: tenantsError } = await supabase
+          .from('tenants')
+          .select('*, properties(name, address, city, state, zip_code)');
+        
+        if (tenantsError) {
+          console.error("Error fetching tenants:", tenantsError);
+          throw tenantsError;
+        }
+        
+        console.log("Tenants fetched:", tenantsData?.length || 0);
+        
+        // Transform tenant data to match our application model
+        const transformedTenants = (tenantsData || []).map(tenant => ({
+          id: tenant.id,
+          name: tenant.name,
+          email: tenant.email,
+          phone: tenant.phone || '',
+          propertyId: tenant.property_id || '',
+          propertyName: tenant.properties ? tenant.properties.name : null,
+          propertyAddress: tenant.properties ? 
+            `${tenant.properties.address}, ${tenant.properties.city}, ${tenant.properties.state} ${tenant.properties.zip_code}` : 
+            null,
+          unitNumber: tenant.unit_number || '',
+          leaseStart: tenant.lease_start,
+          leaseEnd: tenant.lease_end,
+          rentAmount: tenant.rent_amount,
+          depositAmount: tenant.deposit_amount,
+          balance: tenant.balance || 0,
+          status: tenant.status as 'active' | 'inactive' | 'pending',
+          userId: tenant.tenant_user_id,
+          managerId: null // We'll get this from the property
+        }));
+        
+        setTenants(transformedTenants);
+        
+        // Fetch payments
+        const { data: paymentsData, error: paymentsError } = await supabase
+          .from('payments')
+          .select('*');
+        
+        if (paymentsError) {
+          console.error("Error fetching payments:", paymentsError);
+          throw paymentsError;
+        }
+        
+        console.log("Payments fetched:", paymentsData?.length || 0);
+        setPayments(paymentsData || []);
+        
+        // Fetch maintenance requests
+        const { data: maintenanceData, error: maintenanceError } = await supabase
+          .from('maintenance')
+          .select('*');
+        
+        if (maintenanceError) {
+          console.error("Error fetching maintenance requests:", maintenanceError);
+          throw maintenanceError;
+        }
+        
+        console.log("Maintenance requests fetched:", maintenanceData?.length || 0);
+        setMaintenance(maintenanceData || []);
+        
+        // Fetch documents
+        const { data: documentsData, error: documentsError } = await supabase
+          .from('documents')
+          .select('*');
+        
+        if (documentsError) {
+          console.error("Error fetching documents:", documentsError);
+          throw documentsError;
+        }
+        
+        console.log("Documents fetched:", documentsData?.length || 0);
+        setDocuments(documentsData || []);
+        
         setIsLoading(false);
       } catch (error) {
         console.error("Error fetching property manager data:", error);
