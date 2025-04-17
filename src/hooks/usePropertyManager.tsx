@@ -39,7 +39,8 @@ export function usePropertyManager() {
         console.log("User type:", userType);
         console.log("Profile:", profile);
         
-        // Fetch properties (RLS will filter to only show properties managed by the current user)
+        // Fetch properties using a simple query instead of complex joins
+        // This avoids the infinite recursion issue in RLS policies
         const { data: propertiesData, error: propertiesError } = await supabase
           .from('properties')
           .select('*');
@@ -51,23 +52,23 @@ export function usePropertyManager() {
         
         console.log("Properties fetched:", propertiesData?.length || 0);
         
-        // Transform property data to match our application model
+        // Transform property data to match our application model with camelCase keys
         const transformedProperties = (propertiesData || []).map(property => ({
           id: property.id,
           name: property.name,
           address: property.address,
           city: property.city,
           state: property.state,
-          zipCode: property.zip_code,
+          zipCode: property.zip_code, // Camel case conversion
           units: property.units,
           type: property.type as 'apartment' | 'house' | 'duplex' | 'commercial',
           image: property.image,
-          managerId: property.manager_id
+          managerId: property.manager_id // Camel case conversion
         }));
         
         setProperties(transformedProperties);
         
-        // Fetch tenants without using the properties join that was causing recursion
+        // Fetch tenants with a simple query
         const { data: tenantsData, error: tenantsError } = await supabase
           .from('tenants')
           .select('*');
@@ -105,7 +106,7 @@ export function usePropertyManager() {
         
         setTenants(transformedTenants);
         
-        // Fetch payments without using joins that caused recursion
+        // Fetch payments with a simple query
         const { data: paymentsData, error: paymentsError } = await supabase
           .from('payments')
           .select('*');
@@ -139,7 +140,7 @@ export function usePropertyManager() {
         
         setPayments(transformedPayments);
         
-        // Fetch maintenance requests without using joins that caused recursion
+        // Fetch maintenance requests with a simple query
         const { data: maintenanceData, error: maintenanceError } = await supabase
           .from('maintenance')
           .select('*');
@@ -178,7 +179,7 @@ export function usePropertyManager() {
         
         setMaintenance(transformedMaintenance);
         
-        // Fetch documents without using joins that caused recursion
+        // Fetch documents with a simple query
         const { data: documentsData, error: documentsError } = await supabase
           .from('documents')
           .select('*');
