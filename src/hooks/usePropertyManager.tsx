@@ -39,11 +39,10 @@ export function usePropertyManager() {
         console.log("User type:", userType);
         console.log("Profile:", profile);
         
-        // Fetch properties using the corrected RLS policies
-        // This will work now with our security definer function
+        // Using simpler query structure to avoid potential RLS recursion issues
         const { data: propertiesData, error: propertiesError } = await supabase
           .from('properties')
-          .select('*');
+          .select('id, name, address, city, state, zip_code, units, type, image, manager_id');
         
         if (propertiesError) {
           console.error("Error fetching properties:", propertiesError);
@@ -68,10 +67,10 @@ export function usePropertyManager() {
         
         setProperties(transformedProperties);
         
-        // Fetch tenants with a simple query
+        // Fetch tenants with a simple select statement for better RLS compatibility
         const { data: tenantsData, error: tenantsError } = await supabase
           .from('tenants')
-          .select('*');
+          .select('id, name, email, phone, property_id, unit_number, lease_start, lease_end, rent_amount, deposit_amount, balance, status, tenant_user_id');
         
         if (tenantsError) {
           console.error("Error fetching tenants:", tenantsError);
@@ -106,10 +105,10 @@ export function usePropertyManager() {
         
         setTenants(transformedTenants);
         
-        // Fetch payments with a simple query
+        // Fetch payments with a simple select statement
         const { data: paymentsData, error: paymentsError } = await supabase
           .from('payments')
-          .select('*');
+          .select('id, tenant_id, amount, date, method, status, notes');
         
         if (paymentsError) {
           console.error("Error fetching payments:", paymentsError);
@@ -140,10 +139,10 @@ export function usePropertyManager() {
         
         setPayments(transformedPayments);
         
-        // Fetch maintenance requests with a simple query
+        // Fetch maintenance requests with a simple select statement
         const { data: maintenanceData, error: maintenanceError } = await supabase
           .from('maintenance')
-          .select('*');
+          .select('id, property_id, tenant_id, title, description, priority, status, date_submitted, date_completed, assigned_to, cost');
         
         if (maintenanceError) {
           console.error("Error fetching maintenance requests:", maintenanceError);
@@ -179,10 +178,10 @@ export function usePropertyManager() {
         
         setMaintenance(transformedMaintenance);
         
-        // Fetch documents with a simple query
+        // Fetch documents with a simple select statement
         const { data: documentsData, error: documentsError } = await supabase
           .from('documents')
-          .select('*');
+          .select('id, name, type, tenant_id, property_id, upload_date, file_size, file_type, url');
         
         if (documentsError) {
           console.error("Error fetching documents:", documentsError);
