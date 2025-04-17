@@ -39,8 +39,8 @@ export function usePropertyManager() {
         console.log("User type:", userType);
         console.log("Profile:", profile);
         
-        // Fetch properties using a simple query instead of complex joins
-        // This avoids the infinite recursion issue in RLS policies
+        // Fetch properties using the corrected RLS policies
+        // This will work now with our security definer function
         const { data: propertiesData, error: propertiesError } = await supabase
           .from('properties')
           .select('*');
@@ -59,11 +59,11 @@ export function usePropertyManager() {
           address: property.address,
           city: property.city,
           state: property.state,
-          zipCode: property.zip_code, // Camel case conversion
+          zipCode: property.zip_code,
           units: property.units,
           type: property.type as 'apartment' | 'house' | 'duplex' | 'commercial',
           image: property.image,
-          managerId: property.manager_id // Camel case conversion
+          managerId: property.manager_id
         }));
         
         setProperties(transformedProperties);
