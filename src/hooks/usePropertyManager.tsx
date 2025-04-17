@@ -50,12 +50,27 @@ export function usePropertyManager() {
         }
         
         console.log("Properties fetched:", propertiesData?.length || 0);
-        setProperties(propertiesData || []);
+        
+        // Transform property data to match our application model
+        const transformedProperties = (propertiesData || []).map(property => ({
+          id: property.id,
+          name: property.name,
+          address: property.address,
+          city: property.city,
+          state: property.state,
+          zipCode: property.zip_code,
+          units: property.units,
+          type: property.type as 'apartment' | 'house' | 'duplex' | 'commercial',
+          image: property.image,
+          managerId: property.manager_id
+        }));
+        
+        setProperties(transformedProperties);
         
         // Fetch tenants (RLS will filter based on property management)
         const { data: tenantsData, error: tenantsError } = await supabase
           .from('tenants')
-          .select('*, properties(name, address, city, state, zip_code)');
+          .select('*');
         
         if (tenantsError) {
           console.error("Error fetching tenants:", tenantsError);
@@ -71,10 +86,8 @@ export function usePropertyManager() {
           email: tenant.email,
           phone: tenant.phone || '',
           propertyId: tenant.property_id || '',
-          propertyName: tenant.properties ? tenant.properties.name : null,
-          propertyAddress: tenant.properties ? 
-            `${tenant.properties.address}, ${tenant.properties.city}, ${tenant.properties.state} ${tenant.properties.zip_code}` : 
-            null,
+          propertyName: null, // We'll get this from the property data later
+          propertyAddress: null, // We'll get this from the property data later
           unitNumber: tenant.unit_number || '',
           leaseStart: tenant.lease_start,
           leaseEnd: tenant.lease_end,
@@ -86,7 +99,21 @@ export function usePropertyManager() {
           managerId: null // We'll get this from the property
         }));
         
-        setTenants(transformedTenants);
+        // Add property information to tenants
+        const enrichedTenants = transformedTenants.map(tenant => {
+          const tenantProperty = transformedProperties.find(p => p.id === tenant.propertyId);
+          if (tenantProperty) {
+            return {
+              ...tenant,
+              propertyName: tenantProperty.name,
+              propertyAddress: `${tenantProperty.address}, ${tenantProperty.city}, ${tenantProperty.state} ${tenantProperty.zipCode}`,
+              managerId: tenantProperty.managerId
+            };
+          }
+          return tenant;
+        });
+        
+        setTenants(enrichedTenants);
         
         // Fetch payments
         const { data: paymentsData, error: paymentsError } = await supabase
@@ -99,7 +126,24 @@ export function usePropertyManager() {
         }
         
         console.log("Payments fetched:", paymentsData?.length || 0);
-        setPayments(paymentsData || []);
+        
+        // Transform payments data to match our application model
+        const transformedPayments = (paymentsData || []).map(payment => ({
+          id: payment.id,
+          tenantId: payment.tenant_id,
+          tenantName: enrichedTenants.find(t => t.id === payment.tenant_id)?.name,
+          propertyId: enrichedTenants.find(t => t.id === payment.tenant_id)?.propertyId,
+          propertyName: enrichedTenants.find(t => t.id === payment.tenant_id)?.propertyName,
+          unitNumber: enrichedTenants.find(t => t.id === payment.tenant_id)?.unitNumber,
+          amount: payment.amount,
+          date: payment.date,
+          method: payment.method as 'cash' | 'check' | 'bank transfer' | 'credit card',
+          status: payment.status as 'pending' | 'completed' | 'failed',
+          notes: payment.notes,
+          managerId: enrichedTenants.find(t => t.id === payment.tenant_id)?.managerId
+        }));
+        
+        setPayments(transformedPayments);
         
         // Fetch maintenance requests
         const { data: maintenanceData, error: maintenanceError } = await supabase
@@ -112,7 +156,28 @@ export function usePropertyManager() {
         }
         
         console.log("Maintenance requests fetched:", maintenanceData?.length || 0);
-        setMaintenance(maintenanceData || []);
+        
+        // Transform maintenance data to match our application model
+        const transformedMaintenance = (maintenanceData || []).map(request => ({
+          id: request.id,
+          propertyId: request.property_id,
+          propertyName: transformedProperties.find(p => p.id === request.property_id)?.name,
+          tenantId: request.tenant_id,
+          tenantName: enrichedTenants.find(t => t.id === request.tenant_id)?.name,
+          tenantEmail: enrichedTenants.find(t => t.id === request.tenant_id)?.email,
+          unitNumber: enrichedTenants.find(t => t.id === request.tenant_id)?.unitNumber,
+          title: request.title,
+          description: request.description,
+          priority: request.priority as 'low' | 'medium' | 'high' | 'emergency',
+          status: request.status as 'pending' | 'in-progress' | 'completed' | 'cancelled',
+          dateSubmitted: request.date_submitted,
+          dateCompleted: request.date_completed,
+          assignedTo: request.assigned_to,
+          cost: request.cost,
+          managerId: transformedProperties.find(p => p.id === request.property_id)?.managerId
+        }));
+        
+        setMaintenance(transformedMaintenance);
         
         // Fetch documents
         const { data: documentsData, error: documentsError } = await supabase
@@ -125,7 +190,25 @@ export function usePropertyManager() {
         }
         
         console.log("Documents fetched:", documentsData?.length || 0);
-        setDocuments(documentsData || []);
+        
+        // Transform documents data to match our application model
+        const transformedDocuments = (documentsData || []).map(document => ({
+          id: document.id,
+          name: document.name,
+          type: document.type as 'lease' | 'payment' | 'maintenance' | 'other',
+          tenantId: document.tenant_id,
+          tenantName: enrichedTenants.find(t => t.id === document.tenant_id)?.name,
+          propertyId: document.property_id,
+          propertyName: transformedProperties.find(p => p.id === document.property_id)?.name,
+          uploadDate: document.upload_date,
+          fileSize: document.file_size,
+          fileType: document.file_type,
+          url: document.url,
+          managerId: transformedProperties.find(p => p.id === document.property_id)?.managerId || 
+                   enrichedTenants.find(t => t.id === document.tenant_id)?.managerId
+        }));
+        
+        setDocuments(transformedDocuments);
         
         setIsLoading(false);
       } catch (error) {
