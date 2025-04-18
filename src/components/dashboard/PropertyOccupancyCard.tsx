@@ -1,9 +1,8 @@
+
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Property, Tenant } from "@/types";
-import { propertiesService, tenantsService } from "@/services/supabaseService";
-import { useAuth } from "@/contexts";
 
 interface PropertyOccupancyCardProps {
   properties?: Property[];
@@ -11,33 +10,17 @@ interface PropertyOccupancyCardProps {
 }
 
 const PropertyOccupancyCard = ({ properties: propProperties, tenants: propTenants }: PropertyOccupancyCardProps) => {
-  const { user, profile } = useAuth();
   const [properties, setProperties] = useState<Property[]>(propProperties || []);
   const [tenants, setTenants] = useState<Tenant[]>(propTenants || []);
   const [isLoading, setIsLoading] = useState(!propProperties || !propTenants);
 
   useEffect(() => {
-    if (!propProperties || !propTenants) {
-      const fetchData = async () => {
-        try {
-          const managerId = profile?.id || user?.id;
-          const [fetchedProperties, fetchedTenants] = await Promise.all([
-            propertiesService.getAll(managerId),
-            tenantsService.getAll(managerId)
-          ]);
-          
-          setProperties(fetchedProperties);
-          setTenants(fetchedTenants);
-          setIsLoading(false);
-        } catch (error) {
-          console.error("Error fetching data for PropertyOccupancyCard:", error);
-          setIsLoading(false);
-        }
-      };
-      
-      fetchData();
+    if (propProperties && propTenants) {
+      setProperties(propProperties);
+      setTenants(propTenants);
+      setIsLoading(false);
     }
-  }, [propProperties, propTenants, user, profile]);
+  }, [propProperties, propTenants]);
 
   const getPropertyData = () => {
     return properties.map(property => {
