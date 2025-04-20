@@ -22,30 +22,38 @@ export async function loadAllData(managerId?: string) {
     
     // Use Promise.allSettled to continue even if some requests fail
     const results = await Promise.allSettled([
-      propertiesService.getAll(managerId),
-      tenantsService.getAll(managerId),
-      paymentsService.getAll(managerId),
-      maintenanceService.getAll(managerId),
-      documentsService.getAll(managerId).catch(err => {
-        console.error("Error fetching documents:", err);
-        return []; // Return empty array on error
-      })
+      // Direct DB queries with specific column selection to avoid recursion
+      supabase.from('properties').select('id, name, address, city, state, zip_code, units, type, image, manager_id'),
+      supabase.from('tenants').select('id, name, email, phone, property_id, unit_number, lease_start, lease_end, rent_amount, deposit_amount, balance, status, tenant_user_id'),
+      supabase.from('payments').select('id, tenant_id, amount, date, method, status, notes'),
+      supabase.from('maintenance').select('id, property_id, tenant_id, title, description, priority, status, date_submitted, date_completed, assigned_to, cost'),
+      supabase.from('documents').select('id, name, type, tenant_id, property_id, upload_date, file_size, file_type, url')
     ]);
     
-    // Extract the results, providing empty arrays for any rejected promises
-    const [
-      propertiesResult,
-      tenantsResult, 
-      paymentsResult, 
-      maintenanceResult, 
-      documentsResult
-    ] = results;
+    // Process results safely
+    const propertiesResult = results[0].status === 'fulfilled' ? results[0].value.data || [] : [];
+    const tenantsResult = results[1].status === 'fulfilled' ? results[1].value.data || [] : [];
+    const paymentsResult = results[2].status === 'fulfilled' ? results[2].value.data || [] : [];
+    const maintenanceResult = results[3].status === 'fulfilled' ? results[3].value.data || [] : [];
+    const documentsResult = results[4].status === 'fulfilled' ? results[4].value.data || [] : [];
     
-    const properties = propertiesResult.status === 'fulfilled' ? propertiesResult.value : [];
-    const tenants = tenantsResult.status === 'fulfilled' ? tenantsResult.value : [];
-    const payments = paymentsResult.status === 'fulfilled' ? paymentsResult.value : [];
-    const maintenance = maintenanceResult.status === 'fulfilled' ? maintenanceResult.value : [];
-    const documents = documentsResult.status === 'fulfilled' ? documentsResult.value : [];
+    // Check for any errors to report
+    const errors = results
+      .filter(result => result.status === 'rejected')
+      .map((result: any) => result.reason);
+    
+    if (errors.length > 0) {
+      console.warn("Some data fetching operations failed:", errors);
+    }
+    
+    // Transform data using utility functions
+    const { transformProperties, transformTenants, transformPayments, transformMaintenance, transformDocuments } = await import("@/utils/transformData");
+    
+    const properties = transformProperties(propertiesResult);
+    const tenants = transformTenants(tenantsResult, properties);
+    const payments = transformPayments(paymentsResult, tenants);
+    const maintenance = transformMaintenance(maintenanceResult, properties, tenants);
+    const documents = transformDocuments(documentsResult, properties, tenants);
     
     console.log(`Data loaded: ${properties.length} properties, ${tenants.length} tenants`);
     
@@ -56,7 +64,7 @@ export async function loadAllData(managerId?: string) {
       maintenance,
       documents,
       isLoading: false,
-      error: null
+      error: errors.length > 0 ? errors[0] : null
     };
   } catch (error) {
     console.error("Error loading data:", error);

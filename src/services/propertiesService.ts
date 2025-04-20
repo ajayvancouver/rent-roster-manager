@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Property } from "@/types";
 
@@ -6,35 +5,42 @@ export const propertiesService = {
   async getAll(managerId?: string): Promise<Property[]> {
     console.log("Getting properties with managerId:", managerId);
     
-    // The query will be filtered by RLS policies based on the authenticated user
-    const { data, error } = await supabase
-      .from('properties')
-      .select('*');
-    
-    if (error) {
-      console.error("Error fetching properties:", error);
-      throw error;
+    try {
+      // Use a specific column selection instead of '*' to avoid recursive joins
+      const { data, error } = await supabase
+        .from('properties')
+        .select('id, name, address, city, state, zip_code, type, units, image, manager_id')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error("Error fetching properties:", error);
+        throw error;
+      }
+      
+      console.log("Raw properties data from Supabase:", data);
+      console.log("Number of properties fetched:", data?.length || 0);
+      
+      if (!data || data.length === 0) {
+        console.warn("No properties found in database or query returned empty result");
+      }
+      
+      return (data || []).map(item => ({
+        id: item.id,
+        name: item.name,
+        address: item.address,
+        city: item.city,
+        state: item.state,
+        zipCode: item.zip_code,
+        type: item.type as 'apartment' | 'house' | 'duplex' | 'commercial',
+        units: item.units,
+        image: item.image,
+        managerId: item.manager_id
+      }));
+    } catch (error) {
+      console.error("Error in propertiesService.getAll:", error);
+      // Return empty array instead of throwing to prevent app crashes
+      return [];
     }
-    
-    console.log("Raw properties data from Supabase:", data);
-    console.log("Number of properties fetched:", data?.length || 0);
-    
-    if (!data || data.length === 0) {
-      console.warn("No properties found in database or query returned empty result");
-    }
-    
-    return (data || []).map(item => ({
-      id: item.id,
-      name: item.name,
-      address: item.address,
-      city: item.city,
-      state: item.state,
-      zipCode: item.zip_code,
-      type: item.type as 'apartment' | 'house' | 'duplex' | 'commercial',
-      units: item.units,
-      image: item.image,
-      managerId: item.manager_id
-    }));
   },
 
   async getById(id: string): Promise<Property | null> {

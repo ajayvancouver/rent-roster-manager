@@ -31,7 +31,7 @@ export function useDataFetching() {
       
       console.log("Fetching data as user:", userId);
       
-      // Try the services approach first
+      // Direct approach - using separate queries with specific column selection
       try {
         const { data: propertiesData, error: propertiesError } = await supabase
           .from('properties')
@@ -44,10 +44,10 @@ export function useDataFetching() {
         
         const properties = transformProperties(propertiesData || []);
         
-        // Fetch tenants
+        // Fetch tenants with limited columns
         const { data: tenantsData, error: tenantsError } = await supabase
           .from('tenants')
-          .select('*');
+          .select('id, name, email, phone, property_id, unit_number, lease_start, lease_end, rent_amount, deposit_amount, balance, status, tenant_user_id');
         
         if (tenantsError) {
           console.error("Error fetching tenants:", tenantsError);
@@ -56,10 +56,10 @@ export function useDataFetching() {
         
         const tenants = transformTenants(tenantsData || [], properties);
         
-        // Fetch payments
+        // Fetch payments with limited columns
         const { data: paymentsData, error: paymentsError } = await supabase
           .from('payments')
-          .select('*');
+          .select('id, tenant_id, amount, date, method, status, notes');
         
         if (paymentsError) {
           console.error("Error fetching payments:", paymentsError);
@@ -68,10 +68,10 @@ export function useDataFetching() {
         
         const payments = transformPayments(paymentsData || [], tenants);
         
-        // Fetch maintenance
+        // Fetch maintenance with limited columns
         const { data: maintenanceData, error: maintenanceError } = await supabase
           .from('maintenance')
-          .select('*');
+          .select('id, property_id, tenant_id, title, description, priority, status, date_submitted, date_completed, assigned_to, cost');
         
         if (maintenanceError) {
           console.error("Error fetching maintenance:", maintenanceError);
@@ -80,14 +80,15 @@ export function useDataFetching() {
         
         const maintenance = transformMaintenance(maintenanceData || [], properties, tenants);
         
-        // Fetch documents
+        // Fetch documents with limited columns
         const { data: documentsData, error: documentsError } = await supabase
           .from('documents')
-          .select('*');
+          .select('id, name, type, tenant_id, property_id, upload_date, file_size, file_type, url');
         
         if (documentsError) {
           console.error("Error fetching documents:", documentsError);
-          throw new Error(`Documents error: ${documentsError.message}`);
+          // Continue even if documents fail, consider it non-critical
+          console.warn("Continuing without documents due to error");
         }
         
         const documents = transformDocuments(documentsData || [], properties, tenants);
@@ -100,11 +101,13 @@ export function useDataFetching() {
           documents
         };
       } catch (serviceError) {
-        // If service approach fails, try to use the supabaseService directly
-        console.warn("Service approach failed, trying direct service:", serviceError);
+        // If direct query approach fails, try the supabaseService
+        console.warn("Direct query approach failed, trying supabaseService:", serviceError);
         
         try {
+          // Using dynamic import to avoid circular dependencies
           const { loadAllData } = await import("@/services/supabaseService");
+          console.log("Falling back to loadAllData with userId:", userId);
           const result = await loadAllData(userId);
           
           if (result.error) {

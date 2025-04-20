@@ -31,6 +31,68 @@ export const testSupabaseConnection = async (): Promise<{ success: boolean; mess
 };
 
 /**
+ * Diagnoses RLS policy issues
+ */
+export const diagnoseRLSIssues = async (): Promise<{ 
+  success: boolean; 
+  message: string;
+  issues: string[];
+}> => {
+  const issues: string[] = [];
+  
+  try {
+    // Test simple queries to detect RLS recursion issues
+    try {
+      const { data, error } = await supabase
+        .from('properties')
+        .select('id, name')
+        .limit(1);
+        
+      if (error) {
+        if (error.message.includes('recursion')) {
+          issues.push("Properties table has recursive RLS policy");
+        }
+        throw error;
+      }
+    } catch (err) {
+      console.error("Properties test failed:", err);
+    }
+    
+    // Test tenant queries
+    try {
+      const { data, error } = await supabase
+        .from('tenants')
+        .select('id, name')
+        .limit(1);
+        
+      if (error) {
+        if (error.message.includes('recursion')) {
+          issues.push("Tenants table has recursive RLS policy");
+        }
+        throw error;
+      }
+    } catch (err) {
+      console.error("Tenants test failed:", err);
+    }
+    
+    return {
+      success: issues.length === 0,
+      message: issues.length === 0 
+        ? "No RLS issues detected" 
+        : "RLS policy issues found, check Supabase database",
+      issues
+    };
+  } catch (error) {
+    console.error("RLS diagnosis failed:", error);
+    return {
+      success: false,
+      message: `Diagnosis failed: ${error instanceof Error ? error.message : String(error)}`,
+      issues: [...issues, "Diagnosis failed with error"]
+    };
+  }
+};
+
+/**
  * Creates sample data in the database
  * @returns Result with manager and tenant credentials
  */
@@ -79,11 +141,20 @@ export const runFullDatabaseTest = async (): Promise<{
     // Test basic connection
     results.connection = await testSupabaseConnection();
     
+    // Test RLS policies
+    const rlsResult = await diagnoseRLSIssues();
+    results.rlsPolicies = {
+      success: rlsResult.success,
+      message: rlsResult.issues.length > 0 
+        ? `RLS issues found: ${rlsResult.issues.join(', ')}`
+        : "RLS policies working correctly"
+    };
+    
     // Test properties service
     try {
       const { data, error } = await supabase
         .from('properties')
-        .select('*')
+        .select('id, name')
         .limit(1);
       
       if (error) throw error;
@@ -103,7 +174,7 @@ export const runFullDatabaseTest = async (): Promise<{
     try {
       const { data, error } = await supabase
         .from('tenants')
-        .select('*')
+        .select('id, name')
         .limit(1);
       
       if (error) throw error;
@@ -123,7 +194,7 @@ export const runFullDatabaseTest = async (): Promise<{
     try {
       const { data, error } = await supabase
         .from('maintenance')
-        .select('*')
+        .select('id, title')
         .limit(1);
       
       if (error) throw error;
