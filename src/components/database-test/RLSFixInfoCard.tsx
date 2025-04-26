@@ -14,20 +14,22 @@ export const RLSFixInfoCard = () => {
     const checkRLSFunctions = async () => {
       try {
         setIsLoading(true);
-        // Check if the security definer functions exist
-        const { data: functions, error } = await supabase
-          .from('pg_catalog.pg_proc')
-          .select('proname')
-          .eq('proname', 'is_property_manager')
-          .limit(1);
         
-        if (error) {
-          console.error("Error checking RLS functions:", error);
+        // Instead of querying pg_catalog directly, try to use the function itself
+        // and see if it works as a test for its existence
+        const { data, error } = await supabase.rpc('is_property_manager', {
+          property_id: '00000000-0000-0000-0000-000000000000' // Using a dummy UUID for testing
+        });
+        
+        if (error && error.message.includes('function') && error.message.includes('does not exist')) {
+          // Function doesn't exist
+          console.log("RLS functions don't exist:", error);
           setIsFixed(false);
-          return;
+        } else {
+          // The function exists, even if it returned false for our dummy ID
+          console.log("RLS functions exist");
+          setIsFixed(true);
         }
-        
-        setIsFixed(functions && functions.length > 0);
       } catch (error) {
         console.error("Error checking RLS functions:", error);
         setIsFixed(false);
