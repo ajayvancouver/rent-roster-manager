@@ -45,6 +45,14 @@ export const FullDatabaseTestCard = () => {
     }
   };
 
+  // Format error message for display
+  const formatErrorMessage = (message: string) => {
+    if (message.includes('[object Object]')) {
+      return "Error occurred - check console for details";
+    }
+    return message;
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -102,7 +110,7 @@ export const FullDatabaseTestCard = () => {
                       )}
                       <span className="font-medium">{key}</span>
                     </div>
-                    <p className="mt-1 pl-6">{value.message}</p>
+                    <p className="mt-1 pl-6">{formatErrorMessage(value.message)}</p>
                   </div>
                 ))}
               </div>

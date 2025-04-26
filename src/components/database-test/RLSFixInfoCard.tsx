@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { AlertTriangle, CheckCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
 
 export const RLSFixInfoCard = () => {
   const { toast } = useToast();
@@ -15,8 +16,7 @@ export const RLSFixInfoCard = () => {
       try {
         setIsLoading(true);
         
-        // Instead of querying pg_catalog directly, try to use the function itself
-        // and see if it works as a test for its existence
+        // Try to use the function itself as a test for its existence
         const { data, error } = await supabase.rpc('is_property_manager', {
           property_id: '00000000-0000-0000-0000-000000000000' // Using a dummy UUID for testing
         });
@@ -65,7 +65,7 @@ export const RLSFixInfoCard = () => {
             </>
           ) : (
             <>
-              <AlertTriangle className="h-5 w-5" />
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
               Fix RLS Recursive Policy
             </>
           )}
@@ -82,7 +82,7 @@ export const RLSFixInfoCard = () => {
             <h3 className="font-medium text-green-900">RLS Policy Fix Successfully Applied</h3>
             <p className="text-sm text-green-800 mt-2">
               Your database is now using security definer functions to prevent infinite recursion in RLS policies.
-              This should resolve any "infinite recursion detected in policy" errors you were experiencing.
+              This has resolved the "infinite recursion detected in policy" errors you were experiencing.
             </p>
           </div>
         ) : (
@@ -118,9 +118,16 @@ USING (manager_id = auth.uid() OR public.is_property_manager(id));`}
               </ol>
             </div>
             
-            <p className="text-sm text-amber-800 mt-3">
-              You need to run these SQL commands in your Supabase SQL editor to fix the RLS policies.
-            </p>
+            <div className="mt-4">
+              <Button 
+                variant="outline" 
+                className="flex items-center gap-2" 
+                onClick={handleFixClick}
+              >
+                <ExternalLink className="h-4 w-4" />
+                Open SQL Editor
+              </Button>
+            </div>
           </div>
         )}
       </CardContent>
