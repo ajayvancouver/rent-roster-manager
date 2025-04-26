@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, CheckCircle, XCircle, Wrench } from "lucide-react";
+import { Loader2, CheckCircle, XCircle, Database, Gauge } from "lucide-react";
 import { runFullDatabaseTest } from "@/utils/dbConnectionTest";
 import { useToast } from "@/hooks/use-toast";
 
@@ -16,19 +16,19 @@ export const FullDatabaseTestCard = () => {
     details: Record<string, { success: boolean; message: string }>;
   } | null>(null);
 
-  const handleRunFullTest = async () => {
+  const handleFullTest = async () => {
     setIsFullTesting(true);
     try {
       const result = await runFullDatabaseTest();
       setFullTestResult(result);
       
       toast({
-        title: result.success ? "All Tests Passed" : "Some Tests Failed",
+        title: result.success ? "Database Tests Passed" : "Database Tests Failed",
         description: result.message,
         variant: result.success ? "default" : "destructive"
       });
     } catch (error) {
-      console.error("Error running full test:", error);
+      console.error("Error running full database test:", error);
       setFullTestResult({
         success: false,
         message: `Error: ${error instanceof Error ? error.message : String(error)}`,
@@ -37,7 +37,7 @@ export const FullDatabaseTestCard = () => {
       
       toast({
         title: "Test Failed",
-        description: "An unexpected error occurred while running the database tests",
+        description: "An unexpected error occurred while testing the database",
         variant: "destructive"
       });
     } finally {
@@ -49,8 +49,8 @@ export const FullDatabaseTestCard = () => {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Wrench className="h-5 w-5" />
-          Run Full Database Test
+          <Gauge className="h-5 w-5" />
+          Full Database Test
         </CardTitle>
         <CardDescription>
           Test all database services and connections
@@ -58,17 +58,18 @@ export const FullDatabaseTestCard = () => {
       </CardHeader>
       <CardContent className="space-y-4">
         <Button 
-          onClick={handleRunFullTest} 
+          onClick={handleFullTest} 
           disabled={isFullTesting}
           className="w-full"
+          variant="default"
         >
           {isFullTesting ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Testing...
+              Testing All Services...
             </>
           ) : (
-            "Run Full Test"
+            "Run Full Database Test"
           )}
         </Button>
         
@@ -83,26 +84,25 @@ export const FullDatabaseTestCard = () => {
               ) : (
                 <>
                   <XCircle className="h-5 w-5 text-red-500" />
-                  <Badge variant="outline" className="bg-red-50">Some Tests Failed</Badge>
+                  <Badge variant="outline" className="bg-red-50">Test Failures</Badge>
                 </>
               )}
             </div>
             <p className="text-sm">{fullTestResult.message}</p>
             
-            {fullTestResult.details && Object.entries(fullTestResult.details).length > 0 && (
+            {Object.keys(fullTestResult.details).length > 0 && (
               <div className="mt-3 space-y-2">
-                <p className="text-xs font-medium">Details:</p>
-                {Object.entries(fullTestResult.details).map(([service, result]) => (
-                  <div key={service} className={`p-2 rounded text-xs ${result.success ? 'bg-green-50' : 'bg-red-50'}`}>
-                    <div className="flex items-center gap-1">
-                      {result.success ? (
-                        <CheckCircle className="h-3 w-3 text-green-500" />
+                {Object.entries(fullTestResult.details).map(([key, value]) => (
+                  <div key={key} className={`p-2 rounded text-xs ${value.success ? 'bg-green-50' : 'bg-red-50'}`}>
+                    <div className="flex items-center gap-2">
+                      {value.success ? (
+                        <CheckCircle className="h-4 w-4 text-green-500" />
                       ) : (
-                        <XCircle className="h-3 w-3 text-red-500" />
+                        <XCircle className="h-4 w-4 text-red-500" />
                       )}
-                      <p className="font-medium capitalize">{service}:</p>
+                      <span className="font-medium">{key}</span>
                     </div>
-                    <p className="ml-4">{result.message}</p>
+                    <p className="mt-1 pl-6">{value.message}</p>
                   </div>
                 ))}
               </div>

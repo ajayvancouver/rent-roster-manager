@@ -399,6 +399,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string[]
       }
+      is_property_manager: {
+        Args: { property_id: string }
+        Returns: boolean
+      }
+      is_tenant_of_managed_property: {
+        Args: { tenant_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       user_type: "manager" | "tenant"
