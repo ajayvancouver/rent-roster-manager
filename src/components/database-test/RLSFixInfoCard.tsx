@@ -1,19 +1,10 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { AlertTriangle, CheckCircle, ExternalLink, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-
-// Define allowed function names as a type
-type SecurityDefinerFunction = 
-  | "get_user_managed_properties" 
-  | "is_property_manager" 
-  | "is_tenant_of_managed_property"
-  | "get_manager_properties"
-  | "is_tenant_of_user_managed_property"
-  | "is_user_property_manager";
+import { SecurityDefinerFunction } from "@/utils/database/rlsTest";
 
 export const RLSFixInfoCard = () => {
   const { toast } = useToast();
@@ -33,7 +24,8 @@ export const RLSFixInfoCard = () => {
         const requiredFunctions: SecurityDefinerFunction[] = [
           'get_user_managed_properties',
           'is_property_manager',
-          'is_tenant_of_managed_property'
+          'is_tenant_of_managed_property',
+          'get_user_managed_property_ids'
         ];
         
         const results = await Promise.all(

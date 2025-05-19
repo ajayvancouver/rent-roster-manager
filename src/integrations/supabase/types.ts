@@ -403,6 +403,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string[]
       }
+      get_user_managed_property_ids: {
+        Args: Record<PropertyKey, never>
+        Returns: string[]
+      }
       is_property_manager: {
         Args: { property_id: string }
         Returns: boolean
