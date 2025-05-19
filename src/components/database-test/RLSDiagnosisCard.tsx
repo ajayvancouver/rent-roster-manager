@@ -1,10 +1,9 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, CheckCircle, XCircle, AlertTriangle, ShieldCheck } from "lucide-react";
-import { diagnoseRLSIssues } from "@/utils/dbConnectionTest";
+import { diagnoseRLSIssues, type SecurityDefinerFunction } from "@/utils/dbConnectionTest";
 import { useToast } from "@/hooks/use-toast";
 
 // Define allowed function names as a type
