@@ -16,7 +16,7 @@ export const RLSFixInfoCard = () => {
       try {
         setIsLoading(true);
         
-        // Try to use the security definer functions to test for existence
+        // Check for the get_user_managed_properties function
         const { data, error } = await supabase.rpc('get_user_managed_properties');
         
         if (error && error.message.includes('function') && error.message.includes('does not exist')) {
@@ -24,9 +24,25 @@ export const RLSFixInfoCard = () => {
           console.log("RLS security definer functions don't exist:", error);
           setIsFixed(false);
         } else {
-          // The function exists - security definer functions are in place
-          console.log("RLS security definer functions exist");
-          setIsFixed(true);
+          // Verify that RLS policies don't have recursion issues
+          try {
+            // Test a simple query to verify no recursion happens
+            const { error: queryError } = await supabase
+              .from('properties')
+              .select('id')
+              .limit(1);
+              
+            if (queryError && queryError.message.includes('recursion')) {
+              console.log("RLS policies still have recursion issues:", queryError);
+              setIsFixed(false);
+            } else {
+              console.log("RLS security definer functions exist and work properly");
+              setIsFixed(true);
+            }
+          } catch (queryErr) {
+            console.error("Error testing RLS policies:", queryErr);
+            setIsFixed(false);
+          }
         }
       } catch (error) {
         console.error("Error checking RLS functions:", error);

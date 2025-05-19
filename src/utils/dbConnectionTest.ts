@@ -9,11 +9,11 @@ import { toast } from "@/components/ui/use-toast";
  */
 export const testSupabaseConnection = async (): Promise<{ success: boolean; message: string }> => {
   try {
-    // Test a simple query to verify connection
+    // Test a simple query to verify connection (not using aggregate functions)
     const { data, error } = await supabase
       .from('properties')
-      .select('count()')
-      .single();
+      .select('id')
+      .limit(1);
     
     if (error) {
       console.error("Supabase connection test failed:", error);
@@ -22,7 +22,7 @@ export const testSupabaseConnection = async (): Promise<{ success: boolean; mess
     
     return {
       success: true,
-      message: `Connection successful! Found ${data?.count || 0} properties.`
+      message: `Connection successful! Database is responsive.`
     };
   } catch (error) {
     console.error("Supabase connection test failed:", error);
@@ -44,20 +44,33 @@ export const diagnoseRLSIssues = async (): Promise<{
   const issues: string[] = [];
   
   try {
-    // First, check if the security definer function exists by trying to use it
+    // First, check if our security definer functions exist and work properly
+    let securityDefinerFunctionsExist = true;
+    
     try {
-      const { data: functionCheck, error: functionError } = await supabase.rpc('is_property_manager', {
-        property_id: '00000000-0000-0000-0000-000000000000' // Using a dummy UUID for testing
-      });
+      // Test get_user_managed_properties function
+      const { data: propertiesData, error: propertiesError } = await supabase.rpc('get_user_managed_properties');
       
-      if (functionError && functionError.message.includes('function') && functionError.message.includes('does not exist')) {
-        issues.push("Missing security definer function: is_property_manager");
+      if (propertiesError && propertiesError.message.includes('function') && propertiesError.message.includes('does not exist')) {
+        issues.push("Missing security definer function: get_user_managed_properties");
+        securityDefinerFunctionsExist = false;
       }
     } catch (err) {
-      console.error("Function check failed:", err);
-      issues.push("Error checking security definer functions");
+      console.error("Function check failed for get_user_managed_properties:", err);
+      issues.push("Error checking security definer function: get_user_managed_properties");
+      securityDefinerFunctionsExist = false;
     }
     
+    // If the security definer functions seem to be missing, don't test further
+    if (!securityDefinerFunctionsExist) {
+      return {
+        success: false,
+        message: "Missing required security definer functions for RLS policies",
+        issues
+      };
+    }
+    
+    // Now test that our RLS policies are working without recursion
     // Test simple queries to detect RLS recursion issues
     try {
       const { data, error } = await supabase
@@ -178,7 +191,7 @@ export const runFullDatabaseTest = async (): Promise<{
       const { data, error } = await supabase
         .from('properties')
         .select('id, name')
-        .limit(1);
+        .limit(5);
       
       if (error) {
         console.error("Properties service error:", error);
@@ -187,7 +200,7 @@ export const runFullDatabaseTest = async (): Promise<{
       
       results.properties = {
         success: true,
-        message: `Properties service working. Sample: ${data.length > 0 ? data[0].name : 'No properties found'}`
+        message: `Properties service working. Found ${data.length} properties.`
       };
     } catch (error) {
       console.error("Properties service error full:", error);
@@ -202,7 +215,7 @@ export const runFullDatabaseTest = async (): Promise<{
       const { data, error } = await supabase
         .from('tenants')
         .select('id, name')
-        .limit(1);
+        .limit(5);
       
       if (error) {
         console.error("Tenants service error:", error);
@@ -211,7 +224,7 @@ export const runFullDatabaseTest = async (): Promise<{
       
       results.tenants = {
         success: true,
-        message: `Tenants service working. Sample: ${data.length > 0 ? data[0].name : 'No tenants found'}`
+        message: `Tenants service working. Found ${data.length} tenants.`
       };
     } catch (error) {
       console.error("Tenants service error full:", error);
@@ -226,7 +239,7 @@ export const runFullDatabaseTest = async (): Promise<{
       const { data, error } = await supabase
         .from('maintenance')
         .select('id, title')
-        .limit(1);
+        .limit(5);
       
       if (error) {
         console.error("Maintenance service error:", error);
@@ -235,7 +248,7 @@ export const runFullDatabaseTest = async (): Promise<{
       
       results.maintenance = {
         success: true,
-        message: `Maintenance service working. Sample: ${data.length > 0 ? data[0].title : 'No maintenance requests found'}`
+        message: `Maintenance service working. Found ${data.length} maintenance requests.`
       };
     } catch (error) {
       console.error("Maintenance service error full:", error);

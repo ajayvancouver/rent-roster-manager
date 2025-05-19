@@ -45,6 +45,32 @@ export const RLSDiagnosisCard = () => {
     }
   };
 
+  const getBadgeText = () => {
+    if (!rlsResults) return "";
+    
+    if (rlsResults.success) {
+      return "No Issues";
+    }
+    
+    const hasFunctionIssues = rlsResults.issues.some(
+      issue => issue.includes("function") || issue.includes("security definer")
+    );
+    
+    const hasRecursionIssues = rlsResults.issues.some(
+      issue => issue.includes("recursion")
+    );
+    
+    if (hasFunctionIssues && hasRecursionIssues) {
+      return "Function & Recursion Issues";
+    } else if (hasFunctionIssues) {
+      return "Missing Functions";
+    } else if (hasRecursionIssues) {
+      return "Recursion Issues";
+    }
+    
+    return "Issues Found";
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -84,7 +110,7 @@ export const RLSDiagnosisCard = () => {
               ) : (
                 <>
                   <XCircle className="h-5 w-5 text-red-500" />
-                  <Badge variant="outline" className="bg-red-50">Issues Found</Badge>
+                  <Badge variant="outline" className="bg-red-50">{getBadgeText()}</Badge>
                 </>
               )}
             </div>

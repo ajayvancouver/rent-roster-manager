@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, CheckCircle, XCircle, Database, Gauge } from "lucide-react";
+import { Loader2, CheckCircle, XCircle, Database, Gauge, RefreshCw } from "lucide-react";
 import { runFullDatabaseTest } from "@/utils/dbConnectionTest";
 import { useToast } from "@/hooks/use-toast";
 
@@ -50,6 +50,19 @@ export const FullDatabaseTestCard = () => {
     if (!message) return "No error message available";
     if (typeof message !== 'string') return "Error occurred - check console for details";
     if (message.includes('[object Object]')) return "Error occurred - check console for details";
+    
+    // Try to parse JSON string if it looks like one
+    if (message.startsWith('{') && message.endsWith('}')) {
+      try {
+        const parsed = JSON.parse(message);
+        if (parsed.message) {
+          return parsed.message;
+        }
+      } catch (e) {
+        // Not valid JSON, just continue
+      }
+    }
+    
     return message;
   };
 
@@ -77,7 +90,10 @@ export const FullDatabaseTestCard = () => {
               Testing All Services...
             </>
           ) : (
-            "Run Full Database Test"
+            <>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Run Full Database Test
+            </>
           )}
         </Button>
         
