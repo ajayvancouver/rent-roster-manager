@@ -82,7 +82,8 @@ export const diagnoseRLSIssues = async () => {
         
         try {
           // Different approach based on function name
-          if (funcName === "get_user_managed_properties" || funcName === "get_manager_properties" || 
+          if (funcName === "get_user_managed_properties" || 
+              funcName === "get_manager_properties" || 
               funcName === "get_user_managed_property_ids") {
             // Functions that don't require parameters
             const result = await supabase.rpc(funcName);

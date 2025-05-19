@@ -1,19 +1,11 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, CheckCircle, XCircle, AlertTriangle, ShieldCheck } from "lucide-react";
-import { diagnoseRLSIssues, type SecurityDefinerFunction } from "@/utils/dbConnectionTest";
+import { diagnoseRLSIssues } from "@/utils/dbConnectionTest";
 import { useToast } from "@/hooks/use-toast";
-
-// Define allowed function names as a type
-type SecurityDefinerFunction = 
-  | "get_user_managed_properties" 
-  | "is_property_manager" 
-  | "is_tenant_of_managed_property"
-  | "get_manager_properties"
-  | "is_tenant_of_user_managed_property"
-  | "is_user_property_manager";
 
 export const RLSDiagnosisCard = () => {
   const { toast } = useToast();
@@ -24,7 +16,7 @@ export const RLSDiagnosisCard = () => {
     issues: string[];
     functionStatus?: {
       exists: boolean;
-      name: SecurityDefinerFunction;
+      name: string;
     }[];
   } | null>(null);
 
@@ -33,16 +25,7 @@ export const RLSDiagnosisCard = () => {
     try {
       const result = await diagnoseRLSIssues();
       
-      // Type assertion to ensure the functionStatus field has the correct type
-      const typedResult = {
-        ...result,
-        functionStatus: result.functionStatus?.map(func => ({
-          exists: func.exists,
-          name: func.name as SecurityDefinerFunction
-        }))
-      };
-      
-      setRlsResults(typedResult);
+      setRlsResults(result);
       
       toast({
         title: result.success ? "RLS Policies OK" : "RLS Policy Issues",
