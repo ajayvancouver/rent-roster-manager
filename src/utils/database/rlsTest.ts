@@ -9,7 +9,8 @@ export type SecurityDefinerFunction =
   | "get_manager_properties"
   | "is_tenant_of_user_managed_property"
   | "is_user_property_manager"
-  | "get_user_managed_property_ids";
+  | "get_user_managed_property_ids"
+  | "admin_query"; // Added admin_query function
 
 // List of security definer functions that should exist
 export const requiredSecurityFunctions: SecurityDefinerFunction[] = [
@@ -85,17 +86,20 @@ export const diagnoseRLSIssues = async () => {
       AND routine_name = any($1::text[])
     `;
     
-    // Get search_path information for functions
+    // Get search_path information for functions - use type assertion to allow admin_query
     const { data: searchPathData, error: searchPathError } = await supabase.rpc(
-      'admin_query', 
+      'admin_query' as SecurityDefinerFunction, 
       { sql_query: searchPathQuery, params: [requiredSecurityFunctions] }
     );
     
     const searchPathMap = new Map();
     if (searchPathData && !searchPathError) {
-      searchPathData.forEach((row: any) => {
-        searchPathMap.set(row.routine_name, !!row.search_path);
-      });
+      // Use type guard to check if searchPathData is an array before using forEach
+      if (Array.isArray(searchPathData)) {
+        searchPathData.forEach((row: any) => {
+          searchPathMap.set(row.routine_name, !!row.search_path);
+        });
+      }
     } else if (searchPathError) {
       console.log("Error getting search_path info:", searchPathError);
     }

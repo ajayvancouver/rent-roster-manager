@@ -43,17 +43,20 @@ export const RLSFixInfoCard = () => {
           AND routine_name = any($1::text[])
         `;
         
-        // Get search_path information for functions
+        // Get search_path information for functions - use type assertion to allow admin_query
         const { data: searchPathData, error: searchPathError } = await supabase.rpc(
-          'admin_query', 
+          'admin_query' as SecurityDefinerFunction, 
           { sql_query: searchPathQuery, params: [requiredFunctions] }
         );
         
         const searchPathMap = new Map();
         if (searchPathData && !searchPathError) {
-          searchPathData.forEach((row: any) => {
-            searchPathMap.set(row.routine_name, !!row.search_path);
-          });
+          // Use type guard to check if searchPathData is an array before using forEach
+          if (Array.isArray(searchPathData)) {
+            searchPathData.forEach((row: any) => {
+              searchPathMap.set(row.routine_name, !!row.search_path);
+            });
+          }
         }
         
         const results = await Promise.all(
