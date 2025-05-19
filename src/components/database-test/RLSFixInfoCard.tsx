@@ -43,12 +43,9 @@ export const RLSFixInfoCard = () => {
           AND routine_name = any($1::text[])
         `;
         
-        // Create a type that allows both admin_query and other functions
-        type AllowedFunction = SecurityDefinerFunction;
-        
-        // Get search_path information for functions using the new type
+        // Get search_path information for functions using admin_query
         const { data: searchPathData, error: searchPathError } = await supabase.rpc(
-          'admin_query' as AllowedFunction, 
+          "admin_query", 
           { sql_query: searchPathQuery, params: [requiredFunctions] }
         );
         
@@ -66,8 +63,7 @@ export const RLSFixInfoCard = () => {
           requiredFunctions.map(async (funcName) => {
             // Check if the function exists
             try {
-              // Need to use a more flexible type here
-              const { error } = await supabase.rpc(funcName as AllowedFunction);
+              const { error } = await supabase.rpc(funcName);
               
               // Even if we get an error with parameters, the function exists
               // We're just checking if it's a "function doesn't exist" error or not

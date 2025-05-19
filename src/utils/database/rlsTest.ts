@@ -86,12 +86,9 @@ export const diagnoseRLSIssues = async () => {
       AND routine_name = any($1::text[])
     `;
     
-    // Create a type that allows both admin_query and other functions
-    type AllowedFunction = SecurityDefinerFunction;
-    
-    // Get search_path information for functions using the new type
+    // Get search_path information for functions using the admin_query function
     const { data: searchPathData, error: searchPathError } = await supabase.rpc(
-      'admin_query' as AllowedFunction, 
+      "admin_query", 
       { sql_query: searchPathQuery, params: [requiredSecurityFunctions] }
     );
     
@@ -125,15 +122,15 @@ export const diagnoseRLSIssues = async () => {
             error = result.error;
           } else if (funcName.startsWith("is_property_manager")) {
             // Try with a dummy UUID parameter
-            const result = await supabase.rpc(funcName as AllowedFunction, { property_id: '00000000-0000-0000-0000-000000000000' });
+            const result = await supabase.rpc(funcName, { property_id: '00000000-0000-0000-0000-000000000000' });
             error = result.error;
           } else if (funcName.startsWith("is_tenant")) {
             // Try with a dummy UUID parameter
-            const result = await supabase.rpc(funcName as AllowedFunction, { tenant_id: '00000000-0000-0000-0000-000000000000' });
+            const result = await supabase.rpc(funcName, { tenant_id: '00000000-0000-0000-0000-000000000000' });
             error = result.error;
           } else {
             // For other functions, just check if they exist without parameters
-            const result = await supabase.rpc(funcName as AllowedFunction);
+            const result = await supabase.rpc(funcName);
             error = result.error;
           }
           
