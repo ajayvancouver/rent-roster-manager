@@ -93,12 +93,41 @@ export const diagnoseRLSIssues = async () => {
     // Check if required security definer functions exist
     const functionStatus = await Promise.all(
       requiredSecurityFunctions.map(async (funcName: SecurityDefinerFunction) => {
-        const { data, error } = await supabase.rpc(funcName);
-        
+        // We need to try to invoke the function, but it may require parameters
+        // So we'll use a general approach to detect if it exists
         let exists = true;
-        if (error && error.message.includes("does not exist")) {
+        let error = null;
+        
+        try {
+          // Different approach based on function name
+          if (funcName === "get_user_managed_properties" || funcName === "get_manager_properties") {
+            // Functions that don't require parameters
+            const result = await supabase.rpc(funcName);
+            error = result.error;
+          } else if (funcName.startsWith("is_property_manager")) {
+            // Try with a dummy UUID parameter
+            const result = await supabase.rpc(funcName, { property_id: '00000000-0000-0000-0000-000000000000' });
+            error = result.error;
+          } else if (funcName.startsWith("is_tenant")) {
+            // Try with a dummy UUID parameter
+            const result = await supabase.rpc(funcName, { tenant_id: '00000000-0000-0000-0000-000000000000' });
+            error = result.error;
+          } else {
+            // For other functions, just check if they exist without parameters
+            const result = await supabase.rpc(funcName);
+            error = result.error;
+          }
+          
+          // If we get an error about parameters or permissions, the function exists
+          // If we get an error about the function not existing, it doesn't exist
+          if (error && error.message.includes("does not exist")) {
+            exists = false;
+            issues.push(`Required security definer function "${funcName}" is missing`);
+          }
+        } catch (e) {
+          // This probably means the function doesn't exist
           exists = false;
-          issues.push(`Required security definer function "${funcName}" is missing`);
+          issues.push(`Required security definer function "${funcName}" couldn't be called`);
         }
         
         return { name: funcName, exists };
@@ -138,8 +167,10 @@ export const checkTablePermissions = async (tableName: string) => {
       };
     }
     
+    // Cast tableName to any to bypass TypeScript's strict type checking
+    // This is necessary because supabase client expects specific literal types
     const { data, error } = await supabase
-      .from(tableName)
+      .from(tableName as any)
       .select("*")
       .limit(1);
 
