@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { AlertTriangle, CheckCircle, ExternalLink, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { SecurityDefinerFunction } from "@/utils/database/rlsTest";
+import { SecurityDefinerFunction, requiredSecurityFunctions } from "@/utils/database/rlsTest";
 
 export const RLSFixInfoCard = () => {
   const { toast } = useToast();
@@ -22,13 +21,8 @@ export const RLSFixInfoCard = () => {
       try {
         setIsLoading(true);
         
-        // List of security definer functions we expect to find
-        const requiredFunctions: SecurityDefinerFunction[] = [
-          'get_user_managed_properties',
-          'is_property_manager',
-          'is_tenant_of_managed_property',
-          'get_user_managed_property_ids'
-        ];
+        // List of security definer functions we expect to find (exclude admin_query)
+        const requiredFunctions = requiredSecurityFunctions;
         
         // Query to check if search_path is set for each function
         const searchPathQuery = `
@@ -45,7 +39,7 @@ export const RLSFixInfoCard = () => {
         
         // Get search_path information for functions using admin_query
         const { data: searchPathData, error: searchPathError } = await supabase.rpc(
-          "admin_query", 
+          "admin_query", // Now this is a valid SecurityDefinerFunction
           { sql_query: searchPathQuery, params: [requiredFunctions] }
         );
         

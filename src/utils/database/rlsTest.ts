@@ -10,10 +10,10 @@ export type SecurityDefinerFunction =
   | "is_tenant_of_user_managed_property"
   | "is_user_property_manager"
   | "get_user_managed_property_ids"
-  | "admin_query"; // Added admin_query function
+  | "admin_query"; // Include admin_query as a valid function type
 
-// List of security definer functions that should exist
-export const requiredSecurityFunctions: SecurityDefinerFunction[] = [
+// List of security definer functions that should exist (excluding admin_query which is used differently)
+export const requiredSecurityFunctions: Exclude<SecurityDefinerFunction, "admin_query">[] = [
   "get_user_managed_properties",
   "is_property_manager",
   "is_tenant_of_managed_property",
@@ -88,7 +88,7 @@ export const diagnoseRLSIssues = async () => {
     
     // Get search_path information for functions using the admin_query function
     const { data: searchPathData, error: searchPathError } = await supabase.rpc(
-      "admin_query", 
+      "admin_query", // Now this is a valid SecurityDefinerFunction
       { sql_query: searchPathQuery, params: [requiredSecurityFunctions] }
     );
     
@@ -106,7 +106,7 @@ export const diagnoseRLSIssues = async () => {
     
     // Check if required security definer functions exist
     const functionStatus = await Promise.all(
-      requiredSecurityFunctions.map(async (funcName: SecurityDefinerFunction) => {
+      requiredSecurityFunctions.map(async (funcName) => {
         // We need to try to invoke the function, but it may require parameters
         // So we'll use a general approach to detect if it exists
         let exists = true;
