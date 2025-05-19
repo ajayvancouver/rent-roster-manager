@@ -7,6 +7,15 @@ import { Loader2, CheckCircle, XCircle, AlertTriangle, ShieldCheck } from "lucid
 import { diagnoseRLSIssues } from "@/utils/dbConnectionTest";
 import { useToast } from "@/hooks/use-toast";
 
+// Define allowed function names as a type
+type SecurityDefinerFunction = 
+  | "get_user_managed_properties" 
+  | "is_property_manager" 
+  | "is_tenant_of_managed_property"
+  | "get_manager_properties"
+  | "is_tenant_of_user_managed_property"
+  | "is_user_property_manager";
+
 export const RLSDiagnosisCard = () => {
   const { toast } = useToast();
   const [isRLSDiagnosing, setIsRLSDiagnosing] = useState(false);
@@ -16,7 +25,7 @@ export const RLSDiagnosisCard = () => {
     issues: string[];
     functionStatus?: {
       exists: boolean;
-      name: string;
+      name: SecurityDefinerFunction;
     }[];
   } | null>(null);
 

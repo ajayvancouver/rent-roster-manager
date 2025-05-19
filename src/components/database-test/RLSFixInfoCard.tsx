@@ -6,12 +6,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 
+// Define allowed function names as a type
+type SecurityDefinerFunction = 
+  | "get_user_managed_properties" 
+  | "is_property_manager" 
+  | "is_tenant_of_managed_property"
+  | "get_manager_properties"
+  | "is_tenant_of_user_managed_property"
+  | "is_user_property_manager";
+
 export const RLSFixInfoCard = () => {
   const { toast } = useToast();
   const [isFixed, setIsFixed] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [functionInfo, setFunctionInfo] = useState<{
-    name: string;
+    name: SecurityDefinerFunction;
     exists: boolean;
   }[]>([]);
 
@@ -21,7 +30,7 @@ export const RLSFixInfoCard = () => {
         setIsLoading(true);
         
         // List of security definer functions we expect to find
-        const requiredFunctions = [
+        const requiredFunctions: SecurityDefinerFunction[] = [
           'get_user_managed_properties',
           'is_property_manager',
           'is_tenant_of_managed_property'

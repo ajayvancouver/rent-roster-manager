@@ -135,7 +135,7 @@ export const FullDatabaseTestCard = () => {
                   </>
                 )}
               </div>
-              <Badge variant={fullTestResult.success ? "success" : "destructive"} className="ml-auto">
+              <Badge variant={fullTestResult.success ? "default" : "destructive"} className="ml-auto">
                 {getTotalPassedTests()}/{getTotalTests()} Tests Passed
               </Badge>
             </div>

@@ -1,7 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { createSampleManager, createSampleTenant, logoutCurrentUser } from "@/services/sampleAccounts";
-import { toast } from "@/components/ui/use-toast";
 
 /**
  * Tests the connection to Supabase
@@ -40,40 +39,62 @@ export const diagnoseRLSIssues = async (): Promise<{
   success: boolean; 
   message: string;
   issues: string[];
+  functionStatus?: {
+    exists: boolean;
+    name: string;
+  }[];
 }> => {
   const issues: string[] = [];
+  const functionStatus: { exists: boolean; name: string }[] = [];
   
   try {
-    // First, check if our security definer functions exist and work properly
-    let securityDefinerFunctionsExist = true;
+    // Check if our security definer functions exist
+    const requiredFunctions = [
+      'get_user_managed_properties',
+      'is_property_manager',
+      'is_tenant_of_managed_property'
+    ];
     
-    try {
-      // Test get_user_managed_properties function
-      const { data: propertiesData, error: propertiesError } = await supabase.rpc('get_user_managed_properties');
-      
-      if (propertiesError && propertiesError.message.includes('function') && propertiesError.message.includes('does not exist')) {
-        issues.push("Missing security definer function: get_user_managed_properties");
-        securityDefinerFunctionsExist = false;
+    for (const funcName of requiredFunctions) {
+      try {
+        const { error } = await supabase.rpc(funcName);
+        
+        // Even if we get an error with parameters, the function exists
+        // We're just checking if it's a "function doesn't exist" error or not
+        const exists = !(error && error.message.includes('function') && error.message.includes('does not exist'));
+        
+        functionStatus.push({
+          name: funcName,
+          exists
+        });
+        
+        if (!exists) {
+          issues.push(`Missing security definer function: ${funcName}`);
+        }
+      } catch (err) {
+        console.error(`Function check failed for ${funcName}:`, err);
+        issues.push(`Error checking security definer function: ${funcName}`);
+        functionStatus.push({
+          name: funcName,
+          exists: false
+        });
       }
-    } catch (err) {
-      console.error("Function check failed for get_user_managed_properties:", err);
-      issues.push("Error checking security definer function: get_user_managed_properties");
-      securityDefinerFunctionsExist = false;
     }
     
-    // If the security definer functions seem to be missing, don't test further
-    if (!securityDefinerFunctionsExist) {
+    // If any security definer functions are missing, don't test further
+    if (functionStatus.some(f => !f.exists)) {
       return {
         success: false,
         message: "Missing required security definer functions for RLS policies",
-        issues
+        issues,
+        functionStatus
       };
     }
     
     // Now test that our RLS policies are working without recursion
     // Test simple queries to detect RLS recursion issues
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('properties')
         .select('id, name')
         .limit(1);
@@ -93,7 +114,7 @@ export const diagnoseRLSIssues = async (): Promise<{
     
     // Test tenant queries
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('tenants')
         .select('id, name')
         .limit(1);
@@ -111,19 +132,41 @@ export const diagnoseRLSIssues = async (): Promise<{
       issues.push("Error testing tenants table");
     }
     
+    // Test maintenance queries
+    try {
+      const { error } = await supabase
+        .from('maintenance')
+        .select('id, title')
+        .limit(1);
+        
+      if (error) {
+        console.error("Maintenance query error:", error);
+        if (error.message.includes('recursion')) {
+          issues.push("Maintenance table has recursive RLS policy");
+        } else {
+          issues.push(`Maintenance query error: ${error.message}`);
+        }
+      }
+    } catch (err) {
+      console.error("Maintenance test failed:", err);
+      issues.push("Error testing maintenance table");
+    }
+    
     return {
       success: issues.length === 0,
       message: issues.length === 0 
         ? "No RLS issues detected" 
         : "RLS policy issues found, check Supabase database",
-      issues
+      issues,
+      functionStatus
     };
   } catch (error) {
     console.error("RLS diagnosis failed:", error);
     return {
       success: false,
       message: `Diagnosis failed: ${error instanceof Error ? error.message : JSON.stringify(error)}`,
-      issues: [...issues, "Diagnosis failed with error"]
+      issues: [...issues, "Diagnosis failed with error"],
+      functionStatus
     };
   }
 };
@@ -200,7 +243,7 @@ export const runFullDatabaseTest = async (): Promise<{
       
       results.properties = {
         success: true,
-        message: `Properties service working. Found ${data.length} properties.`
+        message: `Properties service working. Found ${data?.length || 0} properties.`
       };
     } catch (error) {
       console.error("Properties service error full:", error);
@@ -224,7 +267,7 @@ export const runFullDatabaseTest = async (): Promise<{
       
       results.tenants = {
         success: true,
-        message: `Tenants service working. Found ${data.length} tenants.`
+        message: `Tenants service working. Found ${data?.length || 0} tenants.`
       };
     } catch (error) {
       console.error("Tenants service error full:", error);
@@ -248,7 +291,7 @@ export const runFullDatabaseTest = async (): Promise<{
       
       results.maintenance = {
         success: true,
-        message: `Maintenance service working. Found ${data.length} maintenance requests.`
+        message: `Maintenance service working. Found ${data?.length || 0} maintenance requests.`
       };
     } catch (error) {
       console.error("Maintenance service error full:", error);
