@@ -31,7 +31,7 @@ export const RLSDiagnosisCard = () => {
       console.error("Error diagnosing RLS:", error);
       setRlsResults({
         success: false,
-        message: `Error: ${error instanceof Error ? error.message : JSON.stringify(error)}`,
+        message: `Error: ${error instanceof Error ? error.message : "Unknown error occurred"}`,
         issues: ["Unknown error during diagnosis"]
       });
       

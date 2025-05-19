@@ -399,12 +399,24 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string[]
       }
+      get_user_managed_properties: {
+        Args: Record<PropertyKey, never>
+        Returns: string[]
+      }
       is_property_manager: {
         Args: { property_id: string }
         Returns: boolean
       }
       is_tenant_of_managed_property: {
         Args: { tenant_id: string }
+        Returns: boolean
+      }
+      is_tenant_of_user_managed_property: {
+        Args: { tenant_id: string }
+        Returns: boolean
+      }
+      is_user_property_manager: {
+        Args: { property_id: string }
         Returns: boolean
       }
     }

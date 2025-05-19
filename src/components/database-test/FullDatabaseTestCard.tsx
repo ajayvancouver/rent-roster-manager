@@ -31,7 +31,7 @@ export const FullDatabaseTestCard = () => {
       console.error("Error running full database test:", error);
       setFullTestResult({
         success: false,
-        message: `Error: ${error instanceof Error ? error.message : String(error)}`,
+        message: `Error: ${error instanceof Error ? error.message : "Unknown error occurred"}`,
         details: {}
       });
       
@@ -47,9 +47,9 @@ export const FullDatabaseTestCard = () => {
 
   // Format error message for display
   const formatErrorMessage = (message: string) => {
-    if (message.includes('[object Object]')) {
-      return "Error occurred - check console for details";
-    }
+    if (!message) return "No error message available";
+    if (typeof message !== 'string') return "Error occurred - check console for details";
+    if (message.includes('[object Object]')) return "Error occurred - check console for details";
     return message;
   };
 

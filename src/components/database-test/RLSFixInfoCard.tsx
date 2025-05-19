@@ -16,18 +16,16 @@ export const RLSFixInfoCard = () => {
       try {
         setIsLoading(true);
         
-        // Try to use the function itself as a test for its existence
-        const { data, error } = await supabase.rpc('is_property_manager', {
-          property_id: '00000000-0000-0000-0000-000000000000' // Using a dummy UUID for testing
-        });
+        // Try to use the security definer functions to test for existence
+        const { data, error } = await supabase.rpc('get_user_managed_properties');
         
         if (error && error.message.includes('function') && error.message.includes('does not exist')) {
           // Function doesn't exist
-          console.log("RLS functions don't exist:", error);
+          console.log("RLS security definer functions don't exist:", error);
           setIsFixed(false);
         } else {
-          // The function exists, even if it returned false for our dummy ID
-          console.log("RLS functions exist");
+          // The function exists - security definer functions are in place
+          console.log("RLS security definer functions exist");
           setIsFixed(true);
         }
       } catch (error) {
@@ -96,23 +94,20 @@ export const RLSFixInfoCard = () => {
               <h4 className="font-medium text-amber-900">Solution:</h4>
               <ol className="list-decimal pl-5 text-sm space-y-2 mt-1 text-amber-800">
                 <li>
-                  Create a security definer function in your database that returns the required data
+                  Create security definer functions in your database that return the required data
                   <pre className="bg-amber-100 p-2 rounded mt-1 overflow-x-auto text-xs">
-                    {`CREATE OR REPLACE FUNCTION public.is_property_manager(property_id uuid)
-RETURNS boolean AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM properties 
-    WHERE id = property_id AND manager_id = auth.uid()
-  );
+                    {`CREATE OR REPLACE FUNCTION public.get_user_managed_properties()
+RETURNS SETOF uuid AS $$
+  SELECT id FROM properties WHERE manager_id = auth.uid();
 $$ LANGUAGE sql SECURITY DEFINER;`}
                   </pre>
                 </li>
                 <li>
-                  Use this function in your RLS policy instead of directly querying the table
+                  Use these functions in your RLS policies instead of directly querying the table
                   <pre className="bg-amber-100 p-2 rounded mt-1 overflow-x-auto text-xs">
-                    {`CREATE POLICY "Users can view properties they manage" 
-ON properties FOR SELECT 
-USING (manager_id = auth.uid() OR public.is_property_manager(id));`}
+                    {`CREATE POLICY "managers can view tenants of their properties" 
+ON tenants FOR SELECT 
+USING (property_id IN (SELECT * FROM get_user_managed_properties()));`}
                   </pre>
                 </li>
               </ol>
