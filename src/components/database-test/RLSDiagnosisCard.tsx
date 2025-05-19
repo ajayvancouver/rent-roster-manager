@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
+import { Loader2, CheckCircle, XCircle, AlertTriangle, ShieldCheck } from "lucide-react";
 import { diagnoseRLSIssues } from "@/utils/dbConnectionTest";
 import { useToast } from "@/hooks/use-toast";
 
@@ -13,7 +13,11 @@ export const RLSDiagnosisCard = () => {
   const [rlsResults, setRlsResults] = useState<{ 
     success: boolean; 
     message: string; 
-    issues: string[] 
+    issues: string[];
+    functionStatus?: {
+      exists: boolean;
+      name: string;
+    }[];
   } | null>(null);
 
   const handleDiagnoseRLS = async () => {
@@ -75,7 +79,7 @@ export const RLSDiagnosisCard = () => {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <AlertTriangle className="h-5 w-5" />
+          <ShieldCheck className="h-5 w-5" />
           RLS Policy Check
         </CardTitle>
         <CardDescription>
@@ -115,6 +119,24 @@ export const RLSDiagnosisCard = () => {
               )}
             </div>
             <p className="text-sm">{rlsResults.message}</p>
+            
+            {rlsResults.functionStatus && rlsResults.functionStatus.length > 0 && (
+              <div className="mt-2 border-t pt-2">
+                <p className="text-xs font-medium mb-1">Security Definer Functions:</p>
+                <ul className="text-xs space-y-1">
+                  {rlsResults.functionStatus.map((func, i) => (
+                    <li key={i} className="flex items-center gap-1">
+                      {func.exists ? (
+                        <CheckCircle className="h-3 w-3 text-green-500" />
+                      ) : (
+                        <XCircle className="h-3 w-3 text-red-500" />
+                      )}
+                      <span>{func.name}: {func.exists ? 'OK' : 'Missing'}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             
             {!rlsResults.success && rlsResults.issues.length > 0 && (
               <div className="mt-2 text-xs text-red-500">

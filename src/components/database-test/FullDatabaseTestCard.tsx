@@ -57,13 +57,35 @@ export const FullDatabaseTestCard = () => {
         const parsed = JSON.parse(message);
         if (parsed.message) {
           return parsed.message;
+        } else if (parsed.error) {
+          return parsed.error;
         }
       } catch (e) {
         // Not valid JSON, just continue
       }
     }
     
+    // Extract message from error objects like {"code":"42P17","details":null,"hint":null,"message":"infinite recursion detected in policy for relation \"properties\""}
+    try {
+      const errorObj = JSON.parse(message);
+      if (errorObj.message) {
+        return errorObj.message;
+      }
+    } catch (e) {
+      // Not valid JSON, just continue
+    }
+    
     return message;
+  };
+
+  const getTotalPassedTests = () => {
+    if (!fullTestResult) return 0;
+    return Object.values(fullTestResult.details).filter(result => result.success).length;
+  };
+  
+  const getTotalTests = () => {
+    if (!fullTestResult) return 0;
+    return Object.keys(fullTestResult.details).length;
   };
 
   return (
@@ -99,18 +121,23 @@ export const FullDatabaseTestCard = () => {
         
         {fullTestResult && (
           <div className="p-3 rounded border">
-            <div className="flex items-center gap-2 mb-2">
-              {fullTestResult.success ? (
-                <>
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <Badge variant="outline" className="bg-green-50">All Tests Passed</Badge>
-                </>
-              ) : (
-                <>
-                  <XCircle className="h-5 w-5 text-red-500" />
-                  <Badge variant="outline" className="bg-red-50">Test Failures</Badge>
-                </>
-              )}
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                {fullTestResult.success ? (
+                  <>
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                    <Badge variant="outline" className="bg-green-50">All Tests Passed</Badge>
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="h-5 w-5 text-red-500" />
+                    <Badge variant="outline" className="bg-red-50">Test Failures</Badge>
+                  </>
+                )}
+              </div>
+              <Badge variant={fullTestResult.success ? "success" : "destructive"} className="ml-auto">
+                {getTotalPassedTests()}/{getTotalTests()} Tests Passed
+              </Badge>
             </div>
             <p className="text-sm">{fullTestResult.message}</p>
             
@@ -120,13 +147,13 @@ export const FullDatabaseTestCard = () => {
                   <div key={key} className={`p-2 rounded text-xs ${value.success ? 'bg-green-50' : 'bg-red-50'}`}>
                     <div className="flex items-center gap-2">
                       {value.success ? (
-                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
                       ) : (
-                        <XCircle className="h-4 w-4 text-red-500" />
+                        <XCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
                       )}
                       <span className="font-medium">{key}</span>
                     </div>
-                    <p className="mt-1 pl-6">{formatErrorMessage(value.message)}</p>
+                    <p className="mt-1 pl-6 break-words">{formatErrorMessage(value.message)}</p>
                   </div>
                 ))}
               </div>

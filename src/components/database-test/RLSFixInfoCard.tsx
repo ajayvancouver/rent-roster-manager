@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { AlertTriangle, CheckCircle, ExternalLink } from "lucide-react";
+import { AlertTriangle, CheckCircle, ExternalLink, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -10,21 +10,53 @@ export const RLSFixInfoCard = () => {
   const { toast } = useToast();
   const [isFixed, setIsFixed] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [functionInfo, setFunctionInfo] = useState<{
+    name: string;
+    exists: boolean;
+  }[]>([]);
 
   useEffect(() => {
     const checkRLSFunctions = async () => {
       try {
         setIsLoading(true);
         
-        // Check for the get_user_managed_properties function
-        const { data, error } = await supabase.rpc('get_user_managed_properties');
+        // List of security definer functions we expect to find
+        const requiredFunctions = [
+          'get_user_managed_properties',
+          'is_property_manager',
+          'is_tenant_of_managed_property'
+        ];
         
-        if (error && error.message.includes('function') && error.message.includes('does not exist')) {
-          // Function doesn't exist
-          console.log("RLS security definer functions don't exist:", error);
-          setIsFixed(false);
-        } else {
-          // Verify that RLS policies don't have recursion issues
+        const results = await Promise.all(
+          requiredFunctions.map(async (funcName) => {
+            // Check if the function exists
+            try {
+              const { error } = await supabase.rpc(funcName);
+              
+              // Even if we get an error with parameters, the function exists
+              // We're just checking if it's a "function doesn't exist" error or not
+              const exists = !(error && error.message.includes('function') && error.message.includes('does not exist'));
+              return {
+                name: funcName,
+                exists
+              };
+            } catch (err) {
+              console.error(`Error checking ${funcName}:`, err);
+              return {
+                name: funcName,
+                exists: false
+              };
+            }
+          })
+        );
+        
+        setFunctionInfo(results);
+        
+        // If all functions exist, we consider it fixed
+        const allFunctionsExist = results.every(fn => fn.exists);
+        
+        if (allFunctionsExist) {
+          // Verify RLS policies don't have recursion issues
           try {
             // Test a simple query to verify no recursion happens
             const { error: queryError } = await supabase
@@ -43,6 +75,8 @@ export const RLSFixInfoCard = () => {
             console.error("Error testing RLS policies:", queryErr);
             setIsFixed(false);
           }
+        } else {
+          setIsFixed(false);
         }
       } catch (error) {
         console.error("Error checking RLS functions:", error);
@@ -55,17 +89,8 @@ export const RLSFixInfoCard = () => {
     checkRLSFunctions();
   }, []);
 
-  const handleFixClick = async () => {
-    try {
-      window.open("https://supabase.com/dashboard/project/noxdsmplywvhcdbqkxds/sql/new", "_blank");
-    } catch (error) {
-      console.error("Error opening SQL editor:", error);
-      toast({
-        title: "Error",
-        description: "Could not open SQL editor. Please navigate to your Supabase project manually.",
-        variant: "destructive"
-      });
-    }
+  const handleFixClick = () => {
+    window.open("https://supabase.com/dashboard/project/noxdsmplywvhcdbqkxds/sql/new", "_blank");
   };
 
   return (
@@ -80,7 +105,7 @@ export const RLSFixInfoCard = () => {
           ) : (
             <>
               <AlertTriangle className="h-5 w-5 text-amber-500" />
-              Fix RLS Recursive Policy
+              {isLoading ? "Checking RLS Status..." : "RLS Policy Fix Required"}
             </>
           )}
         </CardTitle>
@@ -91,13 +116,26 @@ export const RLSFixInfoCard = () => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {isFixed ? (
+        {isLoading ? (
+          <div className="bg-blue-50 p-4 rounded-md">
+            <p className="text-sm text-blue-800">Checking RLS policy status...</p>
+          </div>
+        ) : isFixed ? (
           <div className="bg-green-50 p-4 rounded-md">
             <h3 className="font-medium text-green-900">RLS Policy Fix Successfully Applied</h3>
             <p className="text-sm text-green-800 mt-2">
               Your database is now using security definer functions to prevent infinite recursion in RLS policies.
               This has resolved the "infinite recursion detected in policy" errors you were experiencing.
             </p>
+            
+            <div className="mt-3">
+              <p className="text-sm font-medium text-green-900">Applied Security Definer Functions:</p>
+              <ul className="list-disc pl-5 text-sm mt-1 text-green-800">
+                {functionInfo.map((fn, i) => (
+                  <li key={i}>{fn.name}</li>
+                ))}
+              </ul>
+            </div>
           </div>
         ) : (
           <div className="bg-amber-50 p-4 rounded-md">
@@ -130,9 +168,18 @@ USING (property_id IN (SELECT * FROM get_user_managed_properties()));`}
             </div>
             
             <div className="mt-4">
+              <p className="text-sm font-medium text-amber-900">Missing Security Definer Functions:</p>
+              <ul className="list-disc pl-5 text-sm mt-1 text-amber-800">
+                {functionInfo
+                  .filter(fn => !fn.exists)
+                  .map((fn, i) => (
+                    <li key={i}>{fn.name}</li>
+                  ))}
+              </ul>
+              
               <Button 
                 variant="outline" 
-                className="flex items-center gap-2" 
+                className="flex items-center gap-2 mt-3" 
                 onClick={handleFixClick}
               >
                 <ExternalLink className="h-4 w-4" />
