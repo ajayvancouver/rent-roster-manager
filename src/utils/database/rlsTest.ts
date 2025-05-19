@@ -10,7 +10,7 @@ export type SecurityDefinerFunction =
   | "is_tenant_of_user_managed_property"
   | "is_user_property_manager"
   | "get_user_managed_property_ids"
-  | "admin_query"; // Include admin_query as a valid function type
+  | "admin_query"; 
 
 // List of security definer functions that should exist (excluding admin_query which is used differently)
 export const requiredSecurityFunctions: Exclude<SecurityDefinerFunction, "admin_query">[] = [
@@ -87,8 +87,9 @@ export const diagnoseRLSIssues = async () => {
     `;
     
     // Get search_path information for functions using the admin_query function
+    // Use type assertion to tell TypeScript this is okay
     const { data: searchPathData, error: searchPathError } = await supabase.rpc(
-      "admin_query", // Now this is a valid SecurityDefinerFunction
+      "admin_query" as any, 
       { sql_query: searchPathQuery, params: [requiredSecurityFunctions] }
     );
     

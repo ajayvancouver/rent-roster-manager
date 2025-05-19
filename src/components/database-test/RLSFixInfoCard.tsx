@@ -38,8 +38,9 @@ export const RLSFixInfoCard = () => {
         `;
         
         // Get search_path information for functions using admin_query
+        // Use type assertion to tell TypeScript this is okay
         const { data: searchPathData, error: searchPathError } = await supabase.rpc(
-          "admin_query", // Now this is a valid SecurityDefinerFunction
+          "admin_query" as any, 
           { sql_query: searchPathQuery, params: [requiredFunctions] }
         );
         
