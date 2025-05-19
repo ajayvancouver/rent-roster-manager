@@ -14,6 +14,7 @@ export const RLSFixInfoCard = () => {
   const [functionInfo, setFunctionInfo] = useState<{
     name: SecurityDefinerFunction;
     exists: boolean;
+    hasSearchPath?: boolean;
   }[]>([]);
 
   useEffect(() => {
@@ -29,6 +30,32 @@ export const RLSFixInfoCard = () => {
           'get_user_managed_property_ids'
         ];
         
+        // Query to check if search_path is set for each function
+        const searchPathQuery = `
+          SELECT 
+            routine_name, 
+            (SELECT option_value
+             FROM pg_options_to_table(proconfig)
+             WHERE option_name = 'search_path') as search_path
+          FROM information_schema.routines
+          WHERE routine_schema = 'public'
+          AND routine_type = 'FUNCTION'
+          AND routine_name = any($1::text[])
+        `;
+        
+        // Get search_path information for functions
+        const { data: searchPathData, error: searchPathError } = await supabase.rpc(
+          'admin_query', 
+          { sql_query: searchPathQuery, params: [requiredFunctions] }
+        );
+        
+        const searchPathMap = new Map();
+        if (searchPathData && !searchPathError) {
+          searchPathData.forEach((row: any) => {
+            searchPathMap.set(row.routine_name, !!row.search_path);
+          });
+        }
+        
         const results = await Promise.all(
           requiredFunctions.map(async (funcName) => {
             // Check if the function exists
@@ -38,15 +65,18 @@ export const RLSFixInfoCard = () => {
               // Even if we get an error with parameters, the function exists
               // We're just checking if it's a "function doesn't exist" error or not
               const exists = !(error && error.message.includes('function') && error.message.includes('does not exist'));
+              
               return {
                 name: funcName,
-                exists
+                exists,
+                hasSearchPath: exists ? searchPathMap.get(funcName) || false : false
               };
             } catch (err) {
               console.error(`Error checking ${funcName}:`, err);
               return {
                 name: funcName,
-                exists: false
+                exists: false,
+                hasSearchPath: false
               };
             }
           })
@@ -54,10 +84,11 @@ export const RLSFixInfoCard = () => {
         
         setFunctionInfo(results);
         
-        // If all functions exist, we consider it fixed
+        // If all functions exist and have search_path, we consider it fixed
         const allFunctionsExist = results.every(fn => fn.exists);
+        const allHaveSearchPath = results.every(fn => fn.exists && fn.hasSearchPath);
         
-        if (allFunctionsExist) {
+        if (allFunctionsExist && allHaveSearchPath) {
           // Verify RLS policies don't have recursion issues
           try {
             // Test a simple query to verify no recursion happens
@@ -70,7 +101,7 @@ export const RLSFixInfoCard = () => {
               console.log("RLS policies still have recursion issues:", queryError);
               setIsFixed(false);
             } else {
-              console.log("RLS security definer functions exist and work properly");
+              console.log("RLS security definer functions exist, have search_path set, and work properly");
               setIsFixed(true);
             }
           } catch (queryErr) {
@@ -126,7 +157,7 @@ export const RLSFixInfoCard = () => {
           <div className="bg-green-50 p-4 rounded-md">
             <h3 className="font-medium text-green-900">RLS Policy Fix Successfully Applied</h3>
             <p className="text-sm text-green-800 mt-2">
-              Your database is now using security definer functions to prevent infinite recursion in RLS policies.
+              Your database is now using security definer functions with explicit search_path settings to prevent infinite recursion in RLS policies.
               This has resolved the "infinite recursion detected in policy" errors you were experiencing.
             </p>
             
@@ -134,7 +165,7 @@ export const RLSFixInfoCard = () => {
               <p className="text-sm font-medium text-green-900">Applied Security Definer Functions:</p>
               <ul className="list-disc pl-5 text-sm mt-1 text-green-800">
                 {functionInfo.map((fn, i) => (
-                  <li key={i}>{fn.name}</li>
+                  <li key={i}>{fn.name} {fn.hasSearchPath ? '(with search_path)' : ''}</li>
                 ))}
               </ul>
             </div>
@@ -150,12 +181,12 @@ export const RLSFixInfoCard = () => {
               <h4 className="font-medium text-amber-900">Solution:</h4>
               <ol className="list-decimal pl-5 text-sm space-y-2 mt-1 text-amber-800">
                 <li>
-                  Create security definer functions in your database that return the required data
+                  Create security definer functions in your database that return the required data with explicit search_path
                   <pre className="bg-amber-100 p-2 rounded mt-1 overflow-x-auto text-xs">
                     {`CREATE OR REPLACE FUNCTION public.get_user_managed_properties()
 RETURNS SETOF uuid AS $$
   SELECT id FROM properties WHERE manager_id = auth.uid();
-$$ LANGUAGE sql SECURITY DEFINER;`}
+$$ LANGUAGE sql SECURITY DEFINER SET search_path = public;`}
                   </pre>
                 </li>
                 <li>
@@ -170,12 +201,14 @@ USING (property_id IN (SELECT * FROM get_user_managed_properties()));`}
             </div>
             
             <div className="mt-4">
-              <p className="text-sm font-medium text-amber-900">Missing Security Definer Functions:</p>
+              <p className="text-sm font-medium text-amber-900">Function Status:</p>
               <ul className="list-disc pl-5 text-sm mt-1 text-amber-800">
                 {functionInfo
-                  .filter(fn => !fn.exists)
+                  .filter(fn => !fn.exists || !fn.hasSearchPath)
                   .map((fn, i) => (
-                    <li key={i}>{fn.name}</li>
+                    <li key={i}>
+                      {fn.name}: {!fn.exists ? 'Missing' : !fn.hasSearchPath ? 'Missing search_path' : 'OK'}
+                    </li>
                   ))}
               </ul>
               

@@ -17,6 +17,7 @@ export const RLSDiagnosisCard = () => {
     functionStatus?: {
       exists: boolean;
       name: string;
+      hasSearchPath?: boolean;
     }[];
   } | null>(null);
 
@@ -50,6 +51,49 @@ export const RLSDiagnosisCard = () => {
     }
   };
 
+  // Format error message for display
+  const formatErrorMessage = (message: string) => {
+    if (!message) return "No error message available";
+    if (typeof message !== 'string') return "Error occurred - check console for details";
+    if (message.includes('[object Object]')) return "Error occurred - check console for details";
+    
+    // Try to parse JSON string if it looks like one
+    if (message.startsWith('{') && message.endsWith('}')) {
+      try {
+        const parsed = JSON.parse(message);
+        if (parsed.message) {
+          return parsed.message;
+        } else if (parsed.error) {
+          return parsed.error;
+        }
+      } catch (e) {
+        // Not valid JSON, just continue
+      }
+    }
+    
+    // Extract message from error objects like {"code":"42P17","details":null,"hint":null,"message":"infinite recursion detected in policy for relation \"properties\""}
+    try {
+      const errorObj = JSON.parse(message);
+      if (errorObj.message) {
+        return errorObj.message;
+      }
+    } catch (e) {
+      // Not valid JSON, just continue
+    }
+    
+    return message;
+  };
+
+  const getTotalPassedTests = () => {
+    if (!rlsResults) return 0;
+    return Object.values(rlsResults.functionStatus || []).filter(result => result.exists && result.hasSearchPath).length;
+  };
+  
+  const getTotalTests = () => {
+    if (!rlsResults) return 0;
+    return Object.keys(rlsResults.functionStatus || {}).length;
+  };
+
   const getBadgeText = () => {
     if (!rlsResults) return "";
     
@@ -65,12 +109,24 @@ export const RLSDiagnosisCard = () => {
       issue => issue.includes("recursion")
     );
     
-    if (hasFunctionIssues && hasRecursionIssues) {
+    const hasSearchPathIssues = rlsResults.functionStatus?.some(
+      func => func.exists && !func.hasSearchPath
+    );
+    
+    if (hasFunctionIssues && hasRecursionIssues && hasSearchPathIssues) {
+      return "Multiple Issues";
+    } else if (hasFunctionIssues && hasRecursionIssues) {
       return "Function & Recursion Issues";
+    } else if (hasFunctionIssues && hasSearchPathIssues) {
+      return "Function & Search Path Issues";
+    } else if (hasRecursionIssues && hasSearchPathIssues) {
+      return "Recursion & Search Path Issues";
     } else if (hasFunctionIssues) {
       return "Missing Functions";
     } else if (hasRecursionIssues) {
       return "Recursion Issues";
+    } else if (hasSearchPathIssues) {
+      return "Search Path Issues";
     }
     
     return "Issues Found";
@@ -127,12 +183,16 @@ export const RLSDiagnosisCard = () => {
                 <ul className="text-xs space-y-1">
                   {rlsResults.functionStatus.map((func, i) => (
                     <li key={i} className="flex items-center gap-1">
-                      {func.exists ? (
+                      {func.exists && func.hasSearchPath ? (
                         <CheckCircle className="h-3 w-3 text-green-500" />
+                      ) : func.exists ? (
+                        <AlertTriangle className="h-3 w-3 text-amber-500" />
                       ) : (
                         <XCircle className="h-3 w-3 text-red-500" />
                       )}
-                      <span>{func.name}: {func.exists ? 'OK' : 'Missing'}</span>
+                      <span>
+                        {func.name}: {func.exists ? (func.hasSearchPath ? 'OK' : 'Missing search_path') : 'Missing'}
+                      </span>
                     </li>
                   ))}
                 </ul>

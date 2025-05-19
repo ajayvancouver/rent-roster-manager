@@ -72,6 +72,34 @@ export const diagnoseRLSIssues = async () => {
       }
     }
     
+    // Query to check if search_path is set for each function
+    const searchPathQuery = `
+      SELECT 
+        routine_name, 
+        (SELECT option_value
+         FROM pg_options_to_table(proconfig)
+         WHERE option_name = 'search_path') as search_path
+      FROM information_schema.routines
+      WHERE routine_schema = 'public'
+      AND routine_type = 'FUNCTION'
+      AND routine_name = any($1::text[])
+    `;
+    
+    // Get search_path information for functions
+    const { data: searchPathData, error: searchPathError } = await supabase.rpc(
+      'admin_query', 
+      { sql_query: searchPathQuery, params: [requiredSecurityFunctions] }
+    );
+    
+    const searchPathMap = new Map();
+    if (searchPathData && !searchPathError) {
+      searchPathData.forEach((row: any) => {
+        searchPathMap.set(row.routine_name, !!row.search_path);
+      });
+    } else if (searchPathError) {
+      console.log("Error getting search_path info:", searchPathError);
+    }
+    
     // Check if required security definer functions exist
     const functionStatus = await Promise.all(
       requiredSecurityFunctions.map(async (funcName: SecurityDefinerFunction) => {
@@ -114,7 +142,17 @@ export const diagnoseRLSIssues = async () => {
           issues.push(`Required security definer function "${funcName}" couldn't be called`);
         }
         
-        return { name: funcName, exists };
+        // Check if the function has search_path set
+        const hasSearchPath = searchPathMap.get(funcName) || false;
+        if (exists && !hasSearchPath) {
+          issues.push(`Function "${funcName}" doesn't have search_path set to public`);
+        }
+        
+        return { 
+          name: funcName, 
+          exists,
+          hasSearchPath
+        };
       })
     );
     

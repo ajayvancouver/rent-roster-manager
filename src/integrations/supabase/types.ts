@@ -420,7 +420,7 @@ export type Database = {
         Returns: boolean
       }
       is_user_property_manager: {
-        Args: { property_id: string }
+        Args: Record<PropertyKey, never> | { property_id: string }
         Returns: boolean
       }
     }
