@@ -9,6 +9,7 @@ export interface UserProfile {
   last_name?: string;
   full_name?: string;
   email?: string;
+  phone?: string; // Add phone field to UserProfile interface
   user_type: UserType;
   property_id?: string;
   unit_number?: string;
@@ -30,7 +31,6 @@ export interface AuthContextType {
   isLoading: boolean;
   authError: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  // Remove signInWithGoogleProvider from here
   signUp: (
     email: string, 
     password: string, 

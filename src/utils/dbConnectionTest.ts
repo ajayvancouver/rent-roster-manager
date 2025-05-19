@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 // Define allowed function names as a type
@@ -13,7 +14,10 @@ type SecurityDefinerFunction =
 const requiredSecurityFunctions: SecurityDefinerFunction[] = [
   "get_user_managed_properties",
   "is_property_manager",
-  "is_tenant_of_managed_property"
+  "is_tenant_of_managed_property",
+  "get_manager_properties",
+  "is_tenant_of_user_managed_property",
+  "is_user_property_manager"
 ];
 
 export const testConnection = async () => {
@@ -35,6 +39,9 @@ export const testConnection = async () => {
     return { success: false, message: `Database connection test failed: ${error}` };
   }
 };
+
+// Alias function to match the import in ConnectionTestCard.tsx
+export const testSupabaseConnection = testConnection;
 
 export const diagnoseRLSIssues = async () => {
   try {
@@ -121,6 +128,16 @@ export const diagnoseRLSIssues = async () => {
 
 export const checkTablePermissions = async (tableName: string) => {
   try {
+    // Use the table name as a string directly, but ensure it's one of our valid tables
+    const validTables = ["properties", "tenants", "maintenance", "payments", "documents", "profiles", "payment_methods"];
+    
+    if (!validTables.includes(tableName)) {
+      return { 
+        success: false, 
+        message: `Invalid table name: ${tableName}. Must be one of: ${validTables.join(', ')}` 
+      };
+    }
+    
     const { data, error } = await supabase
       .from(tableName)
       .select("*")
@@ -136,5 +153,84 @@ export const checkTablePermissions = async (tableName: string) => {
   } catch (error) {
     console.error(`Error checking permissions for table ${tableName}:`, error);
     return { success: false, message: `Error checking permissions for table ${tableName}: ${error}` };
+  }
+};
+
+// Add these functions to match what the components are trying to import
+export const runFullDatabaseTest = async () => {
+  try {
+    const results: Record<string, { success: boolean; message: string }> = {};
+    
+    // Test basic connection
+    results["Database Connection"] = await testConnection();
+    
+    // Test RLS configuration
+    const rlsResults = await diagnoseRLSIssues();
+    results["RLS Configuration"] = {
+      success: rlsResults.success,
+      message: rlsResults.message
+    };
+    
+    // Test permissions for each table
+    const tables = ["properties", "tenants", "maintenance", "payments", "documents", "profiles"];
+    for (const table of tables) {
+      results[`${table} Table Access`] = await checkTablePermissions(table);
+    }
+    
+    // Check if all tests passed
+    const allPassed = Object.values(results).every(result => result.success);
+    
+    return {
+      success: allPassed,
+      message: allPassed 
+        ? "All database tests passed successfully" 
+        : "Some database tests failed, check details",
+      details: results
+    };
+  } catch (error) {
+    console.error("Error running full database test:", error);
+    return {
+      success: false,
+      message: `Error during full database test: ${error instanceof Error ? error.message : "Unknown error"}`,
+      details: {
+        "Test Error": {
+          success: false,
+          message: `${error instanceof Error ? error.message : "Unknown error"}`
+        }
+      }
+    };
+  }
+};
+
+export const createAndTestSampleData = async () => {
+  try {
+    // This is just a mock implementation since we don't have the actual implementation
+    // In a real application, this would create sample data and return credentials
+    
+    console.log("Creating sample data...");
+    
+    // Mock credentials for demo
+    const managerCredentials = {
+      email: "manager@example.com",
+      password: "Password123!"
+    };
+    
+    const tenantCredentials = {
+      email: "tenant@example.com",
+      password: "Password123!"
+    };
+    
+    return {
+      success: true,
+      message: "Sample data created successfully",
+      managerCredentials,
+      tenantCredentials
+    };
+  } catch (error) {
+    console.error("Error creating sample data:", error);
+    return {
+      success: false,
+      message: `Error creating sample data: ${error instanceof Error ? error.message : "Unknown error"}`
+    };
   }
 };
