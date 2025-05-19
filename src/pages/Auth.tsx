@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Navigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,7 +23,6 @@ const Auth = () => {
   const { user, signIn, signUp, isLoading } = useAuth();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
-  const fromProvider = searchParams.get('fromProvider') === 'true';
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -33,16 +31,6 @@ const Auth = () => {
   const [createSampleData, setCreateSampleData] = useState(false);
   const [activeTab, setActiveTab] = useState("login");
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    // If redirected back from OAuth provider
-    if (fromProvider) {
-      toast({
-        title: "Authentication in progress",
-        description: "Completing your login...",
-      });
-    }
-  }, [fromProvider, toast]);
 
   if (user) {
     return <Navigate to="/" />;

@@ -1,322 +1,140 @@
-
 import { supabase } from "@/integrations/supabase/client";
-import { createSampleManager, createSampleTenant, logoutCurrentUser } from "@/services/sampleAccounts";
 
-/**
- * Tests the connection to Supabase
- * @returns Connection status result
- */
-export const testSupabaseConnection = async (): Promise<{ success: boolean; message: string }> => {
+// Define allowed function names as a type
+type SecurityDefinerFunction = 
+  | "get_user_managed_properties" 
+  | "is_property_manager" 
+  | "is_tenant_of_managed_property"
+  | "get_manager_properties"
+  | "is_tenant_of_user_managed_property"
+  | "is_user_property_manager";
+
+// List of security definer functions that should exist
+const requiredSecurityFunctions: SecurityDefinerFunction[] = [
+  "get_user_managed_properties",
+  "is_property_manager",
+  "is_tenant_of_managed_property"
+];
+
+export const testConnection = async () => {
   try {
-    // Test a simple query to verify connection (not using aggregate functions)
     const { data, error } = await supabase
-      .from('properties')
-      .select('id')
+      .from("properties")
+      .select("id")
       .limit(1);
-    
+
     if (error) {
-      console.error("Supabase connection test failed:", error);
-      throw error;
+      console.error("Error testing database connection:", error);
+      return { success: false, message: `Database connection test failed: ${error.message}` };
     }
-    
-    return {
-      success: true,
-      message: `Connection successful! Database is responsive.`
-    };
+
+    console.log("Database connection test successful");
+    return { success: true, message: "Database connection test successful" };
   } catch (error) {
-    console.error("Supabase connection test failed:", error);
-    return {
-      success: false,
-      message: `Connection failed: ${error instanceof Error ? error.message : JSON.stringify(error)}`
-    };
+    console.error("Error testing database connection:", error);
+    return { success: false, message: `Database connection test failed: ${error}` };
   }
 };
 
-/**
- * Diagnoses RLS policy issues
- */
-export const diagnoseRLSIssues = async (): Promise<{ 
-  success: boolean; 
-  message: string;
-  issues: string[];
-  functionStatus?: {
-    exists: boolean;
-    name: string;
-  }[];
-}> => {
-  const issues: string[] = [];
-  const functionStatus: { exists: boolean; name: string }[] = [];
-  
+export const diagnoseRLSIssues = async () => {
   try {
-    // Check if our security definer functions exist
-    const requiredFunctions = [
-      'get_user_managed_properties',
-      'is_property_manager',
-      'is_tenant_of_managed_property'
-    ];
+    console.log("Diagnosing RLS issues...");
     
-    for (const funcName of requiredFunctions) {
-      try {
-        const { error } = await supabase.rpc(funcName);
-        
-        // Even if we get an error with parameters, the function exists
-        // We're just checking if it's a "function doesn't exist" error or not
-        const exists = !(error && error.message.includes('function') && error.message.includes('does not exist'));
-        
-        functionStatus.push({
-          name: funcName,
-          exists
-        });
-        
-        if (!exists) {
-          issues.push(`Missing security definer function: ${funcName}`);
-        }
-      } catch (err) {
-        console.error(`Function check failed for ${funcName}:`, err);
-        issues.push(`Error checking security definer function: ${funcName}`);
-        functionStatus.push({
-          name: funcName,
-          exists: false
-        });
+    // Test connection to tables with RLS
+    const tablesWithIssues: string[] = [];
+    const issues: string[] = [];
+    
+    // Check properties table
+    const { data: propertiesData, error: propertiesError } = await supabase
+      .from("properties")
+      .select("id")
+      .limit(1);
+      
+    if (propertiesError) {
+      if (propertiesError.message.includes("recursion")) {
+        tablesWithIssues.push("properties");
+        issues.push("Properties table has recursive RLS policy");
       }
     }
     
-    // If any security definer functions are missing, don't test further
-    if (functionStatus.some(f => !f.exists)) {
-      return {
-        success: false,
-        message: "Missing required security definer functions for RLS policies",
-        issues,
-        functionStatus
-      };
-    }
-    
-    // Now test that our RLS policies are working without recursion
-    // Test simple queries to detect RLS recursion issues
-    try {
-      const { error } = await supabase
-        .from('properties')
-        .select('id, name')
-        .limit(1);
-        
-      if (error) {
-        console.error("Properties query error:", error);
-        if (error.message.includes('recursion')) {
-          issues.push("Properties table has recursive RLS policy");
-        } else {
-          issues.push(`Properties query error: ${error.message}`);
-        }
+    // Check tenants table
+    const { data: tenantsData, error: tenantsError } = await supabase
+      .from("tenants")
+      .select("id")
+      .limit(1);
+      
+    if (tenantsError) {
+      if (tenantsError.message.includes("recursion")) {
+        tablesWithIssues.push("tenants");
+        issues.push("Tenants table has recursive RLS policy");
       }
-    } catch (err) {
-      console.error("Properties test failed:", err);
-      issues.push("Error testing properties table");
     }
     
-    // Test tenant queries
-    try {
-      const { error } = await supabase
-        .from('tenants')
-        .select('id, name')
-        .limit(1);
-        
-      if (error) {
-        console.error("Tenants query error:", error);
-        if (error.message.includes('recursion')) {
-          issues.push("Tenants table has recursive RLS policy");
-        } else {
-          issues.push(`Tenants query error: ${error.message}`);
-        }
+    // Check maintenance table
+    const { data: maintenanceData, error: maintenanceError } = await supabase
+      .from("maintenance")
+      .select("id")
+      .limit(1);
+      
+    if (maintenanceError) {
+      if (maintenanceError.message.includes("recursion")) {
+        tablesWithIssues.push("maintenance");
+        issues.push("Maintenance table has recursive RLS policy");
       }
-    } catch (err) {
-      console.error("Tenants test failed:", err);
-      issues.push("Error testing tenants table");
     }
     
-    // Test maintenance queries
-    try {
-      const { error } = await supabase
-        .from('maintenance')
-        .select('id, title')
-        .limit(1);
+    // Check if required security definer functions exist
+    const functionStatus = await Promise.all(
+      requiredSecurityFunctions.map(async (funcName: SecurityDefinerFunction) => {
+        const { data, error } = await supabase.rpc(funcName);
         
-      if (error) {
-        console.error("Maintenance query error:", error);
-        if (error.message.includes('recursion')) {
-          issues.push("Maintenance table has recursive RLS policy");
-        } else {
-          issues.push(`Maintenance query error: ${error.message}`);
+        let exists = true;
+        if (error && error.message.includes("does not exist")) {
+          exists = false;
+          issues.push(`Required security definer function "${funcName}" is missing`);
         }
-      }
-    } catch (err) {
-      console.error("Maintenance test failed:", err);
-      issues.push("Error testing maintenance table");
-    }
+        
+        return { name: funcName, exists };
+      })
+    );
     
+    const success = issues.length === 0;
+    const message = success
+      ? "RLS policies appear to be correctly configured"
+      : `Found ${issues.length} issues with RLS configuration`;
+      
     return {
-      success: issues.length === 0,
-      message: issues.length === 0 
-        ? "No RLS issues detected" 
-        : "RLS policy issues found, check Supabase database",
+      success,
+      message,
       issues,
       functionStatus
     };
   } catch (error) {
-    console.error("RLS diagnosis failed:", error);
+    console.error("Error diagnosing RLS:", error);
     return {
       success: false,
-      message: `Diagnosis failed: ${error instanceof Error ? error.message : JSON.stringify(error)}`,
-      issues: [...issues, "Diagnosis failed with error"],
-      functionStatus
+      message: `Error during RLS diagnosis: ${error instanceof Error ? error.message : "Unknown error"}`,
+      issues: [`Diagnosis error: ${error instanceof Error ? error.message : "Unknown error"}`]
     };
   }
 };
 
-/**
- * Creates sample data in the database
- * @returns Result with manager and tenant credentials
- */
-export const createAndTestSampleData = async (): Promise<{ 
-  success: boolean; 
-  message: string;
-  managerCredentials?: { email: string; password: string };
-  tenantCredentials?: { email: string; password: string };
-}> => {
+export const checkTablePermissions = async (tableName: string) => {
   try {
-    // Ensure we're logged out first
-    await logoutCurrentUser();
-    
-    // Create a sample manager (which also creates properties)
-    const managerCredentials = await createSampleManager();
-    
-    // Create a sample tenant
-    const tenantCredentials = await createSampleTenant();
-    
-    return {
-      success: true,
-      message: "Successfully created sample manager and tenant accounts with properties",
-      managerCredentials,
-      tenantCredentials
-    };
-  } catch (error) {
-    console.error("Failed to create sample data:", error);
-    return {
-      success: false,
-      message: `Failed to create sample data: ${error instanceof Error ? error.message : JSON.stringify(error)}`
-    };
-  }
-};
+    const { data, error } = await supabase
+      .from(tableName)
+      .select("*")
+      .limit(1);
 
-/**
- * Tests that all services are working correctly
- */
-export const runFullDatabaseTest = async (): Promise<{ 
-  success: boolean; 
-  message: string;
-  details: Record<string, { success: boolean; message: string }>;
-}> => {
-  const results: Record<string, { success: boolean; message: string }> = {};
-  
-  try {
-    // Test basic connection
-    results.connection = await testSupabaseConnection();
-    
-    // Test RLS policies
-    const rlsResult = await diagnoseRLSIssues();
-    results.rlsPolicies = {
-      success: rlsResult.success,
-      message: rlsResult.issues.length > 0 
-        ? `RLS issues found: ${rlsResult.issues.join(', ')}`
-        : "RLS policies working correctly"
-    };
-    
-    // Test properties service with better error handling
-    try {
-      const { data, error } = await supabase
-        .from('properties')
-        .select('id, name')
-        .limit(5);
-      
-      if (error) {
-        console.error("Properties service error:", error);
-        throw error;
-      }
-      
-      results.properties = {
-        success: true,
-        message: `Properties service working. Found ${data?.length || 0} properties.`
-      };
-    } catch (error) {
-      console.error("Properties service error full:", error);
-      results.properties = {
-        success: false,
-        message: `Properties service error: ${error instanceof Error ? error.message : JSON.stringify(error)}`
-      };
+    if (error) {
+      console.error(`Error checking permissions for table ${tableName}:`, error);
+      return { success: false, message: `Error checking permissions for table ${tableName}: ${error.message}` };
     }
-    
-    // Test tenants service with better error handling
-    try {
-      const { data, error } = await supabase
-        .from('tenants')
-        .select('id, name')
-        .limit(5);
-      
-      if (error) {
-        console.error("Tenants service error:", error);
-        throw error;
-      }
-      
-      results.tenants = {
-        success: true,
-        message: `Tenants service working. Found ${data?.length || 0} tenants.`
-      };
-    } catch (error) {
-      console.error("Tenants service error full:", error);
-      results.tenants = {
-        success: false,
-        message: `Tenants service error: ${error instanceof Error ? error.message : JSON.stringify(error)}`
-      };
-    }
-    
-    // Test maintenance service with better error handling
-    try {
-      const { data, error } = await supabase
-        .from('maintenance')
-        .select('id, title')
-        .limit(5);
-      
-      if (error) {
-        console.error("Maintenance service error:", error);
-        throw error;
-      }
-      
-      results.maintenance = {
-        success: true,
-        message: `Maintenance service working. Found ${data?.length || 0} maintenance requests.`
-      };
-    } catch (error) {
-      console.error("Maintenance service error full:", error);
-      results.maintenance = {
-        success: false,
-        message: `Maintenance service error: ${error instanceof Error ? error.message : JSON.stringify(error)}`
-      };
-    }
-    
-    // Determine overall success
-    const allSuccessful = Object.values(results).every(result => result.success);
-    
-    return {
-      success: allSuccessful,
-      message: allSuccessful 
-        ? "All database connections are working correctly" 
-        : "Some database connections failed",
-      details: results
-    };
+
+    console.log(`Permissions check for table ${tableName} successful`);
+    return { success: true, message: `Permissions check for table ${tableName} successful` };
   } catch (error) {
-    console.error("Database test failed:", error);
-    return {
-      success: false,
-      message: `Database test failed: ${error instanceof Error ? error.message : JSON.stringify(error)}`,
-      details: results
-    };
+    console.error(`Error checking permissions for table ${tableName}:`, error);
+    return { success: false, message: `Error checking permissions for table ${tableName}: ${error}` };
   }
 };

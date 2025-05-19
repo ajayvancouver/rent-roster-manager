@@ -33,7 +33,17 @@ export const RLSDiagnosisCard = () => {
     setIsRLSDiagnosing(true);
     try {
       const result = await diagnoseRLSIssues();
-      setRlsResults(result);
+      
+      // Type assertion to ensure the functionStatus field has the correct type
+      const typedResult = {
+        ...result,
+        functionStatus: result.functionStatus?.map(func => ({
+          exists: func.exists,
+          name: func.name as SecurityDefinerFunction
+        }))
+      };
+      
+      setRlsResults(typedResult);
       
       toast({
         title: result.success ? "RLS Policies OK" : "RLS Policy Issues",

@@ -1,24 +1,25 @@
 
-import { User, Session } from "@supabase/supabase-js";
+import { Session, User } from "@supabase/supabase-js";
 
-export type UserType = "manager" | "tenant";
+export type UserType = "tenant" | "manager";
 
 export interface UserProfile {
   id: string;
-  email: string;
+  first_name?: string;
+  last_name?: string;
   full_name?: string;
-  avatar_url?: string;
+  email?: string;
   user_type: UserType;
   property_id?: string;
   unit_number?: string;
-  phone?: string;
   rent_amount?: number;
   deposit_amount?: number;
   balance?: number;
   lease_start?: string;
   lease_end?: string;
-  status?: string;
-  manager_id?: string;
+  tenant_status?: string;
+  avatar_url?: string;
+  created_at?: string;
 }
 
 export interface AuthContextType {
@@ -29,7 +30,13 @@ export interface AuthContextType {
   isLoading: boolean;
   authError: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signInWithGoogleProvider: () => Promise<void>;
-  signUp: (email: string, password: string, userType: UserType, fullName?: string, createSampleData?: boolean) => Promise<void>;
+  // Remove signInWithGoogleProvider from here
+  signUp: (
+    email: string, 
+    password: string, 
+    userType: UserType, 
+    fullName?: string,
+    createSampleData?: boolean
+  ) => Promise<void>;
   signOut: () => Promise<void>;
 }

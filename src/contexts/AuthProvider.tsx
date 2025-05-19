@@ -4,8 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AuthContextType, UserProfile, UserType } from "@/types/auth";
 import { 
-  signInWithEmail, 
-  signInWithGoogle, 
+  signInWithEmail,
   signUpWithEmail, 
   signOutUser, 
   fetchUserProfile, 
@@ -142,18 +141,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signInWithGoogleProvider = async () => {
-    try {
-      setIsLoading(true);
-      await signInWithGoogle();
-    } catch (error: any) {
-      console.error("Google sign in error:", error.message);
-      throw error;
-    } finally {
-      // Auth state change will handle loading state
-    }
-  };
-
   const signUp = async (
     email: string, 
     password: string, 
@@ -213,7 +200,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading,
         authError,
         signIn,
-        signInWithGoogleProvider,
         signUp,
         signOut,
       }}
